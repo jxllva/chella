@@ -884,3 +884,10 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .cc-lvl.is-high .cc-bars i { background: #5E8F52 !important; }
 .cc-lvl.is-mid .cc-bars i:nth-child(-n+2) { background: #C9922E !important; }
 .cc-lvl.is-low .cc-bars i:nth-child(1) { background: #C9553F !important; }
+
+/* sprout: one flat fresh green, a straight stem that forks into two leaves, white veins */
+.ch-sp-stem { stroke: #79B451 !important; stroke-width: 2.8 !important; }
+.ch-sp-l1 path:first-child, .ch-sp-l2 path:first-child { fill: #86BF5B !important; }
+.ch-sp-vein { stroke: rgba(255,255,255,.92) !important; stroke-width: .45 !important; }
+.ch-sp-l1 { transform-origin: 0% 100% !important; }
+.ch-sp-l2 { transform-origin: 100% 100% !important; }
