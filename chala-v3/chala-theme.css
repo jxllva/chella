@@ -179,3 +179,11 @@ html.ch-open, html.ch-open body { overflow: hidden; }
 @keyframes cc-breathe-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes cc-shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(7px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(3px); } }
 @media (prefers-reduced-motion: reduce) { .cc-ring, .cc-scan svg, .cc-pop, .cc-shake, .cc-breathe { animation: none; } .cc-spin { animation-duration: 2s; } }
+
+/* low balance: a tag on the card front, and the note under the raised card */
+.cc-low { position: absolute; right: 16px; top: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 8px; border-radius: 999px; background: rgba(255,255,255,.72); box-shadow: inset 0 0 0 1px rgba(255,255,255,.9); font: 700 .6875rem/1 var(--f-sans); letter-spacing: .02em; color: #a8432b; }
+.cc-low[hidden] { display: none; }
+.cc-low i { width: 7px; height: 7px; border-radius: 50%; background: #d4683f; box-shadow: 0 0 0 3px rgba(212,104,63,.18); animation: cc-low 1.8s ease-in-out infinite; }
+.cc-note.is-low { color: #a8432b; }
+@keyframes cc-low { 50% { box-shadow: 0 0 0 5px rgba(212,104,63,.05); } }
+@media (prefers-reduced-motion: reduce) { .cc-low i { animation: none; } }

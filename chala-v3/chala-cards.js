@@ -3,7 +3,8 @@
    look (Bricolage Grotesque, ink, Faiit's paper + sky). Prototype only: no real payment.
 
    - At rest the cards sit as a visible stack. Tap the front card, or drag it up, to bring it up to pay.
-   - Face ID → "Hold near reader". Tap the card to pay the demo charge.
+   - Face ID, then tap the card to pay the demo charge.
+   - A card under 25% of its limit shows a "Low balance" tag, and says what's left before you pay.
    - The light strip on the front is the balance bar: it drains as you spend, and the card warms to
      peach when less than 40% of its limit is left. Not enough left → declined.
    - Swipe the raised card sideways to flip it: the back shows what's available. Tap to flip back.
@@ -11,7 +12,8 @@
 (() => {
   const CHARGE = 186.40;
   const EASE = 'cubic-bezier(.2,.8,.2,1)';
-  const REST_TILT = 10; // a little depth at rest, without hiding the card face
+  const REST_TILT = 10;
+  const LOW = .25; // under 25% of the limit left → "Low balance" // a little depth at rest, without hiding the card face
   const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const money = (n, fixed) => { const v = Math.max(0, n), d = fixed || v % 1 ? 2 : 0; return '$' + v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); };
@@ -38,7 +40,6 @@
   };
   const STATUS = {
     faceid: `<div class="cc-st-ico cc-scan">${ICON.face}</div><p>Face ID</p>`,
-    ready: `<div class="cc-st-ico cc-tap"><i class="cc-ring"></i><i class="cc-ring cc-ring2"></i>${ICON.tap}</div><p>Hold near reader</p>`,
     sending: '<div class="cc-st-ico"><i class="cc-spin"></i></div><p>Processing</p>',
     done: `<div class="cc-st-ico cc-done">${ICON.check}</div><p>Done</p>`,
     declined: `<div class="cc-st-ico cc-declined">${ICON.x}</div><p class="cc-bad">Declined</p>`
@@ -65,6 +66,7 @@
           <div class="cc-sheen"></div>
           <div class="cc-strip"><i></i></div>
           <span class="cc-name">${esc(d.name)}</span>
+          <span class="cc-low" hidden><i></i>Low balance</span>
           ${ICON.chip}
           <span class="cc-holder">${esc(holder || 'Card holder')}</span>
           <span class="cc-last4">•••• ${d.last4}</span>
@@ -167,11 +169,12 @@
         const done = isA && s.phase === 'done';
         bar.style.transition = `width ${done ? '800ms' : '600ms'} ${EASE} ${done ? '0ms' : '300ms'}, box-shadow 500ms ease`;
         bar.style.boxShadow = glowLine;
+        el.querySelector('.cc-low').hidden = ratio >= LOW;
         el.querySelector('.cc-back-num').textContent = money(avail, true);
         const bb = el.querySelector('.cc-back-bar i');
         bb.style.width = (ratio * 100).toFixed(1) + '%'; bb.style.boxShadow = glowLine;
         el.querySelector('.cc-back-bar em').textContent = Math.round(ratio * 100) + '%';
-        el.setAttribute('aria-label', `${d.name} card, ${money(avail, true)} of ${money(d.limit)} available. ${isA ? (s.open ? (flipped() ? 'Activate to flip back.' : s.phase === 'ready' ? 'Activate to pay.' : '') : 'Activate to bring up.') : 'Activate to switch to this card.'}`);
+        el.setAttribute('aria-label', `${d.name} card, ${money(avail, true)} of ${money(d.limit)} available. ${ratio < LOW ? 'Low balance. ' : ''}${isA ? (s.open ? (flipped() ? 'Activate to flip back.' : s.phase === 'ready' ? 'Activate to pay.' : '') : 'Activate to bring up.') : 'Activate to switch to this card.'}`);
       });
 
       const status = $('.cc-status'), key = settled ? s.phase : 'idle';
@@ -180,7 +183,9 @@
       $('.cc-info').classList.toggle('is-on', settled);
       const note = $('.cc-note');
       let txt = '', cls = '';
-      if (settled && s.phase === 'done') { txt = `−${money(s.tx, true)} paid`; cls = 'is-done cc-breathe'; }
+      const aAvail = availOf(def(s.active), s.spent[s.active] || 0), aLow = aAvail / def(s.active).limit < LOW;
+      if (settled && s.phase === 'ready' && aLow) { txt = `Low balance · ${money(aAvail, true)} left`; cls = 'is-low cc-breathe'; }
+      if (settled && s.phase === 'done') { txt = `−${money(s.tx, true)} paid` + (aLow ? ` · ${money(aAvail, true)} left` : ''); cls = (aLow ? 'is-low' : 'is-done') + ' cc-breathe'; }
       if (settled && s.phase === 'declined') { txt = 'Not enough available'; cls = 'is-bad'; }
       note.textContent = txt; note.className = 'cc-note ' + cls;
       note.classList.toggle('cc-shake', s.shake);
