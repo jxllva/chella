@@ -426,3 +426,14 @@ button:active:not(:disabled), [role=button]:active { transform: scale(.98); }
 .lc:focus-visible, .gc:focus-visible, .hm-save:focus-visible, .hm-add:focus-visible { outline: 2px solid var(--p-ink); outline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce) { .mt-leaf, .mt-coin, .mt-fl { transition: none; } }
+
+/* Home: solid white cards on a page washed with a slight orange gradient */
+.fz-tab-home .fz-sky { background:
+    radial-gradient(90% 55% at 100% 0%, rgba(255,186,140,.42), transparent 70%),
+    radial-gradient(80% 50% at 0% 45%, rgba(255,205,170,.30), transparent 72%),
+    radial-gradient(90% 55% at 70% 100%, rgba(248,150,110,.22), transparent 72%),
+    linear-gradient(180deg, #FBF3EC 0%, #FAF4EF 50%, #F9EFE8 100%) !important; }
+.fz-tab-home .fz-sky i { display: none !important; }
+.hm-save, .lc, .gc { background: #FFFFFF !important; box-shadow: 0 1px 2px rgba(120,60,30,.04), 0 10px 28px -18px rgba(150,80,40,.22) !important; }
+.lc-bar, .gc-bar { background: #F1EEEA !important; }
+.hm-add { background: #FFFFFF !important; box-shadow: 0 1px 2px rgba(120,60,30,.06); }
