@@ -1,0 +1,123 @@
+/* chala v3 — puts chala's stories into Faiit's look.
+   chala-base.css is chala.html's own styles, scoped under #chala-layer. This file only overrides:
+   Faiit's type (Bricolage Grotesque + Instrument Serif italic accents), paper + soft sky colours,
+   ink pill buttons and frosted glass cards. */
+
+/* ---------- the overlay ---------- */
+#chala-layer { position: fixed; inset: 0; z-index: 2000; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+#chala-layer[hidden] { display: none !important; }
+html.ch-open, html.ch-open body { overflow: hidden; }
+
+#chala-layer {
+  /* Faiit tokens, mirrored here so chala's rules can lean on them */
+  --ch-paper: #f7f5f1; --ch-ink: #22201d; --ch-ink-2: #625d56; --ch-ink-3: #8a847b; --ch-accent: #9c5f48;
+  --ch-sans: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ch-serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+  --ch-sky: radial-gradient(70% 40% at 0% 0%, rgba(201,220,242,.9), transparent 70%),
+            radial-gradient(65% 38% at 100% 6%, rgba(244,205,189,.85), transparent 70%),
+            radial-gradient(70% 40% at 15% 55%, rgba(216,204,241,.55), transparent 72%),
+            radial-gradient(60% 35% at 100% 100%, rgba(241,226,191,.6), transparent 70%);
+
+  /* chala's own tokens, re-pointed at Faiit */
+  --font: var(--ch-sans); --f-display: var(--ch-sans);
+  --n-bg: var(--ch-paper); --n-bg2: var(--ch-paper); --n-card: rgba(255,255,255,.62);
+  --n-line: rgba(255,255,255,.9); --n-line2: rgba(34,32,29,.14);
+  --n-ink: var(--ch-ink); --n-ink2: var(--ch-ink-2); --n-mute: var(--ch-ink-3); --n-faint: #b5aea4;
+  --n-brand: var(--ch-ink); --n-brand-soft: #ffffff; --n-coral: #c8553d; --n-sand: #e6e0d7;
+  --n-green: #3f7a5a; --n-green-soft: rgba(255,255,255,.62);
+  --n-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 12px 30px rgba(60,50,80,.08);
+  font-family: var(--ch-sans); color: var(--ch-ink); background: var(--ch-paper);
+}
+#chala-layer .app { background: transparent; max-width: 430px; margin: 0 auto; }
+#chala-layer .app::after { display: none; }
+@media (min-width: 500px) { #chala-layer { background: var(--ch-sky), #efebe5; } #chala-layer .app { box-shadow: 0 30px 80px rgba(60,50,80,.14); } }
+
+/* ---------- story slides ---------- */
+#chala-layer .story-frame { --f-text: var(--ch-sans); }
+#chala-layer .t-blend, #chala-layer .t-blend .slide {
+  --f-num: var(--ch-sans); --num-w: 800; --num-ls: -0.06em; --num-scale: .9;
+  --bg: radial-gradient(85% 50% at 0% 0%, color-mix(in srgb, var(--m) 55%, transparent), transparent 72%),
+        radial-gradient(70% 42% at 100% 8%, rgba(244,205,189,.8), transparent 70%),
+        radial-gradient(70% 45% at 100% 62%, color-mix(in srgb, var(--n) 16%, transparent), transparent 70%),
+        radial-gradient(80% 40% at 10% 100%, rgba(201,220,242,.75), transparent 70%),
+        var(--ch-paper);
+  --b1: color-mix(in srgb, var(--m) 40%, transparent); --b2: rgba(255,255,255,.55); --b3: rgba(255,255,255,.5);
+  --ink: var(--ch-ink); --text: color-mix(in srgb, var(--d) 30%, var(--ch-ink-2)); --l1: var(--ch-ink);
+  --acc: color-mix(in srgb, var(--d) 55%, var(--ch-accent));
+  --grain-op: .1;
+  --btn-bg: rgba(255,255,255,.7); --btn-fg: var(--ch-ink); --btn-bd: rgba(255,255,255,.95); --btn-sh: 0 8px 22px rgba(60,50,80,.08);
+  --btn2-bg: var(--ch-ink); --btn2-fg: #fff;
+}
+#chala-layer .s-kicker { font-weight: 600; letter-spacing: .12em; }
+#chala-layer .s-num { letter-spacing: -0.06em; }
+#chala-layer .s-sub { font-weight: 500; }
+#chala-layer .s-punch { font-weight: 800; letter-spacing: -0.04em; }
+/* Faiit's signature: the second line in italic serif */
+#chala-layer .s-punch .l2 { font-family: var(--ch-serif); font-style: italic; font-weight: 400; letter-spacing: -0.01em; font-size: 1.14em; line-height: 1; }
+#chala-layer .s-btn { border-radius: 999px; min-height: 52px; font-weight: 600; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+#chala-layer .story-brand { font-family: var(--ch-serif); font-style: italic; font-weight: 400; font-size: 22px; letter-spacing: -0.01em; }
+#chala-layer .story-actions button { font-weight: 600; }
+/* the pause slide stays dark, in Faiit ink */
+#chala-layer .slide.is-pause { --bg: radial-gradient(70% 45% at 85% 0%, rgba(216,204,241,.22), transparent 70%), radial-gradient(60% 40% at 0% 100%, rgba(244,205,189,.18), transparent 70%), #1b1917; --acc: #f4cdbd; }
+#chala-layer .is-pause .s-punch .l2 { color: #f4cdbd; }
+#chala-layer .btn-light { background: #f7f5f1; color: var(--ch-ink); border-radius: 999px; box-shadow: none; font-weight: 600; }
+
+/* ---------- real talk: ink, quiet, Faiit type ---------- */
+#chala-layer #realtalk.active, #chala-layer .rt-slide {
+  background: radial-gradient(80% 45% at 90% 5%, rgba(216,204,241,.16), transparent 70%), radial-gradient(70% 45% at 0% 100%, rgba(244,205,189,.14), transparent 70%), #1b1917;
+}
+#chala-layer .rt-eyebrow { color: #f4cdbd; letter-spacing: .14em; }
+#chala-layer .rt-intro h1, #chala-layer .rt-end h2 { font-family: var(--ch-sans); font-weight: 800; letter-spacing: -0.05em; font-size: 38px; line-height: .98; }
+#chala-layer .rt-stat { font-family: var(--ch-sans); font-weight: 800; letter-spacing: -0.06em; background: linear-gradient(118deg, #c9dcf2 0%, #d8ccf1 45%, #f4cdbd 90%); -webkit-background-clip: text; background-clip: text; filter: none; }
+#chala-layer .rt-line { font-family: var(--ch-serif); font-style: italic; font-size: 28px; line-height: 1.12; letter-spacing: -0.01em; color: #f7f5f1; }
+#chala-layer .rt-why { border-radius: 20px; background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); color: #d9d4cc; }
+#chala-layer .rt-why span { color: #c9dcf2; }
+
+/* ---------- the plan survey: paper + sky, frosted cards, ink pills ---------- */
+#chala-layer #survey.active { background: var(--ch-sky), var(--ch-paper); min-height: 100dvh; }
+#chala-layer #survey .topbar { padding-top: calc(env(safe-area-inset-top, 0px) + 18px); }
+#chala-layer #survey .logo { font-family: var(--ch-serif); font-style: italic; font-weight: 400; font-size: 26px; letter-spacing: -0.01em; color: var(--ch-ink); }
+#chala-layer .sv-title { font-family: var(--ch-sans); font-weight: 800; font-size: 34px; line-height: .98; letter-spacing: -0.05em; color: var(--ch-ink); }
+#chala-layer .sv-sub { color: var(--ch-ink-2); line-height: 1.5; }
+#chala-layer .sv-count, #chala-layer .sv-label, #chala-layer .field { color: var(--ch-ink-3); font-weight: 600; letter-spacing: .12em; }
+#chala-layer .opt, #chala-layer .hchip, #chala-layer .limit-row, #chala-layer .jchip {
+  border-radius: 24px; backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2); }
+#chala-layer .jchip { border-radius: 999px; }
+#chala-layer .opt.sel, #chala-layer .hchip.sel { border: 1.5px solid var(--ch-ink) !important; background: rgba(255,255,255,.92) !important; box-shadow: 0 10px 26px rgba(60,50,80,.12) !important; }
+#chala-layer .opt-t { font-weight: 700; letter-spacing: -0.02em; }
+#chala-layer .opt-e, #chala-layer .hchip svg, #chala-layer .lr-top svg { color: var(--ch-accent); }
+#chala-layer .jchip.sel svg { color: #fff; }
+#chala-layer .lr-val { font-family: var(--ch-sans); font-weight: 800; color: var(--ch-ink); }
+#chala-layer .lr-free { color: var(--n-green); }
+#chala-layer .limit-sum { background: rgba(255,255,255,.62) !important; border: 1px solid rgba(255,255,255,.95) !important; color: var(--ch-ink-2); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+#chala-layer .limit-sum b { color: var(--ch-ink); }
+#chala-layer .btn { min-height: 56px; border-radius: 999px; font-weight: 600; font-size: 17px; letter-spacing: -0.01em; }
+#chala-layer .btn-primary, #chala-layer .btn-primary:not(:disabled):hover { background: var(--ch-ink); color: #fff; box-shadow: none; }
+#chala-layer .btn-ghost, #chala-layer .btn-ghost:not(:disabled):hover { background: transparent; color: var(--ch-ink); border: 0; box-shadow: inset 0 0 0 1.5px rgba(34,32,29,.22); }
+#chala-layer .field input { border-radius: 16px; background: rgba(255,255,255,.7); }
+#chala-layer .field input:focus { border-color: var(--ch-ink); box-shadow: 0 0 0 3px rgba(34,32,29,.08); }
+#chala-layer .error { border-radius: 16px; background: rgba(244,205,189,.5); color: #7a3a24; }
+#chala-layer input[type=range]::-webkit-slider-runnable-track { background: linear-gradient(90deg, var(--ch-ink) 0 var(--p), var(--n-sand) var(--p) 100%); }
+#chala-layer input[type=range]::-moz-range-progress { background: var(--ch-ink); }
+#chala-layer input[type=range]::-webkit-slider-thumb { border-color: var(--ch-ink); }
+#chala-layer input[type=range]::-moz-range-thumb { border-color: var(--ch-ink); }
+#chala-layer :focus-visible { outline: 2px solid var(--ch-ink); outline-offset: 3px; }
+
+/* ---------- confetti (lives on <body>, outside the overlay) ---------- */
+.ch-confetti { position: fixed; top: -30px; z-index: 3000; pointer-events: none; color: #fff; text-shadow: 0 0 6px rgba(255,255,255,.95), 0 0 14px rgba(244,205,189,.9); animation: ch-confetti-fall 1.8s ease-in forwards; }
+@keyframes ch-confetti-fall { to { transform: translateY(105vh) rotate(540deg); } }
+
+/* ---------- home: the recap hero gets a play button beside the breakdown ---------- */
+.fx-hero-acts { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.fx-hero-acts .fx-review { margin-left: 0; margin-right: 0; }
+.fx-review.ch-play { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.92); color: #22201d; }
+.fx-review.ch-play svg { width: 14px; height: 14px; }
+
+@media (prefers-reduced-motion: reduce) { .ch-confetti { display: none; } }
+
+/* ---------- the chala wordmark (replaces Faiit's F in onboarding) ---------- */
+.fw-mark.ch-wordmark { width: auto !important; height: auto !important; display: inline-block; font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-weight: 400; font-size: 34px; line-height: 1; letter-spacing: -0.01em; color: var(--f-ink, #22201d); }
+.fw-splash .fw-mark.ch-wordmark { font-size: 64px; }
+.ch-wordmark-in { animation: ch-word-in 1.1s cubic-bezier(.22,.8,.24,1) both; }
+@keyframes ch-word-in { from { opacity: 0; filter: blur(10px); transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .ch-wordmark-in { animation: none; } }
