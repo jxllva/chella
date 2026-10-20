@@ -435,3 +435,47 @@
 .cw.is-dark .cw-gate:not(.is-blocked){background:rgba(255,255,255,.14);color:#fff}
 .cw-gate[hidden]{display:none}
 .cw-gate span{overflow:hidden;text-overflow:ellipsis}
+
+/* =====================================================================
+   Spot the trick: one dark screen between the story and the plan
+   ===================================================================== */
+.cw[data-genre=tricks]{--cw-bg:#191919;--cw-fg:#F2F0EC;
+  background:radial-gradient(80% 45% at 92% 4%,rgba(201,188,229,.18),transparent 70%),radial-gradient(70% 45% at 0% 100%,rgba(233,187,169,.14),transparent 70%),#191919}
+.cw[data-genre=tricks] .ew-kicker{color:#E9BBA9}
+.cw[data-genre=tricks] .ew-h em{color:#C9BCE5!important}
+.cw-tricks-s{gap:12px}
+.cw-tricks{display:grid;gap:8px}
+.cw-trick{appearance:none;border:0;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:5px;padding:13px 15px 14px;border-radius:20px;color:#F2F0EC;font:inherit;
+  background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);transition:background .25s,box-shadow .25s,color .25s}
+.cw-trick-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cw-trick-h small{font:600 .6875rem/1.2 var(--f-sans);letter-spacing:.1em;text-transform:uppercase;color:#C9BCE5}
+.cw-check{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.3);color:transparent;transition:background .25s,color .25s,box-shadow .25s}
+.cw-check svg{width:15px;height:15px}
+.cw-trick b{font:700 1.0625rem/1.25 var(--f-sans);letter-spacing:-.01em}
+.cw-trick-d{font:400 .875rem/1.4 var(--f-sans);color:#CFCBC4}
+.cw-trick[aria-pressed=true]{color:#1d1b19;background:linear-gradient(135deg,#F4EFFF 0%,#FBE6DE 100%);box-shadow:inset 0 0 0 1px #fff}
+.cw-trick[aria-pressed=true] .cw-trick-h small{color:#6B5A9A}
+.cw-trick[aria-pressed=true] .cw-trick-d{color:#4a4640}
+.cw-trick[aria-pressed=true] .cw-check{background:#1d1b19;color:#fff;box-shadow:none}
+.cw-none{appearance:none;border:0;cursor:pointer;align-self:flex-start;min-height:44px;padding:0 16px;border-radius:999px;background:transparent;color:#CFCBC4;font:600 .875rem/1 var(--f-sans);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.18)}
+.cw-none[aria-pressed=true]{background:#F2F0EC;color:#1d1b19;box-shadow:none}
+.cw[data-genre=tricks] .cw-reply{color:#E8E4DD;min-height:1.4em}
+.cw-trick:focus-visible,.cw-none:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media (max-height:700px){.cw-trick{padding:10px 13px 11px;gap:3px}.cw-trick-d{font-size:.8125rem}.cw-tricks-s .ew-sub{display:none}}
+
+.cw-tricks-s .ew-h{font-size:clamp(1.75rem,8vw,2.25rem)}
+.cw-trick b{font-size:1rem}
+@media (max-height:700px){.cw-tricks-s .ew-h{font-size:1.625rem}}
+.cw-trick{position:relative}
+@media (max-height:700px){
+  .cw-tricks-s{gap:8px}
+  .cw-tricks-s .ew-h{font-size:1.5rem}
+  .cw-tricks{gap:6px}
+  .cw-trick{padding:10px 44px 10px 13px;gap:2px}
+  .cw-trick-h small{display:none}
+  .cw-trick-h .cw-check{position:absolute;top:10px;right:10px;width:24px;height:24px}
+  .cw-none{min-height:40px}
+  .cw[data-genre=tricks] .cw-reply:empty{display:none}
+}
+/* headings get focus so screen readers announce each new screen; no ring for that */
+.cw [tabindex="-1"]:focus,.cw [tabindex="-1"]:focus-visible{outline:none}

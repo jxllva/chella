@@ -36,7 +36,6 @@
   const WANTS = ['Food delivery', 'Cafés', 'Shopping', 'Subscriptions', 'Dining', 'Transport', 'Travel'];
   const SHORT = { 'Food delivery': 'Delivery', 'Cafés': 'Cafés', Shopping: 'Shopping', Subscriptions: 'Subscriptions', Dining: 'Eating out', Transport: 'Rides', Travel: 'Travel' };
   const LIQ = { 'Food delivery': 'var(--coral)', 'Cafés': '#a9cf78', Shopping: 'var(--peri)', Subscriptions: 'var(--lilac)', Dining: '#f2c46b', Transport: '#8fd0c4', Travel: '#9cc3f2' };
-  const PACE = { gentle: .2, real: .35, cold: .6 };
 
   // ---------- reading the month ----------
   function analyse(month) {
@@ -75,7 +74,7 @@
     const month = api.month || window.FaiitWrap.sampleMonth();
     const A = analyse(month), m = api.money;
     // A month ("September") or, for the first Wrapped, the whole statement ("the last 7 weeks", "the past year")
-    const short = month.short || month.label.split(' ')[0], title = month.title || short;
+    const short = month.short || month.label.split(' ')[0], title = month.title || month.label || short;
     const single = !month.range;
     const perMonth = c => single ? c : Math.round(c / Math.max(1, A.days / 30.44));
     const eps = read(EP), prevKey = Object.keys(eps).filter(k => k < month.key).sort().pop(), prev = prevKey ? eps[prevKey] : null;
@@ -103,8 +102,7 @@
     if (A.shop.length >= 2) B('box', unboxing);
     if (A.subs.length >= 2) B('lineup', lineup);
     if (beats.length < 3) B('top', topMerchant);
-    B('turn', turn);
-    B('mode', mode);
+    B('tricks', tricks);
     B('limits', limits);
     B('goals', goals);
     B('finale', finale);
@@ -114,7 +112,7 @@
       bite: ['Pick one to continue', '[data-a="bite"]'], case: ['Lock in your guess to continue', '[data-a="lock"]'],
       objection: ['Object, or let it stand, to continue', '.ew-court-act'], binge: ['Tap an episode to continue', '[data-a="ep"]'],
       matcha: ['Lock in your guess to continue', '[data-a="lock"]'], box: ['Press and hold the box to continue', '.ew-parcel'],
-      lineup: ['Make a guess to continue', '[data-a="guess"]'], mode: ['Pick one to continue', '[data-a="mode"]'],
+      lineup: ['Make a guess to continue', '[data-a="guess"]'], tricks: ['Tap the ones that got you', '.cw-trick,.cw-none'],
       goals: ['Pick a goal, then tap the seal', '.cw-gpills,.ew-seal']
     };
 
@@ -122,7 +120,7 @@
     el.innerHTML = `<section class="ew cw" aria-label="Your ${esc(month.label)} Wrapped">
   <header class="ew-top">
     <div class="ew-bars" aria-hidden="true">${beats.map(() => '<span><i></i></span>').join('')}</div>
-    <div class="ew-row"><span class="ew-brand">${esc(month.brand || `${short} Wrapped`)}${month.sample ? ' · sample data' : ''}</span>
+    <div class="ew-row"><span class="ew-brand">${esc(month.brand || `${month.label || short} Wrapped`)}${month.sample ? ' · sample data' : ''}</span>
       <button class="ew-x" data-w="close" aria-label="Close Wrapped">${I('<path d="M6 6l12 12M18 6 6 18"/>')}</button></div>
   </header>
   <main class="ew-stage" aria-live="polite"></main>
@@ -234,10 +232,12 @@
     function cold() {
       const lines = A.ex.slice(0, 7);
       const spend = sum(A.ex.filter(r => r.category !== 'Rent & bills'));
+      const fmtD = (d, y) => new Date(d + 'T12:00').toLocaleDateString('en-US', y ? { month: 'short', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric' });
+      const spanLabel = month.range ? `${fmtD(month.start, month.start.slice(0, 4) !== month.end.slice(0, 4))} – ${fmtD(month.end, true)}` : '';
       const callback = prev?.note ? `Last episode you sealed “${prev.note}.” Let’s see how it went.` : '';
       return { genre: 'cold', scene: `
 <div class="ew-cold">
-  <p class="ew-kicker">Previously, on your bank statement</p>
+  <p class="ew-kicker">Previously, on your bank statement${month.range ? ` · ${esc(spanLabel)}` : ''}</p>
   <h1 class="ew-h">${esc(title)}.<br><em>${A.ex.length} purchases.</em><br>One main character.</h1>
   <div class="ew-printer" aria-hidden="true"><span class="ew-slot"></span><div class="ew-paper">${lines.map(r => `<p><span>${esc(dateLabel(r.date))}</span><span>${esc(r.merchant)}</span><b>${m(r.cents)}</b></p>`).join('')}<p class="ew-cut">· · ·</p></div></div>
   <p class="ew-sub">You spent <b>${m(spend)}</b> ${single ? `in ${esc(short)}` : `over ${esc(short)}`}, not counting rent and bills. Here’s where it went.${callback ? ' ' + esc(callback) : ''}</p>
@@ -522,64 +522,67 @@
 </div>`, mount: () => ready() };
     }
 
-    // ----- The turn: the jokes stop, the plan starts -----
-    function turn() {
-      const facts = [];
-      if (A.noSpend > 0) facts.push(`<b>${A.noSpend}</b> ${A.noSpend === 1 ? 'day' : 'days'} you spent nothing at all.`);
-      if (A.gro.length) facts.push(`<b>${A.gro.length}</b> grocery ${A.gro.length === 1 ? 'run' : 'runs'}. You kept feeding yourself.`);
-      if (A.fees.length) facts.push(`<b>${m(sum(A.fees))}</b> in bank fees. That one’s fixable.`);
-      if (!facts.length) facts.push(`<b>${A.ex.length}</b> purchases, and you made it through every one.`);
-      return { genre: 'turn', dark: true, scene: `
-<div class="ew-turn">
-  <p class="ew-kicker">Okay. The jokes are done.</p>
-  <h1 class="ew-h">What would you like to <em>make room for?</em></h1>
-  <p class="ew-sub">Three quick steps turn what you just saw into your plan.</p>
-  <ol class="cw-steps">
-    <li><b>How next month should feel</b><span>One tap</span></li>
-    <li><b>Your monthly limits</b><span>Suggested from your spending</span></li>
-    <li><b>What you’re saving for</b><span>Up to three goals, sealed</span></li>
-  </ol>
-</div>`, mount: (n, restored) => { if (!restored && !reduce()) [...n.querySelectorAll('.ew-kicker,.ew-h,.ew-sub,.cw-steps li')].forEach((x, k) => x.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 700, delay: 150 + k * 260, easing: EASE, fill: 'backwards' })); } };
-    }
-
-    // =================================================================
-    // The plan
-    // =================================================================
-    const MODES = [
-      { k: 'less', t: 'Less on autopilot', d: 'Same life, fewer taps.', ic: '<path d="M5 12h9"/><path d="m11 8 4 4-4 4"/><path d="M19 5v14"/>' },
-      { k: 'save', t: 'Saving for something', d: 'Money with a job before it’s spent.', ic: '<path d="M6 21V4"/><path d="M6 4.5h11l-2.2 3.6L17 11.7H6"/>' },
-      { k: 'love', t: 'More on what I love', d: 'Spend on purpose, cut the rest.', ic: '<path d="M12 20s-7-4.3-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7 2.6C19 15.7 12 20 12 20z"/>' }
-    ];
-    const PACES = [['gentle', 'Ease in', 'about 20% less'], ['real', 'Real change', 'about 35% less'], ['cold', 'Cold turkey', 'about 60% less']];
-    function mode(s) {
-      s.pace ??= 'real';
-      const topWant = A.cats.find(c => WANTS.includes(c.name));
-      const reply = k => k === 'less' ? (A.del.length ? `Then ${appName} is the one to watch: ${A.del.length} orders in ${esc(short)}.` : topWant ? `Then ${esc(topWant.name)} is the one to watch: ${m(topWant.cents)} in ${esc(short)}.` : '')
-        : k === 'save' ? 'Then your limits will save money, and your goals will give it a job.'
-          : 'Then we’ll protect what you love and trim what you don’t notice.';
-      return { genre: 'question', scene: `
-<div class="cw-mode">
-  <p class="ew-kicker">Your turn</p>
-  <h1 class="ew-h ew-h-sm">What should your next month <em>feel like?</em></h1>
-  <div class="cw-opts" role="radiogroup" aria-label="What should next month feel like">${MODES.map(o => `<button class="cw-opt" role="radio" aria-checked="false" data-a="mode" data-k="${o.k}"><span class="cw-opt-ic">${I(o.ic)}</span><span><b>${esc(o.t)}</b><small>${esc(o.d)}</small></span></button>`).join('')}</div>
+    // ----- Spot the trick: the dark patterns behind this person's spending -----
+    // Each card is a trick apps use, shown with this person's own numbers. What they tap
+    // decides which limit jars come switched on next, so the plan follows from the story.
+    const trickList = (() => {
+      const out = [], wantsSmall = A.ex.filter(r => r.cents < 1000 && WANTS.includes(r.category));
+      if (A.del.length >= 3) out.push({ id: 'fees', cat: 'Food delivery', tag: app, cost: sum(A.del), t: 'Fees hidden in small lines',
+        d: `${A.del.length} orders, ${usd(sum(A.del))}. The fees show up later, one small line at a time.` });
+      if (wantsSmall.length >= 6) { const top = Object.entries(wantsSmall.reduce((o, r) => { o[r.category] = (o[r.category] || 0) + 1; return o; }, {})).sort((a, b) => b[1] - a[1])[0][0];
+        out.push({ id: 'taps', cat: top, tag: 'Tap to pay', cost: sum(wantsSmall), t: 'Tapping doesn’t feel like paying',
+          d: `${wantsSmall.length} buys under $10 came to ${usd(sum(wantsSmall))}. None felt like spending.` }); }
+      if (A.subs.length >= 2) out.push({ id: 'renew', cat: 'Subscriptions', tag: 'Subscriptions', cost: sum(A.subs) * 3, t: 'Free trial, then it pays itself',
+        d: `${A.subs.length} renewed on their own, ${usd(sum(A.subs))} a month. Cancelling is hidden on purpose.` });
+      if (A.shop.length >= 3) out.push({ id: 'cart', cat: 'Shopping', tag: 'Shopping', cost: sum(A.shop), t: '“Free shipping if you add one more”',
+        d: `${A.shop.length} orders, ${usd(sum(A.shop))}. Extra things go in the cart just to get free shipping.` });
+      if (A.bnpl.length) out.push({ id: 'split', cat: 'Shopping', tag: 'Pay later', cost: sum(A.bnpl) * 4, t: 'Split into 4, still the full price',
+        d: `${usd(sum(A.bnpl))} went to pay-later plans. Four small payments still add up to the full price.` });
+      if (A.matcha.length >= 3 || A.cafes.length >= 5) { const l = A.matcha.length >= 3 ? A.matcha : A.cafes;
+        out.push({ id: 'points', cat: 'Cafés', tag: cafeWord === 'matcha' ? 'Matcha' : 'Coffee', cost: sum(l), t: 'Points that keep you coming back',
+          d: `${l.length} visits, ${usd(sum(l))}. Stars and streaks keep pulling you back.` }); }
+      if (A.fees.length) out.push({ id: 'overdraft', cat: null, tag: 'Bank fees', cost: sum(A.fees) * 6, t: 'Paid to let you go below zero',
+        d: `${usd(sum(A.fees))} in fees. The bank let you go below zero, then charged you for it.` });
+      return out.sort((a, b) => b.cost - a.cost).slice(0, 3);
+    })();
+    function tricks(s) {
+      s.picked ??= []; s.none ??= false;
+      if (!trickList.length) return { genre: 'tricks', dark: true, scene: `
+<div class="cw-tricks-s">
+  <p class="ew-kicker">Spot the trick</p>
+  <h1 class="ew-h ew-h-sm">Nothing sneaky <em>stood out.</em></h1>
+  <p class="ew-sub">Apps hide fees, renew trials and split prices to get you spending. None of that shows up much here. Next, a few limits to keep it that way.</p>
+</div>`, mount: () => ready() };
+      return { genre: 'tricks', dark: true, scene: `
+<div class="cw-tricks-s">
+  <p class="ew-kicker">Spot the trick</p>
+  <h1 class="ew-h ew-h-sm">Apps did some of this <em>on purpose.</em></h1>
+  <p class="ew-sub">Tap the ones that got you. We’ll start your plan there.</p>
+  <div class="cw-tricks" role="group" aria-label="Tricks that got you">${trickList.map(x => `<button class="cw-trick" data-a="trick" data-id="${x.id}" aria-pressed="false">
+    <span class="cw-trick-h"><small>${esc(x.tag)}</small><i class="cw-check" aria-hidden="true">${I('<path d="M6 12.5 10 16.5 18 8"/>')}</i></span>
+    <b>${esc(x.t)}</b><span class="cw-trick-d">${esc(x.d)}</span></button>`).join('')}</div>
+  <button class="cw-none" data-a="none" aria-pressed="false">None of these got me</button>
   <p class="cw-reply" aria-live="polite"></p>
-  <p class="ew-ask">How big a change?</p>
-  <div class="cw-seg" role="radiogroup" aria-label="How big a change">${PACES.map(p => `<button role="radio" aria-checked="false" data-a="pace" data-k="${p[0]}"><b>${p[1]}</b><small>${p[2]}</small></button>`).join('')}</div>
-</div>`, mount: n => {
+</div>`, mount: (n, restored) => {
         const paint = () => {
-          n.querySelectorAll('[data-a="mode"]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.k === s.mode)));
-          n.querySelectorAll('[data-a="pace"]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.k === s.pace)));
-          n.querySelector('.cw-reply').innerHTML = s.mode ? reply(s.mode) : '';
-          if (s.mode) ready();
+          n.querySelectorAll('[data-a="trick"]').forEach(b => b.setAttribute('aria-pressed', String(s.picked.includes(b.dataset.id))));
+          n.querySelector('[data-a="none"]').setAttribute('aria-pressed', String(s.none));
+          const got = trickList.filter(x => s.picked.includes(x.id)), cats = [...new Set(got.map(x => x.cat).filter(Boolean))];
+          n.querySelector('.cw-reply').textContent = s.none ? 'Nice. Next, a few limits to keep it that way.' : got.length ? (cats.length ? `Next: limits for ${listJoin(cats.map(c => (SHORT[c] || c).toLowerCase()))}, already switched on.` : 'Next: your monthly limits.') : '';
+          if (s.none || got.length) ready();
         };
         paint();
+        if (!restored) rise(n.querySelectorAll('.cw-trick'), 110, 250);
         n.addEventListener('click', e => {
-          const b = e.target.closest('[data-a="mode"],[data-a="pace"]'); if (!b) return;
-          if (b.dataset.a === 'mode') { s.mode = b.dataset.k; const r = n.querySelector('.cw-reply'); paint(); rise([r]); }
-          else { s.pace = b.dataset.k; paint(); }
+          const b = e.target.closest('[data-a="trick"],[data-a="none"]'); if (!b) return;
+          if (b.dataset.a === 'none') { s.none = !s.none; if (s.none) s.picked = []; }
+          else { const id = b.dataset.id; s.picked = s.picked.includes(id) ? s.picked.filter(x => x !== id) : [...s.picked, id]; if (s.picked.length) s.none = false;
+            if (!reduce()) b.animate([{ transform: 'scale(.97)' }, { transform: 'none' }], { duration: 260, easing: EASE }); }
+          paint();
         });
       } };
     }
+    const spottedCats = () => [...new Set(trickList.filter(x => (S.tricks?.picked || []).includes(x.id)).map(x => x.cat).filter(Boolean))];
 
     // ----- Limits: drag each jar to the amount you want -----
     const limitCands = (() => {
@@ -589,7 +592,8 @@
       return [...cats.slice(0, 4 - subs.length), ...subs];
     })();
     const suggestLimit = c => {
-      const cut = PACE[S.mode?.pace || 'real'];
+      // a firmer cut where they spotted a trick, a gentle one elsewhere
+      const cut = spottedCats().includes(c.name) ? .35 : .2;
       if (c.name === 'Subscriptions' && S.lineup?.cut?.length) return Math.max(100, sum(A.subs) - sum(subsCut()));
       return round5(c.cents * (1 - cut));
     };
@@ -598,8 +602,9 @@
       s.items ??= {};
       limitCands.forEach((c, k) => {
         const ex = s.items[c.name], had = plan0.done ? plan0.limits[c.name] : undefined;
-        if (!ex) s.items[c.name] = { on: plan0.done ? had != null : (k < 2 || c.name === 'Subscriptions'), cents: had ?? suggestLimit(c), touched: had != null };
-        else if (!ex.touched) ex.cents = suggestLimit(c); // the pace or the lineup changed since
+        const spotted = spottedCats(), on = plan0.done ? had != null : spotted.length ? spotted.includes(c.name) : (k < 2 || c.name === 'Subscriptions');
+        if (!ex) s.items[c.name] = { on, cents: had ?? suggestLimit(c), touched: had != null };
+        else { if (!ex.touched) ex.cents = suggestLimit(c); if (!ex.manual && !plan0.done) ex.on = on; } // the tricks or the lineup changed since
       });
       return s.items;
     }
@@ -620,7 +625,7 @@
       return { genre: 'limits', scene: `
 <div class="cw-limits">
   <h1 class="ew-h ew-h-sm">Set your <em>monthly limits</em></h1>
-  <p class="ew-sub">Drag a jar, or tap − and +.</p>
+  <p class="ew-sub">${spottedCats().length ? 'Switched on for the tricks you spotted. ' : ''}Drag a jar, or tap − and +.</p>
   <div class="cw-jars">${limitCands.map(jar).join('')}</div>
   <p class="cw-tally cw-freed" aria-live="polite"></p>
 </div>`, mount: n => {
@@ -642,13 +647,13 @@
         const set = (card, cents, bounce) => { const c = limitCands.find(x => x.name === card.dataset.c), it = items[c.name]; it.cents = Math.max(0, Math.min(max(c), Math.round(cents / 500) * 500)); it.touched = true; paintOne(card, bounce); total(); };
         n.addEventListener('click', e => {
           const b = e.target.closest('[data-a]'); if (!b) return; const card = b.closest('.cw-jarcard'); if (!card) return; const it = items[card.dataset.c];
-          if (b.dataset.a === 'track') { it.on = !it.on; paintOne(card); total(); }
-          if (b.dataset.a === 'up' || b.dataset.a === 'dn') { if (!it.on) { it.on = true; } set(card, it.cents + (b.dataset.a === 'up' ? 500 : -500), true); }
+          if (b.dataset.a === 'track') { it.on = !it.on; it.manual = true; paintOne(card); total(); }
+          if (b.dataset.a === 'up' || b.dataset.a === 'dn') { if (!it.on) { it.on = true; it.manual = true; } set(card, it.cents + (b.dataset.a === 'up' ? 500 : -500), true); }
         });
         n.querySelectorAll('.cw-jar').forEach(j => {
           const card = j.closest('.cw-jarcard'); let drag = false;
           const at = y => { const r = j.getBoundingClientRect(), c = limitCands.find(x => x.name === card.dataset.c); return (1 - Math.max(0, Math.min(1, (y - r.top) / r.height))) * max(c); };
-          j.addEventListener('pointerdown', e => { const it = items[card.dataset.c]; if (!it.on) { it.on = true; } drag = true; j.setPointerCapture(e.pointerId); j.classList.add('is-drag'); set(card, at(e.clientY)); });
+          j.addEventListener('pointerdown', e => { const it = items[card.dataset.c]; if (!it.on) { it.on = true; it.manual = true; } drag = true; j.setPointerCapture(e.pointerId); j.classList.add('is-drag'); set(card, at(e.clientY)); });
           j.addEventListener('pointermove', e => { if (drag) set(card, at(e.clientY)); });
           const up = () => { if (!drag) return; drag = false; j.classList.remove('is-drag'); paintOne(card, true); };
           j.addEventListener('pointerup', up); j.addEventListener('pointercancel', up);

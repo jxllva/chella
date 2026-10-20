@@ -196,8 +196,9 @@
     root.innerHTML = `
 <div class="sh-wrap" data-phase="wrapped">
   <div class="sh-gift">
-    <p class="ew-kicker">Your ${esc(ctx.month.replace(/^my /, ''))}, ready to post</p>
-    <h1 class="ew-h ew-h-sm">${cards.length} cards. <em>Zero dollar signs.</em></h1>
+    <p class="ew-kicker">${esc(/^my /.test(ctx.month) ? `Your year · ${ctx.year}` : `${ctx.month} ${ctx.year}`)}</p>
+    <h1 class="ew-h ew-h-sm">Unwrap it. <em>Then show it off.</em></h1>
+    <p class="ew-sub sh-lede">${cards.length} cards made from your ${/^my /.test(ctx.month) ? 'year' : /–/.test(ctx.month) ? 'spending' : 'month'}. They show the story, never your amounts or names.</p>
     <div class="sh-parcel" aria-hidden="true"><span class="sh-string h"></span><span class="sh-string v"></span><svg class="sh-bow" viewBox="0 0 120 80"><path d="M60 40 C40 8 8 10 12 34 C16 56 44 52 60 40 Z M60 40 C80 8 112 10 108 34 C104 56 76 52 60 40 Z" fill="none" stroke="#E8352E" stroke-width="7" stroke-linejoin="round"/><path d="M56 44 L40 76 M64 44 L80 76" stroke="#E8352E" stroke-width="7" stroke-linecap="round"/><circle cx="60" cy="40" r="9" fill="#E8352E"/></svg><span class="sh-tag">From: ${esc(ctx.month)}<br>To: you</span></div>
     <div class="sh-slide" role="slider" tabindex="0" aria-label="Slide to unwrap" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
       <span class="sh-slide-label">Slide to <em>unwrap</em></span><span class="sh-knob" aria-hidden="true">→</span>
