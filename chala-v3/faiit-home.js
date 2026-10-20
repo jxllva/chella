@@ -523,6 +523,64 @@
         hasPrev: iso(prevEnd) >= firstDay, hasNext: off < 0, storyKey, storyName: mk === nowKey ? `${start.toLocaleDateString('en-US', { month: 'long' })} so far` : `${start.toLocaleDateString('en-US', { month: 'long' })} Wrapped` };
     }
 
+
+    /* chala v3: achievements — badges you catch from what you actually did */
+    const SEEN_KEY = 'chala-badges-seen-v1';
+    function badgeList() {
+      const sv = savedTotal(p), lims = Object.entries(p.limits), goals = p.goals.filter(g => !g.archived);
+      const prev = new Date(today.getFullYear(), today.getMonth() - 1, 1), prevKey = monthKey(prev), prevBy = api.spendIn(prevKey);
+      const prevHasData = (api.months?.() || []).includes(prevKey);
+      const pace = today.getDate() / dim;
+      const B = (id, name, how, done, icon) => ({ id, name, how, done: !!done, icon });
+      return [
+        B('plan', 'Planted', 'Made your first plan', p.done, '<path d="M12 21v-9"/><path d="M12 13c0-4 2.6-6.6 7-7 .2 4.4-2.6 7-7 7z"/><path d="M12 15.5c0-3.2-2.2-5.4-6-5.6-.2 3.4 2 5.6 6 5.6z"/>'),
+        B('first', 'First save', 'Set money aside for the first time', sv > 0, '<path d="M12 3v12m-4.5-4.5L12 15l4.5-4.5"/><path d="M4.5 17.5v1.8c0 .9.7 1.7 1.7 1.7h11.6c.9 0 1.7-.8 1.7-1.7v-1.8"/>'),
+        B('c100', '$100 club', 'Saved $100 in total', sv >= 10000, '<circle cx="12" cy="12" r="8.5"/><path d="M14.6 9.2c-.5-.9-1.5-1.4-2.6-1.4-1.5 0-2.6.8-2.6 2s1.1 1.7 2.6 2.1 2.7.9 2.7 2.2-1.2 2.1-2.7 2.1c-1.2 0-2.3-.6-2.8-1.6M12 6v1.8m0 8.4V18"/>'),
+        B('c500', '$500 club', 'Saved $500 in total', sv >= 50000, '<path d="M5 20h14M7 20V10m5 10V6m5 14v-7"/>'),
+        B('c1k', 'Four figures', 'Saved $1,000 in total', sv >= 100000, '<path d="m12 3 2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6-4.5-4.1 6-.7z"/>'),
+        B('goal', 'Goal reached', 'Finished saving for a goal', goals.some(g => g.target && savedFor(p, g.id) >= g.target), '<path d="M6 21V4"/><path d="M6 4.5h11l-2.2 3.6L17 11.7H6"/>'),
+        B('ontrack', 'On track', 'Every limit on pace this month', lims.length && lims.every(([n, l]) => spentNow(n) <= l * pace), '<path d="M4 17 9.5 11.5l3.5 3.5L20 8"/><path d="M15 8h5v5"/>'),
+        B('under', 'Under the line', 'Ended a month under every limit', prevHasData && lims.length && lims.every(([n, l]) => (prevBy[n] || 0) <= l), '<path d="M4 12.5 9 17.5 20 6.5"/>'),
+        B('values', 'Knows what matters', 'Picked what you care about', p.values.length, '<path d="M12 20s-7-4.3-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7 2.6C19 15.7 12 20 12 20z"/>'),
+        B('habit', 'Habit forming', 'Saved three separate times', p.contributions.length >= 3, '<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4.5h-4.5"/>'),
+        B('dreamer', 'Big dreamer', 'Have three goals going', goals.length >= 3, '<path d="M12 3.5 14 9l5.5.4-4.2 3.5 1.3 5.4L12 15.4l-4.6 2.9 1.3-5.4L4.5 9.4 10 9z"/><path d="M19 3v3m-1.5-1.5h3"/>'),
+        B('data', 'Money in', 'Brought in a statement or bank', api.hasData?.(), '<rect x="3.5" y="6" width="17" height="12" rx="2.5"/><path d="M3.5 10h17M7 14.5h3"/>')
+      ];
+    }
+    function badgesCard() {
+      const list = badgeList(), got = list.filter(b => b.done);
+      let seen = []; try { seen = JSON.parse(localStorage.getItem(SEEN_KEY)) || []; } catch {}
+      const tints = ['#E9BBA9', '#C9BCE5', '#EBCBD1', '#BFD6B0'];
+      return `
+<section class="bd" data-rise aria-label="Achievements">
+  <div class="bd-top">
+    <div><p class="pf-k">Achievements</p><p class="bd-sum"><b>${got.length}</b> of ${list.length} caught</p></div>
+    <div class="bd-saved"><b data-count="${savedTotal(p)}">${m(savedTotal(p))}</b><span>saved so far</span></div>
+  </div>
+  <div class="bd-grid">
+    ${list.map((b, i) => `<button class="bd-b ${b.done ? 'is-got' : 'is-locked'}${b.done && !seen.includes(b.id) ? ' is-new' : ''}" data-h="badge" data-id="${b.id}" style="--tint:${tints[i % 4]};--i:${i}" aria-label="${esc(b.name)}: ${b.done ? 'caught' : 'locked'}. ${esc(b.how)}">
+      <span class="bd-m">${I(b.icon)}${b.done ? '' : '<i class="bd-lock" aria-hidden="true"></i>'}</span><span class="bd-n">${esc(b.name)}</span></button>`).join('')}
+  </div>
+  <p class="bd-note" aria-live="polite">Tap a badge to see how to catch it.</p>
+</section>`;
+    }
+    function catchNewBadges() {
+      const fresh = [...el.querySelectorAll('.bd-b.is-new')];
+      if (!fresh.length) return;
+      let seen = []; try { seen = JSON.parse(localStorage.getItem(SEEN_KEY)) || []; } catch {}
+      fresh.forEach(n => seen.push(n.dataset.id));
+      try { localStorage.setItem(SEEN_KEY, JSON.stringify(seen)); } catch {}
+      const note = el.querySelector('.bd-note');
+      if (note) note.textContent = fresh.length === 1 ? `New badge caught: ${fresh[0].querySelector('.bd-n').textContent}` : `${fresh.length} new badges caught`;
+      if (reduce()) { fresh.forEach(n => n.classList.remove('is-new')); return; }
+      fresh.forEach((n, j) => {
+        const md = n.querySelector('.bd-m');
+        md.animate([{ transform: 'translateY(-40px) scale(.3) rotate(-30deg)', opacity: 0 }, { transform: 'translateY(4px) scale(1.18) rotate(8deg)', opacity: 1, offset: .55 }, { transform: 'translateY(-2px) scale(.95) rotate(-4deg)', offset: .78 }, { transform: 'none', opacity: 1 }],
+          { duration: 900, delay: 350 + j * 180, easing: 'cubic-bezier(.25,.1,.25,1)', fill: 'backwards' });
+        setTimeout(() => { n.classList.add('is-shine'); setTimeout(() => n.classList.remove('is-new', 'is-shine'), 1200); }, 1000 + j * 180);
+      });
+    }
+
     function homeTab() {
       const goals = p.goals.filter(g => !g.archived), saved = savedTotal(p);
       const since = new Date(p.joinedAt || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -532,7 +590,7 @@
       const addBtn = (h, label) => `<button class="hm-add" data-h="${h}" aria-label="${label}">${I('<path d="M12 5v14M5 12h14"/>')}</button>`;
       return `
 <header class="hm-head" data-mood="${moodNow}" data-rise>
-  <button class="hm-logo" data-logo aria-label="chala">cha<span class="hm-l" aria-hidden="true"><svg class="hm-sprout" viewBox="0 0 14 30"><path class="hm-stem" d="M7 29.5V9.5"/><path class="hm-leaf1" d="M7.4 11.5C6.6 6.3 9 2.4 13.6 1.6c.6 5-1.9 9-6.2 9.9z"/><path class="hm-leaf2" d="M6.6 16.8C6.9 12.4 4.2 9.6.4 9.4c-.4 4.2 2 7.2 6.2 7.4z"/></svg></span>a</button>
+  <button class="hm-logo" data-logo aria-label="chala">${window.chalaWord ? chalaWord() : 'chala'}</button>
   <p class="hm-when">${esc(today.toLocaleDateString('en-US', { weekday: 'long' }))} ${esc(today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))} ${today.getFullYear()}</p>
   <h1 class="hm-hello">Welcome back,<br><span class="hm-who">${esc(first || 'friend')}</span><span class="hm-dot">.</span></h1>
   <p class="hm-nudge">${esc(NUDGE[moodNow])}</p>
@@ -590,6 +648,7 @@
   <p class="pf-k">Profile</p>
   <h1 class="pf-title">Hi, ${esc(first || 'you')}.</h1>
 </header>
+${badgesCard()}
 <div class="pf-rows">
   ${row('chalaplan', '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/><path d="M12 10v4M10 12h4"/>', 'Change my plan', 'Goal, habits and limits', 'h-sage')}
   ${row('values', '<path d="M12 20s-7-4.3-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7 2.6C19 15.7 12 20 12 20z"/>', 'What matters to you', vals.length ? esc(vals.map(v => v.label).join(', ')) : 'Nothing picked yet', 'h-clay')}
@@ -609,11 +668,12 @@
       el.querySelectorAll('[data-count]').forEach(n => countUp(n, +n.dataset.count, m));
       /* chala v3: logo — tap the sprout */
       el.querySelector('[data-logo]')?.addEventListener('click', e => {
-        const b = e.currentTarget, s = b.querySelector('.hm-sprout');
+        const b = e.currentTarget, s = b.querySelector('.ch-sp');
         if (!reduce()) s.animate([{ transform: 'rotate(0) scale(1)' }, { transform: 'rotate(-18deg) scale(1.25)' }, { transform: 'rotate(10deg) scale(1.1)' }, { transform: 'rotate(0) scale(1)' }], { duration: 700, easing: 'cubic-bezier(.25,.1,.25,1)' });
-        const c = document.createElement('i'); c.className = 'hm-coin'; c.textContent = '$'; b.querySelector('.hm-l').appendChild(c);
+        const c = document.createElement('i'); c.className = 'hm-coin'; c.textContent = '$'; b.querySelector('.ch-l').appendChild(c);
         setTimeout(() => c.remove(), 1000);
       });
+      if (tab === 'profile') catchNewBadges();
       /* chala v3: money tree on Home */
       if (tab === 'home' && window.ChalaTree) ChalaTree.mount(el.querySelector('.mt'), { mode: home.treeMode, onMode: md => { home.treeMode = md; }, getData: treeData,
         onWrapped: () => api.openRecap(monthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1)), 'home'), onRecap: (md, off) => { if (window.ChalaInsights) ChalaInsights.open({ mode: md, offset: off, getData: insightData, onStory: k => api.openRecap(k, 'home') }); else api.openRecap(nowKey, 'home'); },
@@ -795,6 +855,10 @@ ${isNew ? '' : '<button class="fz-quiet" type="button" data-s="del">Delete goal<
       else if (k === 'restore') { const g = p.goals.find(x => x.id === t.dataset.id); if (g) { g.archived = false; store(p); paint(); } }
       else if (k === 'addgoal') editGoal('new');
       else if (k === 'logsave') logSave();
+      else if (k === 'badge') { const b = badgeList().find(x => x.id === t.dataset.id), note = el.querySelector('.bd-note');
+        if (b && note) note.innerHTML = `<b>${esc(b.name)}</b> · ${b.done ? 'Caught. ' : 'Locked. '}${esc(b.how)}.`;
+        el.querySelectorAll('.bd-b.is-on').forEach(x => x.classList.remove('is-on')); t.classList.add('is-on');
+        if (!reduce()) t.querySelector('.bd-m').animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-10deg) scale(1.08)' }, { transform: 'rotate(7deg)' }, { transform: 'none' }], { duration: 480, easing: 'ease-out' }); }
       else if (k === 'values') editValues();
       else if (k === 'chalaplan') { if (window.Chala) Chala.survey({ onExit: () => home(el, api, 'profile') }); }
       else if (k === 'addstatement') api.addStatement();

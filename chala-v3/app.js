@@ -289,5 +289,8 @@ render=function(){
  faiitToHello()}});return}
  if(view==='decoding'){Faiit.decoding(app,{done:()=>{history.replaceState({view:faiitHome(),tab,step},'',location.pathname);startStory()}});return}
  Faiit.leave();if(view==='splash'){app.innerHTML=Faiit.splash();return}return faiitPrevRender.apply(this,arguments)};
-if(!Faiit.user()){view='welcome';history.replaceState({view:'welcome'},'',location.pathname);render()}
-else{history.replaceState({view:'connect',tab,step},'',location.pathname);render();splashTimer=setTimeout(()=>go(faiitHome(),false),1300)}
+/* chala v3: every open starts on the splash, where the sprout in chala's "l" grows */
+const SPLASH_MS=matchMedia('(prefers-reduced-motion: reduce)').matches?700:2300;
+app.innerHTML=Faiit.splash();
+if(!Faiit.user()){splashTimer=setTimeout(()=>{view='welcome';history.replaceState({view:'welcome'},'',location.pathname);render()},SPLASH_MS)}
+else{history.replaceState({view:'connect',tab,step},'',location.pathname);splashTimer=setTimeout(()=>go(faiitHome(),false),SPLASH_MS)}
