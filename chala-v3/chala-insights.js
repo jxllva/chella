@@ -64,7 +64,7 @@
           ${d.budget ? paceCard(d) : ''}
           ${catCard(d)}
 
-          ${opts.onStory && d.storyKey ? `<button class="ri-story" data-a="story">${I('<path d="M7 4.5v15l12-7.5z"/>')}<span>Play the ${esc(d.storyName)} story</span></button>` : ''}
+          ${opts.onStory && d.storyKey ? `<button class="ri-story" data-a="story">${I('<path d="M7 4.5v15l12-7.5z"/>')}<span>${esc(d.storyName)}</span></button>` : ''}
         </div>
         <div class="ri-tip" role="status" aria-live="polite"></div>`;
       wire(d);
