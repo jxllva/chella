@@ -74,34 +74,63 @@
   }
 
   const MOOD = [[.8, 'Flourishing'], [.58, 'Growing'], [.34, 'Thirsty'], [0, 'Wilting']];
+  const usd = c => '$' + Math.round(Math.abs(c) / 100).toLocaleString('en-US');
+  const HIDE = 'chala-hide-amounts-v1';
+  const hidden = () => { try { return localStorage.getItem(HIDE) === '1'; } catch { return false; } };
+  const EYE = I('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>');
+  const EYE_OFF = I('<path d="M3 3l18 18"/><path d="M10.6 5.6A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3 3.7M6.6 6.6C3.9 8.4 2.5 12 2.5 12S6 18.5 12 18.5a9 9 0 0 0 4.4-1.1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>');
+  const listJoin = a => a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' and ' + a.at(-1);
+  // high, moderate or comfortably below: against an even pace through the period (same rule as Home's greeting)
+  function status(d) {
+    if (!d.budget) return { k: 'none', t: 'No budget set yet', s: 'Add a spending limit to see how you’re doing.' };
+    const pace = d.spent / Math.max(1, d.budget * d.elapsed), left = d.budget - d.spent;
+    const tail = d.daysLeft > 0 ? ` · ${d.daysLeft} ${d.daysLeft === 1 ? 'day' : 'days'} to go` : '';
+    if (left < 0) return { k: 'high', t: 'High: over budget', s: `${usd(-left)} over${tail}` };
+    if (pace > 1.1) return { k: 'high', t: 'High: ahead of budget', s: `${usd(left)} left${tail}` };
+    if (pace > .85) return { k: 'mid', t: 'Moderate: on pace', s: `${usd(left)} left${tail}` };
+    return { k: 'low', t: 'Comfortably below budget', s: `${usd(left)} left${tail}` };
+  }
 
   function mount(host, opts) {
     if (!host) return;
     const st = { mode: opts.mode || 'M', offset: 0 };
+    host.classList.add('sp', 'mt-v2');
     host.innerHTML = `
-      <div class="mt-top">
-        <div class="mt-seg" role="tablist" aria-label="Period">
-          <button role="tab" data-m="M" aria-label="Month">M</button><button role="tab" data-m="W" aria-label="Week">W</button>
-        </div>
+      <div class="sp-top">
+        <div class="sp-seg" role="tablist" aria-label="Period"><button role="tab" data-m="W">Week</button><button role="tab" data-m="M">Month</button></div>
+        <button class="sp-eye" data-a="eye"></button>
+      </div>
+      <div class="sp-period">
+        <button class="sp-arrow mt-arrow" data-d="-1" aria-label="Previous period">${I('<path d="M14.5 6 8.5 12l6 6"/>')}</button>
+        <p class="sp-when" aria-live="polite"><b></b><span></span></p>
+        <button class="sp-arrow mt-arrow" data-d="1" aria-label="Next period">${I('<path d="M9.5 6l6 6-6 6"/>')}</button>
+      </div>
+      <div class="mt-sum">
+        <span class="sp-k">Spent</span>
+        <b class="sp-amt"></b>
+        <span class="sp-of"></span>
+        <span class="sp-status"><i aria-hidden="true"></i><span></span></span>
+        <span class="sp-left"></span>
       </div>
       <button class="mt-stage" aria-label="Your money tree. Tap to shake it.">${treeSVG()}<span class="mt-tip" aria-hidden="true"></span><span class="mt-pop" aria-hidden="true"></span></button>
       <p class="mt-mood" aria-live="polite"><b></b><span></span></p>
-      <div class="mt-pagerwrap"><div class="mt-pager">
-        <button class="mt-arrow" data-d="-1" aria-label="Previous">${I('<path d="M14.5 6 8.5 12l6 6"/>')}</button>
-        <span class="mt-range" aria-live="polite"></span>
-        <button class="mt-arrow" data-d="1" aria-label="Next">${I('<path d="M9.5 6l6 6-6 6"/>')}</button>
-      </div></div>
-      <div class="mt-actions">
-        <button class="mt-wrapped" aria-label="Play your Wrapped">${I('<rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8.5h14V12M12 8v12.5"/><path d="M12 8c-1.5-3.5-5.5-3.5-5.5-1S10 8 12 8zM12 8c1.5-3.5 5.5-3.5 5.5-1S14 8 12 8z"/>')}</button>
-        <button class="mt-recap">Recap</button>
-      </div>`;
+      <p class="sp-cats"></p>
+      <div class="sp-acts"><button class="sp-wrap mt-wrapped" data-a="wrap">${I('<path d="M5 4.5h11l3 3V19.5H5z"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h4"/>')}<span>Your wrap</span></button><button class="sp-recap mt-recap" data-a="recap">${I('<path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V8M16 15v-6"/>')}<span>Recap</span></button></div>`;
     const $ = s => host.querySelector(s), $$ = s => [...host.querySelectorAll(s)];
     const leaves = $$('.mt-leaf'), coins = $$('.mt-coin'), fallen = $$('.mt-fl');
 
     function paint(animate) {
       const d = opts.getData(st.mode, st.offset);
-      $$('.mt-seg button').forEach(b => { const on = b.dataset.m === st.mode; b.classList.toggle('is-on', on); b.setAttribute('aria-selected', on); });
-      $('.mt-range').textContent = d.label;
+      $$('.sp-seg button').forEach(b => { const on = b.dataset.m === st.mode; b.classList.toggle('is-on', on); b.setAttribute('aria-selected', on); });
+      const hide = hidden(), sx = status(d);
+      host.dataset.status = sx.k;
+      $('.sp-when b').textContent = d.when || d.label; $('.sp-when span').textContent = d.range || '';
+      $('.sp-amt').textContent = hide ? '$•••' : usd(d.spent || 0);
+      $('.sp-of').textContent = d.budget ? `of ${hide ? '$•••' : usd(d.budget)} ${st.mode === 'W' ? 'weekly' : 'monthly'} budget` : 'No limits set';
+      $('.sp-status span').textContent = sx.t;
+      $('.sp-left').textContent = hide && d.budget ? (d.daysLeft > 0 ? `${d.daysLeft} ${d.daysLeft === 1 ? 'day' : 'days'} to go` : '') : sx.s;
+      $('.sp-cats').innerHTML = d.cats?.length ? `Counts what you set limits for: ${esc(listJoin(d.cats))}.` : '<button class="sp-addlimit" data-h="addlimit">Add a spending limit</button>';
+      const eye = $('.sp-eye'); eye.innerHTML = hide ? EYE_OFF : EYE; eye.setAttribute('aria-pressed', String(hide)); eye.setAttribute('aria-label', hide ? 'Show amounts' : 'Hide amounts');
       $('[data-d="-1"]').disabled = !d.hasPrev; $('[data-d="1"]').disabled = !d.hasNext;
       const h = Math.max(0, Math.min(1, d.health));
       const shown = Math.round(18 + (leaves.length - 18) * Math.pow(h, 1.7)); // thins out quickly as health drops
@@ -120,7 +149,7 @@
       host.dataset.mood = mood.toLowerCase();
       $('.mt-mood b').textContent = mood;
 
-      $('.mt-stage').setAttribute('aria-label', `Your money tree is ${mood.toLowerCase()}. ${d.caption}. Tap to shake it.`);
+      $('.mt-stage').setAttribute('aria-label', `Your money tree is ${mood.toLowerCase()}: ${sx.t.toLowerCase()}. Tap to shake it.`);
     }
 
     function shake() {
@@ -178,6 +207,7 @@
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.m && b.dataset.m !== st.mode) { st.mode = b.dataset.m; st.offset = 0; $('.mt-pop').classList.remove('on'); opts.onMode?.(st.mode); paint(true); return; }
       if (b.dataset.d) { go(+b.dataset.d); return; }
+      if (b.dataset.a === 'eye') { try { localStorage.setItem(HIDE, hidden() ? '0' : '1'); } catch {} paint(false); return; }
       if (b.classList.contains('mt-wrapped')) { opts.onWrapped?.(); return; }
       if (b.classList.contains('mt-recap')) { opts.onRecap?.(st.mode, st.offset); return; }
       if (b.classList.contains('mt-stage')) {

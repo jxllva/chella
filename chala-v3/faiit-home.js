@@ -7,6 +7,7 @@
   const EASE = 'cubic-bezier(.22,.8,.24,1)';
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const uid = () => Math.random().toString(36).slice(2, 9);
+  const SAVE_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7.5"/></svg>';
   const cents = v => { const n = Math.round(parseFloat(String(v).replace(/[^0-9.]/g, '')) * 100); return Number.isFinite(n) && n > 0 ? n : 0; };
 
   // ---------- what people protect ----------
@@ -479,7 +480,12 @@
       const spent = treeRows.filter(r => r.date >= s0 && r.date <= e0 && cats.includes(r.category)).reduce((s, r) => s + r.cents, 0) + extra;
       const saved = savedTotal(p);
       const prevEnd = mode === 'M' ? new Date(start.getFullYear(), start.getMonth(), 0) : new Date(start.getFullYear(), start.getMonth(), start.getDate() - 1);
-      const base = { label, saved, hasNext: off < 0, hasPrev: iso(prevEnd) >= firstDay };
+      const unit = mode === 'M' ? 'month' : 'week';
+      const when = off === 0 ? `This ${unit}` : off === -1 ? `Last ${unit}` : label;
+      const range = mode === 'M' ? `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}–${end.getDate()}, ${end.getFullYear()}` : label;
+      const daysLeft = off === 0 ? Math.max(0, Math.round((end - today) / 864e5)) : 0;
+      const SHORTN = { 'Food delivery': 'delivery', 'Cafés': 'cafés', Shopping: 'shopping', Subscriptions: 'subscriptions', Dining: 'eating out', Transport: 'rides', Travel: 'travel', Groceries: 'groceries', Health: 'health', Education: 'education' };
+      const base = { label, saved, hasNext: off < 0, hasPrev: iso(prevEnd) >= firstDay, spent, budget, elapsed, when, range, daysLeft, cats: cats.map(c => SHORTN[c] || c.toLowerCase()) };
       if (!budget) return { ...base, health: .66, caption: 'Set a limit to grow your tree', tip: 'Add a spending limit to see how it grows' };
       const u = spent / Math.max(1, budget * elapsed);
       let health = u <= .6 ? 1 : u <= 1 ? 1 - (u - .6) / .4 * .42 : Math.max(.05, .58 - (u - 1) * .9);
@@ -613,8 +619,10 @@
       const goals = p.goals.filter(g => !g.archived), saved = savedTotal(p);
       const since = new Date(p.joinedAt || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       const names = Object.keys(p.limits);
-      const hNow = treeData('M', 0)?.health ?? .66, moodNow = hNow >= .8 ? 'flourishing' : hNow >= .58 ? 'growing' : hNow >= .34 ? 'thirsty' : 'wilting';
-      const NUDGE = { flourishing: 'Your money tree is thriving. Keep it up.', growing: 'Your money tree is growing nicely.', thirsty: 'Your money tree could use a slow week.', wilting: 'Your money tree needs a little care.' };
+      // same rule as the spending jar, so the greeting and the jar always agree
+      const dNow = treeData('M', 0), paceNow = dNow?.budget ? dNow.spent / Math.max(1, dNow.budget * dNow.elapsed) : 0;
+      const moodNow = !dNow?.budget ? 'none' : dNow.spent > dNow.budget ? 'wilting' : paceNow > 1.1 ? 'thirsty' : paceNow > .85 ? 'growing' : 'flourishing';
+      const NUDGE = { flourishing: 'Spending is comfortably below budget this month.', growing: 'Spending is on pace with your budget this month.', thirsty: 'Spending is running high this month.', wilting: 'You’re over budget this month.', none: 'Set a spending limit to see how your month is going.' };
       const addBtn = (h, label) => `<button class="hm-add" data-h="${h}" aria-label="${label}">${I('<path d="M12 5v14M5 12h14"/>')}</button>`;
       return `
 <header class="hm-head" data-mood="${moodNow}" data-rise>
@@ -622,7 +630,7 @@
   <h1 class="hm-hello"><span class="hm-wb">Welcome back,</span> <span class="hm-who">${esc(first || 'friend')}</span><span class="hm-dot">.</span></h1>
   <p class="hm-nudge">${esc(NUDGE[moodNow])}</p>
 </header>
-<section class="mt" aria-label="Your money tree"></section>
+<section class="mt" aria-label="Your money tree and spending"></section>
 
 <h2 class="hm-k" data-rise>Saving</h2>
 <button class="hm-save" data-h="logsave" data-rise>
@@ -660,33 +668,29 @@ ${(() => { const past = p.goals.filter(g => g.archived || isDone(p, g)); return 
       return `
 <header class="pf-head" data-rise>${logoBtn()}<p class="pf-k">Wraps</p><h1 class="pf-title">Your recaps.</h1></header>
 <div class="wg-host"></div>
-<button class="fz-addstmt" data-h="addstatement">${I('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>')}Add a statement</button>`;
+<label class="fz-addstmt fz-pdf">${I('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>')}<span class="fz-pdf-t">Add a PDF statement</span><input class="fw-sr" type="file" accept="application/pdf,.pdf" data-pdf aria-label="Choose a PDF statement"></label>
+<p class="fz-pdf-st" role="status" aria-live="polite"></p>`;
     }
     function cardsTab() {
       return `
 <header class="pf-head" data-rise>${logoBtn()}<p class="pf-k">Cards</p><h1 class="pf-title">Your cards.</h1></header>
 <div class="cc" aria-label="Swipe up to pay"></div>`;
     }
-    /* chala v3: profile laid out like chala's (header, goal card, then one row per action) */
+    /* chala v3: profile is just your details, like Faiit's */
     function profileTab() {
-      const vals = p.values.map(valueById).filter(Boolean);
-      const arrow = I('<path d="M5 12h14m-6-6 6 6-6 6"/>');
-      const row = (h, icon, title, sub, cls = '') => `<button class="pf-row ${cls}" data-h="${h}"><span class="pf-ic">${I(icon)}</span><span class="pf-t">${title}${sub ? `<small>${sub}</small>` : ''}</span><span class="pf-go">${arrow}</span></button>`;
+      const pen = I('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>');
+      const row = (h, title, value, cls = '') => `<button class="pf-row pf-row-simple ${cls}" data-h="${h}"><span class="pf-t">${title}${value ? `<small>${value}</small>` : ''}</span>${cls ? '' : `<span class="pf-go">${pen}</span>`}</button>`;
       return `
 <header class="pf-head" data-rise>
   ${logoBtn()}
   <p class="pf-k">Profile</p>
   <h1 class="pf-title">Hi, ${esc(first || 'you')}.</h1>
 </header>
-${badgesCard()}
 <div class="pf-rows">
-  ${row('chalaplan', '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/><path d="M12 10v4M10 12h4"/>', 'Change my plan', 'Goal, habits and limits', 'h-sage')}
-  ${row('values', '<path d="M12 20s-7-4.3-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7 2.6C19 15.7 12 20 12 20z"/>', 'What matters to you', vals.length ? esc(vals.map(v => v.label).join(', ')) : 'Nothing picked yet', 'h-clay')}
-  ${row('rename', '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/>', 'Your name', esc(user.name || 'Add your name'), 'h-slate')}
-  ${row('addstatement', '<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>', 'Add a statement', 'PDF, CSV or a photo', 'h-ochre')}
-  ${row('review', '<path d="M5 2.5h14v19l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>', 'Review purchases', 'Check and fix what we found', 'h-teal')}
-  ${row('signout', '<path d="M15 12H4m4-4-4 4 4 4"/><path d="M11 4h7a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7"/>', 'Sign out', '', 'is-danger')}
+  ${row('rename', 'Name', esc(user.name || 'Add your name'))}
+  ${row('phone', 'Phone number', esc(api.phone() || 'Add your number'))}
 </div>
+<div class="pf-rows pf-rows-out">${row('signout', 'Sign out', '', 'is-danger')}</div>
 `;
     }
     const navHTML = () => `<nav class="fh-nav" aria-label="Main">${NAV.map(([id, label, ic]) => `<button class="fh-nav-btn fj ${id === tab ? 'is-on' : ''}" data-tab="${id}" aria-label="${label}" ${id === tab ? 'aria-current="page"' : ''}>${ic}<span>${label}</span></button>`).join('')}</nav>`;
@@ -705,12 +709,27 @@ ${badgesCard()}
       });
       if (tab === 'profile') catchNewBadges();
       /* chala v3: money tree on Home */
-      if (tab === 'home' && window.ChalaTree) ChalaTree.mount(el.querySelector('.mt'), { mode: home.treeMode, onMode: md => { home.treeMode = md; }, getData: treeData,
-        onWrapped: () => api.openRecap(monthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1)), 'home'), onRecap: (md, off) => { if (window.ChalaInsights) ChalaInsights.open({ mode: md, offset: off, getData: insightData, onStory: k => api.openRecap(k, 'home') }); else api.openRecap(nowKey, 'home'); },
+      if (tab === 'home' && window.ChalaSpend && !window.ChalaTree) ChalaSpend.mount(el.querySelector('.mt'), { mode: home.treeMode, onMode: md => { home.treeMode = md; }, getData: treeData,
+        onWrap: () => api.openRecap(null, 'home'), onRecap: (md, off) => { if (window.ChalaInsights) ChalaInsights.open({ mode: md, offset: off, getData: insightData, onStory: k => api.openRecap(k, 'home') }); else api.openRecap(nowKey, 'home'); } });
+      else if (tab === 'home' && window.ChalaTree) ChalaTree.mount(el.querySelector('.mt'), { mode: home.treeMode, onMode: md => { home.treeMode = md; }, getData: treeData,
+        onWrapped: () => api.openRecap(null, 'home'), onRecap: (md, off) => { if (window.ChalaInsights) ChalaInsights.open({ mode: md, offset: off, getData: insightData, onStory: k => api.openRecap(k, 'home') }); else api.openRecap(nowKey, 'home'); },
         getStats: (md, off) => insightData(md, off),
         coinText: () => `${m(savedTotal(p))} set aside so far` });
       /* chala v3: swipe-up-to-pay cards */
       if (tab === 'cards' && window.ChalaCards) ChalaCards.mount(el.querySelector('.cc'), { holder: user.name || '' });
+      if (tab === 'wraps') {
+        const inp = el.querySelector('[data-pdf]'), lab = inp?.closest('.fz-pdf'), stEl = el.querySelector('.fz-pdf-st');
+        inp?.addEventListener('change', async () => {
+          const f = inp.files?.[0]; inp.value = ''; if (!f || !api.addPdf) return;
+          lab.classList.add('is-busy'); inp.disabled = true; stEl.textContent = '';
+          const label = lab.querySelector('.fz-pdf-t');
+          const res = await api.addPdf(f, x => { label.textContent = `Reading ${f.name.length > 22 ? 'your statement' : f.name}… ${Math.round(x * 100)}%`; });
+          lab.classList.remove('is-busy'); inp.disabled = false; label.textContent = 'Add a PDF statement';
+          if (res.error) { api.toast(res.error, 'error'); return; }
+          api.toast(res.added ? `Added ${res.added} ${res.added === 1 ? 'purchase' : 'purchases'} from ${f.name}${res.dupes ? `. ${res.dupes} already here were skipped` : ''}.` : 'Everything in that PDF was already here.');
+          home(el, api, 'wraps');
+        });
+      }
       if (tab === 'wraps' && window.FaiitGallery) FaiitGallery.render(el.querySelector('.wg-host'), { rows: api.wrapRows?.() || [], sample: api.isSample?.(), tab: home.wrapsView, onTab: t => { home.wrapsView = t; }, onWrap: k => api.openRecap(k, 'wraps'), onBreakdown: k => api.openBreakdown(k, 'wraps') });
       if (!reduce()) el.querySelector('.fz-page')?.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 520, easing: EASE });
     }
@@ -742,22 +761,39 @@ ${badgesCard()}
 </section>`;
     }
     function editLimit(name) {
-      const cur = p.limits[name] || 0, prot = protects(p, name).length > 0;
-      /* chala v3: one clear field for the limit — tap it and type */
-      sheet(`<p class="ls-k">Monthly limit</p>
+      let saved = p.limits[name] || 0;
+      const prot = protects(p, name).length > 0;
+      const now = () => saved ? `Your limit: <b>${m(saved)}</b> a month` : 'No limit set yet';
+      /* chala v3: one field; the save button lives inside it and wakes up only for a new, valid amount */
+      const ov = sheet(`<p class="ls-k">Monthly limit</p>
 <h2 id="fh-sheet-title" class="fh-sh-title ls-title">${esc(name)}</h2>
 <p class="ls-sub">How much do you want to spend on ${esc(name.toLowerCase())} each month?${prot ? ' <span class="fz-tag">Protected</span>' : ''}</p>
-<form class="fz-form ls-form">
-  <label class="ls-field"><span class="ls-cur">$</span><input id="ls-type" class="ls-type" name="typed" inputmode="numeric" autocomplete="off" value="${cur ? (cur / 100).toFixed(0) : ''}" placeholder="0" aria-label="Monthly limit in dollars for ${esc(name)}" size="5" style="width:${Math.max(1, cur ? String(Math.round(cur / 100)).length : 1) * .62 + .08}em"><span class="ls-per">/ month</span><span class="ls-pen" aria-hidden="true">${I('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>')}</span></label>
-  <button class="fh-unwrap fj" type="submit">Save limit</button>
+<form class="fz-form ls-form" novalidate>
+  <div class="ls-field" data-s="focus"><span class="ls-cur">$</span><input id="ls-type" class="ls-type" name="typed" inputmode="numeric" autocomplete="off" value="${saved ? (saved / 100).toFixed(0) : ''}" placeholder="0" aria-label="Monthly limit in dollars for ${esc(name)}" aria-describedby="ls-now" size="5" style="width:${Math.max(1, saved ? String(Math.round(saved / 100)).length : 1) * .62 + .08}em"><span class="ls-per">/ month</span>
+    <button class="ms-save" type="submit" aria-label="Save limit" disabled>${SAVE_IC}</button></div>
+  <p class="ls-now" id="ls-now" aria-live="polite">${now()}</p>
 </form>
-${p.limits[name] ? `<button class="fz-danger" type="button" data-s="remove">${I('<path d="M4.5 7h15M9.5 7V4.8c0-.7.5-1.3 1.2-1.3h2.6c.7 0 1.2.6 1.2 1.3V7M6.5 7l.9 12.2c.1.8.7 1.3 1.5 1.3h6.2c.8 0 1.4-.5 1.5-1.3L17.5 7"/><path d="M10 11v5.5M14 11v5.5"/>')}Remove limit</button>` : ''}
+<button class="fz-danger" type="button" data-s="remove" ${saved ? '' : 'hidden'}>${I('<path d="M4.5 7h15M9.5 7V4.8c0-.7.5-1.3 1.2-1.3h2.6c.7 0 1.2.6 1.2 1.3V7M6.5 7l.9 12.2c.1.8.7 1.3 1.5 1.3h6.2c.8 0 1.4-.5 1.5-1.3L17.5 7"/><path d="M10 11v5.5M14 11v5.5"/>')}Remove limit</button>
 ${txList(name)}`, {
-        input: t => { if (t.name !== 'typed') return; t.value = t.value.replace(/[^0-9]/g, '').slice(0, 6); t.style.width = `${Math.max(1, t.value.length) * .62 + .08}em`; },
-        submit: (f, close) => { const v = (+String(f.typed.value).replace(/[^0-9]/g, '') || 0) * 100; if (v > 0) p.limits[name] = v; else delete p.limits[name]; store(p); close(); paint(); },
-        remove: (t, close) => { delete p.limits[name]; store(p); close(); paint(); },
+        focus: (t, close, w) => { if (!t.closest('.ms-save')) w.querySelector('#ls-type').focus(); },
+        input: (t, w) => {
+          if (t.name !== 'typed') return;
+          t.value = t.value.replace(/[^0-9]/g, '').slice(0, 6); t.style.width = `${Math.max(1, t.value.length) * .62 + .08}em`;
+          const v = (+t.value || 0) * 100; w.querySelector('.ms-save').disabled = !(v > 0 && v !== saved);
+        },
+        submit: (f, close, w) => {
+          const btn = w.querySelector('.ms-save'); if (btn.disabled) return;
+          const v = (+f.typed.value || 0) * 100; if (!(v > 0)) return;
+          p.limits[name] = v; store(p); saved = v; paint();
+          f.typed.value = String(v / 100); btn.disabled = true; f.typed.blur();
+          w.querySelector('.ls-now').innerHTML = now(); w.querySelector('[data-s="remove"]').hidden = false;
+          if (!reduce()) w.querySelector('.ls-now b').animate([{ transform: 'scale(1.15)' }, { transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.3,1.4,.5,1)' });
+          api.toast(`${name} limit saved: ${m(v)} a month`);
+        },
+        remove: (t, close) => { delete p.limits[name]; store(p); close(); paint(); api.toast(`${name} limit removed`); },
         txmore: (t, close, w) => { w.querySelector('.tx').classList.add('is-all'); t.remove(); }
-      }).el.querySelectorAll('.fj').forEach(jelly);
+      });
+      ov.el.querySelectorAll('.fj').forEach(jelly);
     }
     function addLimit() {
       const unused = spend.categories.filter(c => !(c.name in p.limits));
@@ -770,19 +806,62 @@ ${txList(name)}`, {
     function editGoal(id) {
       const g = p.goals.find(x => x.id === id) || { id: uid(), title: '', target: 50000, value: '' }, isNew = !p.goals.some(x => x.id === id);
       let val = g.value;
-      sheet(`<h2 id="fh-sheet-title" class="fh-sh-title">${isNew ? 'New goal' : 'Edit goal'}</h2>
+      if (isNew) {
+        sheet(`<h2 id="fh-sheet-title" class="fh-sh-title">New goal</h2>
 <form class="fz-form">
-  <label class="fw-sr" for="fz-gt">Goal name</label><input class="fz-name" id="fz-gt" name="title" value="${esc(g.title)}" maxlength="40" placeholder="Weekend away" required>
+  <label class="fw-sr" for="fz-gt">Goal name</label><input class="fz-name" id="fz-gt" name="title" value="" maxlength="40" placeholder="Weekend away" required>
   <label class="fz-money-big"><span class="fw-sr">Target</span><i>$</i><input name="target" inputmode="decimal" value="${g.target / 100}" aria-label="Target amount"></label>
   <p class="sa-gh fz-chips-h">What’s it for?</p>
   ${chipsOf(VALUES, val, 'val')}
-  <button class="fh-unwrap fj" type="submit">${isNew ? 'Add goal' : 'Save'}</button>
+  <button class="fh-unwrap fj" type="submit">Add goal</button>
+</form>`, {
+          'pick-val': (t, close, w) => { val = val === t.dataset.v ? '' : t.dataset.v; w.querySelectorAll('[data-s="pick-val"]').forEach(b => { const on = b.dataset.v === val; b.setAttribute('aria-pressed', on); b.setAttribute('aria-checked', on); }); },
+          submit: (f, close) => { const title = f.title.value.trim(); if (!title) { f.title.focus(); return; } const target = cents(f.target.value) || g.target; p.goals = [...p.goals, { ...g, title, target, value: val }]; store(p); close(); paint(); api.toast(`${title} added: ${m(target)} goal`); }
+        }).el.querySelectorAll('.fj').forEach(jelly);
+        return;
+      }
+      /* an existing goal: name and target each have their own save button inside the field;
+         the button wakes up only when the value is valid and different from what's saved */
+      const amt = c => c % 100 ? (c / 100).toFixed(2) : String(c / 100);
+      const meta = () => `Target <b>${m(g.target)}</b> · ${m(savedFor(p, g.id))} saved so far`;
+      sheet(`<h2 id="fh-sheet-title" class="fh-sh-title">Edit goal</h2>
+<p class="fz-sh-meta eg-meta" aria-live="polite">${meta()}</p>
+<form class="fz-form eg-form" novalidate>
+  <label class="eg-l" for="fz-gt">Goal name</label>
+  <div class="ms-wrap"><input class="fz-name" id="fz-gt" name="title" value="${esc(g.title)}" maxlength="40" placeholder="Weekend away" autocomplete="off"><button class="ms-save" type="button" data-s="savetitle" aria-label="Save goal name" disabled>${SAVE_IC}</button></div>
+  <label class="eg-l" for="fz-tg">Target amount</label>
+  <div class="fz-money-big ms-money"><i>$</i><input id="fz-tg" name="target" inputmode="decimal" value="${amt(g.target)}" autocomplete="off" aria-label="Target amount"><button class="ms-save" type="button" data-s="savetarget" aria-label="Save target amount" disabled>${SAVE_IC}</button></div>
+  <p class="sa-gh fz-chips-h">What’s it for?</p>
+  ${chipsOf(VALUES, val, 'val')}
 </form>
-${isNew ? '' : `<button class="fz-danger" type="button" data-s="del">${I('<path d="M4.5 7h15M9.5 7V4.8c0-.7.5-1.3 1.2-1.3h2.6c.7 0 1.2.6 1.2 1.3V7M6.5 7l.9 12.2c.1.8.7 1.3 1.5 1.3h6.2c.8 0 1.4-.5 1.5-1.3L17.5 7"/><path d="M10 11v5.5M14 11v5.5"/>')}Delete goal</button>`}`, {
-        'pick-val': (t, close, w) => { val = val === t.dataset.v ? '' : t.dataset.v; w.querySelectorAll('[data-s="pick-val"]').forEach(b => { const on = b.dataset.v === val; b.setAttribute('aria-pressed', on); b.setAttribute('aria-checked', on); }); },
-        submit: (f, close) => { const title = f.title.value.trim(); if (!title) { f.title.focus(); return; } const upd = { ...g, title, target: cents(f.target.value) || g.target, value: val }; p.goals = isNew ? [...p.goals, upd] : p.goals.map(x => x.id === g.id ? upd : x); store(p); close(); paint(); },
-        del: (t, close) => { p.goals = p.goals.filter(x => x.id !== g.id); p.contributions = p.contributions.filter(c => c.goalId !== g.id); store(p); close(); paint(); }
-      }).el.querySelectorAll('.fj').forEach(jelly);
+<button class="fz-danger" type="button" data-s="del">${I('<path d="M4.5 7h15M9.5 7V4.8c0-.7.5-1.3 1.2-1.3h2.6c.7 0 1.2.6 1.2 1.3V7M6.5 7l.9 12.2c.1.8.7 1.3 1.5 1.3h6.2c.8 0 1.4-.5 1.5-1.3L17.5 7"/><path d="M10 11v5.5M14 11v5.5"/>')}Delete goal</button>`, {
+        input: (t, w) => {
+          if (t.name === 'target') {
+            let v = t.value.replace(/[^0-9.]/g, ''); const i = v.indexOf('.'); if (i >= 0) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/\./g, '').slice(0, 2); t.value = v.slice(0, 9);
+            const c = cents(t.value); w.querySelector('[data-s="savetarget"]').disabled = !(c > 0 && c !== g.target);
+          }
+          if (t.name === 'title') { const v = t.value.trim(); w.querySelector('[data-s="savetitle"]').disabled = !(v && v !== g.title); }
+        },
+        savetarget: (t, close, w) => {
+          const inp = w.querySelector('[name="target"]'), c = cents(inp.value); if (!(c > 0) || c === g.target) return;
+          g.target = c; delete g.doneAt; if (isDone(p, g)) g.doneAt = new Date().toISOString();
+          store(p); paint(); inp.value = amt(c); t.disabled = true; inp.blur();
+          w.querySelector('.eg-meta').innerHTML = meta();
+          if (!reduce()) w.querySelector('.eg-meta b').animate([{ transform: 'scale(1.15)' }, { transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.3,1.4,.5,1)' });
+          api.toast(`Target saved: ${m(c)}`);
+        },
+        savetitle: (t, close, w) => {
+          const inp = w.querySelector('[name="title"]'), v = inp.value.trim(); if (!v || v === g.title) return;
+          g.title = v; store(p); paint(); inp.value = v; t.disabled = true; inp.blur();
+          api.toast('Goal name saved');
+        },
+        submit: (f, close, w) => { // Enter saves the field you're in, if it has something to save
+          const which = document.activeElement?.name === 'title' ? 'savetitle' : 'savetarget', btn = w.querySelector(`[data-s="${which}"]`);
+          if (btn && !btn.disabled) btn.click();
+        },
+        'pick-val': (t, close, w) => { val = val === t.dataset.v ? '' : t.dataset.v; g.value = val; store(p); paint(); api.toast(val ? `Tagged: ${VALUES.find(v => v.id === val)?.label || val}` : 'Tag removed'); w.querySelectorAll('[data-s="pick-val"]').forEach(b => { const on = b.dataset.v === val; b.setAttribute('aria-pressed', on); b.setAttribute('aria-checked', on); }); },
+        del: (t, close) => { p.goals = p.goals.filter(x => x.id !== g.id); p.contributions = p.contributions.filter(c => c.goalId !== g.id); store(p); close(); paint(); api.toast(`${g.title} deleted`); }
+      });
     }
     /* where saved money can go: your goals, plain savings, or something else */
     const BUCKETS = [
@@ -941,7 +1020,10 @@ ${arch.length ? `<p class="sa-gh">Archived</p><div class="sa-list">${arch.map(ro
       else if (k === 'addstatement') api.addStatement();
       else if (k === 'review') api.review();
       else if (k === 'rename') sheet(`<h2 id="fh-sheet-title" class="fh-sh-title">Your name</h2><form class="fz-form"><label class="fw-sr" for="fz-nm">Name</label><input class="fz-name" id="fz-nm" name="n" value="${esc(user.name || '')}" maxlength="40" autocomplete="name" required><button class="fh-unwrap fj" type="submit">Save</button></form>`, {
-          submit: (f, close) => { const v = f.n.value.trim(); if (!v) return; api.setName(v); user.name = v; close(); home(el, api, tab); }
+          submit: (f, close) => { const v = f.n.value.trim(); if (!v) return; api.setName(v); user.name = v; close(); home(el, api, tab); api.toast('Name saved'); }
+        });
+      else if (k === 'phone') sheet(`<h2 id="fh-sheet-title" class="fh-sh-title">Phone number</h2><p class="fz-sh-meta">You sign in with this number.</p><form class="fz-form" novalidate><label class="fw-sr" for="fz-ph">Phone number</label><input class="fz-name" id="fz-ph" name="ph" type="tel" inputmode="tel" autocomplete="tel" value="${esc(window.Faiit?.formatPhone ? Faiit.formatPhone(user.iso, user.phone || '') : (user.phone || ''))}" required><p class="cw-sheet-err" role="alert" hidden></p><button class="fh-unwrap fj" type="submit">Save</button></form>`, {
+          submit: (f, close) => { const d = f.ph.value.replace(/\D/g, ''), err = f.querySelector('.cw-sheet-err'); if (d.length < 7 || d.length > 15) { err.hidden = false; err.textContent = 'Enter your full phone number.'; f.ph.focus(); return; } window.Faiit?.patch?.({ phone: d }); user.phone = d; close(); home(el, api, tab); api.toast?.('Phone number updated'); }
         });
       else if (k === 'signout') api.signout();
     };
@@ -951,7 +1033,7 @@ ${arch.length ? `<p class="sa-gh">Archived</p><div class="sa-list">${arch.map(ro
 
   const needsPlan = () => !load().done;
   const reset = () => { try { localStorage.removeItem(KEY); } catch {} };
-  window.FaiitHome = { plan, home, needsPlan, reset, jelly };
+  window.FaiitHome = { plan, home, needsPlan, reset, jelly, sheet }; /* chala v3: sheet is shared so the Wrapped's pop-ups match the app */
   home.wrapsView = 'monthly';
   home.treeMode = 'M';
 })();
