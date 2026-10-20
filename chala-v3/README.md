@@ -24,7 +24,7 @@ Third version, blending the other two. The originals are untouched for reference
 | `chala-stories.js` | roast, Real talk, survey, recap (from chala.html) |
 | `chala-base.css` | chala.html's styles, scoped under `#chala-layer` (generated) |
 | `chala-theme.css` | Faiit-look overrides, wordmark, home play button, Cards tab, Profile |
-| `chala-cards.js` | Cards tab: card stack, flip for balance, low balance tag, opt-in balance light (glowing strip) |
+| `chala-cards.js` | Cards tab: card stack, flip for balance, low balance tag |
 | `chala-premium.css` | the premium theme, loaded last: Inter, warm off-white, charcoal pills, soft peach / lavender / blush light |
 | `chala-tree.js` | Home's money tree: banknote leaves, autumn and fallen leaves track how you're pacing against your limits; tap to shake, swipe or arrows for periods, Month / Week |
 | `chala-insights.js` | the Recap page from the tree: earned, spent, saved, by day, pace and category |
