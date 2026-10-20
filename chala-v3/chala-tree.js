@@ -117,7 +117,7 @@
       const mood = MOOD.find(([t]) => h >= t)[1];
       host.dataset.mood = mood.toLowerCase();
       $('.mt-mood b').textContent = mood;
-      $('.mt-mood span').textContent = d.caption;
+
       $('.mt-stage').setAttribute('aria-label', `Your money tree is ${mood.toLowerCase()}. ${d.caption}. Tap to shake it.`);
     }
 

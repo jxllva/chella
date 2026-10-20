@@ -489,9 +489,18 @@
       const goals = p.goals.filter(g => !g.archived), saved = savedTotal(p);
       const since = new Date(p.joinedAt || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       const names = Object.keys(p.limits);
+      const hNow = treeData('M', 0)?.health ?? .66, moodNow = hNow >= .8 ? 'flourishing' : hNow >= .58 ? 'growing' : hNow >= .34 ? 'thirsty' : 'wilting';
+      const hr = today.getHours(), partOfDay = hr < 5 ? 'Night' : hr < 12 ? 'Morning' : hr < 17 ? 'Afternoon' : hr < 22 ? 'Evening' : 'Night';
+      const greet = hr < 5 ? 'Still up' : hr < 12 ? 'Morning' : hr < 17 ? 'Afternoon' : hr < 22 ? 'Evening' : 'Night owl';
+      const NUDGE = { flourishing: 'Your money tree is thriving. Keep it up.', growing: 'Your money tree is growing nicely.', thirsty: 'Your money tree could use a slow week.', wilting: 'Your money tree needs a little care.' };
       const addBtn = (h, label) => `<button class="hm-add" data-h="${h}" aria-label="${label}">${I('<path d="M12 5v14M5 12h14"/>')}</button>`;
       return `
-<header class="hm-head" data-rise><span class="hm-mark">chala</span><p class="hm-hi">welcome back</p><h1 class="hm-name">${esc(user.name || first || 'there')}</h1></header>
+<header class="hm-head" data-mood="${moodNow}" data-rise>
+  <button class="hm-logo" data-logo aria-label="chala">cha<span class="hm-l">l<svg class="hm-sprout" viewBox="0 0 24 24" aria-hidden="true"><path class="hm-stem" d="M12 22c0-5 0-8 1-11"/><path class="hm-leaf1" d="M13 11c-1-4 2-7 7-7 0 5-3 8-7 7z"/><path class="hm-leaf2" d="M12.4 14c-.6-3-3.4-4.8-7.4-4.4.2 3.8 3 5.6 7.4 4.4z"/></svg></span>a</button>
+  <p class="hm-when">${esc(today.toLocaleDateString('en-US', { weekday: 'long' }))} ${esc(partOfDay.toLowerCase())} · ${esc(today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))}</p>
+  <h1 class="hm-hello">${esc(greet)},<br><span class="hm-who">${esc(first || 'friend')}</span><span class="hm-dot">.</span></h1>
+  <p class="hm-nudge">${esc(NUDGE[moodNow])}</p>
+</header>
 <section class="mt" aria-label="Your money tree"></section>
 
 <h2 class="hm-k" data-rise>Saving</h2>
@@ -584,6 +593,13 @@ ${goal}
       el.innerHTML = `<section class="fz fz-tab-${tab}" aria-label="${tab}"><div class="fz-sky" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="fz-page">${body}</div></section>${navHTML()}`;
       el.querySelectorAll('.fj').forEach(jelly);
       el.querySelectorAll('[data-count]').forEach(n => countUp(n, +n.dataset.count, m));
+      /* chala v3: logo — tap the sprout */
+      el.querySelector('[data-logo]')?.addEventListener('click', e => {
+        const b = e.currentTarget, s = b.querySelector('.hm-sprout');
+        if (!reduce()) s.animate([{ transform: 'rotate(0) scale(1)' }, { transform: 'rotate(-18deg) scale(1.25)' }, { transform: 'rotate(10deg) scale(1.1)' }, { transform: 'rotate(0) scale(1)' }], { duration: 700, easing: 'cubic-bezier(.25,.1,.25,1)' });
+        const c = document.createElement('i'); c.className = 'hm-coin'; c.textContent = '$'; b.querySelector('.hm-l').appendChild(c);
+        setTimeout(() => c.remove(), 1000);
+      });
       /* chala v3: money tree on Home */
       if (tab === 'home' && window.ChalaTree) ChalaTree.mount(el.querySelector('.mt'), { mode: home.treeMode, onMode: md => { home.treeMode = md; }, getData: treeData,
         onWrapped: () => api.openRecap(monthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1)), 'home'), onRecap: () => api.openRecap(nowKey, 'home'),
