@@ -853,7 +853,7 @@ ${isNew ? '' : '<button class="fz-quiet" type="button" data-s="del">Delete goal<
       else if (k === 'addgoal') editGoal('new');
       else if (k === 'logsave') logSave();
       else if (k === 'badge') { const b = badgeList().find(x => x.id === t.dataset.id), note = el.querySelector('.bd-note');
-        if (b && note) note.innerHTML = `<b>${esc(b.name)}</b> · ${b.done ? 'Earned. ' : ''}${esc(b.how)}.`;
+        if (b && note) note.innerHTML = `<b>${esc(b.name)}</b> · ${esc(b.how)}.`;
         el.querySelectorAll('.bd-b.is-on').forEach(x => x.classList.remove('is-on')); t.classList.add('is-on');
         if (!reduce()) t.querySelector('.bd-m').animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-10deg) scale(1.08)' }, { transform: 'rotate(7deg)' }, { transform: 'none' }], { duration: 480, easing: 'ease-out' }); }
       else if (k === 'values') editValues();
