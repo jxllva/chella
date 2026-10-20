@@ -14,7 +14,7 @@
   const ESSENTIAL = new Set(['Rent & bills', 'Groceries', 'Health', 'Transport', 'Education']);
   const NEVER_COMMENT = new Set(['Health', 'Rent & bills']);
   const CATS = ['Food delivery', 'Dining', 'Cafés', 'Groceries', 'Shopping', 'Transport', 'Subscriptions', 'Travel', 'Health', 'Rent & bills', 'Education', 'Other'];
-  const COLORS = ['#E0483C', '#2F6FE0', '#F3C74A', '#4FA35E', '#8A5BD6', '#F08A4B', '#1d1b2e', '#E77FA6', '#60B7C9', '#A88A5A', '#9AA6F7', '#C9C2B4'];
+  const COLORS = ['#191919', '#C9BCE5', '#E9BBA9', '#EBCBD1', '#8E8E8B', '#D9CFC5', '#A79FC4', '#D4A794', '#CFCFCC', '#B5ADA4', '#E4DEF2', '#EFE3DF']; /* chala v3: muted premium palette */
   const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const dayOf = d => new Date(d + 'T12:00:00').getDay();
   const dLabel = d => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -191,7 +191,7 @@
     }
 
     // 03 · the cake: scrolling serves one slice at a time
-    const CAKE = ['#E0483C', '#2F6FE0', '#F3C74A', '#4FA35E', '#8A5BD6', '#F08A4B', '#F6E7CC', '#E77FA6', '#60B7C9', '#A88A5A', '#9AA6F7', '#1d1b2e'];
+    const CAKE = ['#C9BCE5', '#E9BBA9', '#EBCBD1', '#D9CFC5', '#A79FC4', '#D4A794', '#E4DEF2', '#B5ADA4', '#CFCFCC', '#EFE3DF', '#8E8E8B', '#3A3A3A']; /* chala v3: muted premium palette */
     function sceneCake() {
       if (!S.cats.length) return { html: `<section class="sc sc3 is-flow"><div class="sc-pin"><p class="sc-k">Where it went</p><h2 class="sc-h">No purchases <em>this month.</em></h2></div></section>`, update() {} };
       const big = S.cats.filter((c, k) => k < 7 && c.cents / (S.spent || 1) >= .03), cats = big.length ? big : S.cats.slice(0, 1), rest = S.cats.filter(c => !cats.includes(c));
@@ -204,7 +204,7 @@
       const html = `<section class="sc sc3" style="--vh:${120 + cats.length * 40}"><div class="sc-pin">
   <p class="sc-k">Where it went</p>
   <h2 class="sc-h"><span>${m(S.spent)}</span> <em>across ${S.spendT.length} purchases.</em></h2>
-  <div class="cake"><svg viewBox="0 0 360 360" role="group" aria-label="Spending by category">${parts.map((p, k) => { const mid = (p.a0 + p.a1) / 2; return `<g class="slice" data-r="cat" data-k="${k}" style="--dx:${(Math.cos(mid) * 26).toFixed(1)}px;--dy:${(Math.sin(mid) * 16).toFixed(1)}px" role="button" tabindex="0" aria-label="${esc(cats[k].name)}, ${Math.round(cats[k].cents / total * 100)}%"><path d="${arc(p, depth)}" fill="#6B3E2E" stroke="#1d1b2e" stroke-width="1.6"/><path d="${arc(p, 0)}" fill="${p.c}" stroke="#1d1b2e" stroke-width="1.6"/></g>`; }).join('')}</svg></div>
+  <div class="cake"><svg viewBox="0 0 360 360" role="group" aria-label="Spending by category">${parts.map((p, k) => { const mid = (p.a0 + p.a1) / 2; return `<g class="slice" data-r="cat" data-k="${k}" style="--dx:${(Math.cos(mid) * 26).toFixed(1)}px;--dy:${(Math.sin(mid) * 16).toFixed(1)}px" role="button" tabindex="0" aria-label="${esc(cats[k].name)}, ${Math.round(cats[k].cents / total * 100)}%"><path d="${arc(p, depth)}" fill="#D8D2CA" stroke="#FDFCFA" stroke-width="1.6"/><path d="${arc(p, 0)}" fill="${p.c}" stroke="#FDFCFA" stroke-width="1.6"/></g>`; }).join('')}</svg></div>
   <div class="cake-l" aria-live="polite"><span class="cl-sw"></span><b class="cl-n"></b><span class="cl-v"></span><span class="cl-m"></span></div>
   <div class="cake-links"><button class="sc-pill" data-r="slice">See these purchases</button><button class="sc-link" data-r="allcats">All categories</button>${unclear.length ? `<button class="sc-link" data-r="unclear">${unclear.length} ${unclear.length === 1 ? 'needs' : 'need'} context</button>` : ''}</div>
 </div></section>`;

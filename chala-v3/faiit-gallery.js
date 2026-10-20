@@ -9,7 +9,7 @@
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const seeded = seed => { let h = seed >>> 0 || 1; return () => { h = Math.imul(h ^ (h >>> 15), 2246822507) ^ Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; }; };
   // Flat colors from the moodboard, each with the ink that reads on it.
-  const TONES = [['#9AA6F7', '#1d1b2e'], ['#8B5224', '#F6EBD9'], ['#F4A7B9', '#1d1b2e'], ['#1F6B45', '#F6EBD9'], ['#F3C74A', '#1d1b2e'], ['#6E0F14', '#F6EBD9'], ['#CFE3F2', '#1d1b2e'], ['#2443C7', '#F6EBD9'], ['#E0483C', '#F6EBD9'], ['#D7F25A', '#1d1b2e'], ['#F6EBD9', '#1d1b2e'], ['#1d1b2e', '#F6EBD9']];
+  const TONES = [['#DCD3EF', '#191919'], ['#ECCBBD', '#191919'], ['#ECD0D6', '#191919'], ['#191919', '#F7F7F5'], ['#E8E3DC', '#191919'], ['#C9BCE5', '#191919'], ['#F3E1D8', '#191919'], ['#3A3A3A', '#F7F7F5'], ['#E9BBA9', '#191919'], ['#EFEAF6', '#191919'], ['#F4E5E8', '#191919'], ['#D8D6D1', '#191919']]; /* chala v3: muted premium palette */
   const HABITS = { 'Food delivery': ['orders', 'box'], 'Cafés': ['coffees', 'cup'], 'Shopping': ['packages', 'bag'], 'Groceries': ['grocery runs', 'basket'] };
   const mName = (k, o = { month: 'long' }) => new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 1).toLocaleDateString('en-US', o);
 

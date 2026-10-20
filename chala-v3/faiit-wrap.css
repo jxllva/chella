@@ -278,7 +278,7 @@
 .ew-env2.is-sealed .paper{transform:translateY(40px)}
 
 /* ===== Share cards (faiit-share.js) ===== */
-@font-face{font-family:'Anton';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/anton-latin-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Anton';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/inter-latin-wght-normal.woff2') format('woff2')}
 @font-face{font-family:'Courier Prime';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/courier-prime-latin-700-normal.woff2') format('woff2')}
 .sh-wrap{display:flex;flex-direction:column;gap:16px}
 .sh-gift{display:flex;flex-direction:column;gap:18px}

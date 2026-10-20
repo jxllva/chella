@@ -17,16 +17,16 @@
 
   const CARDS = [
     { id: 'a', name: 'Everyday', last4: '4021', limit: 3000, pct: 62,
-      base: 'linear-gradient(118deg, rgba(186,238,222,.82) 0%, rgba(214,224,252,.62) 42%, rgba(252,236,212,.74) 78%, rgba(220,240,236,.66) 100%)',
+      base: 'linear-gradient(118deg, #E6E0F3 0%, #DCD3EF 45%, #EFEAF6 100%)',
       light: 'rgba(120,230,235,.75)' },
     { id: 'b', name: 'Travel', last4: '7716', limit: 5000, pct: 48,
-      base: 'linear-gradient(118deg, rgba(150,214,168,.9) 0%, rgba(196,232,200,.72) 45%, rgba(122,190,150,.88) 100%)',
+      base: 'linear-gradient(118deg, #F3E1D8 0%, #ECCBBD 50%, #F6E9E2 100%)',
       light: 'rgba(140,235,160,.8)' },
     { id: 'c', name: 'Groceries', last4: '0388', limit: 800, pct: 9,
-      base: 'linear-gradient(118deg, rgba(214,226,246,.8) 0%, rgba(236,228,250,.65) 50%, rgba(250,232,222,.75) 100%)',
+      base: 'linear-gradient(118deg, #F4E5E8 0%, #ECD0D6 50%, #F7ECEE 100%)',
       light: 'rgba(170,200,255,.75)' }
   ];
-  const WARM = 'linear-gradient(118deg, rgba(240,192,166,.78) 0%, rgba(248,220,200,.66) 48%, rgba(236,184,158,.74) 100%)';
+  const WARM = 'linear-gradient(118deg, rgba(233,187,169,.55) 0%, rgba(240,210,196,.45) 50%, rgba(233,187,169,.5) 100%)';
 
   const CHIP = '<svg class="cc-chip" width="46" height="36" viewBox="0 0 46 36" fill="none" stroke="rgba(150,110,90,.6)" stroke-width="1.1" stroke-linecap="round" aria-hidden="true"><rect x=".75" y=".75" width="44.5" height="34.5" rx="7" fill="#E6C6B0"/><rect x="15" y="7" width="16" height="22" rx="4" fill="#EDD3C1"/><path d="M23 .75V7"/><path d="M23 29v6.25"/><path d="M15 18h16"/><path d="M.75 12H11c2.2 0 4 1.8 4 4"/><path d="M.75 24H11c2.2 0 4-1.8 4-4"/><path d="M45.25 12H35c-2.2 0-4 1.8-4 4"/><path d="M45.25 24H35c-2.2 0-4-1.8-4-4"/><path d="M.75 18H8"/><path d="M38 18h7.25"/></svg>';
 

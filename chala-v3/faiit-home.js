@@ -35,13 +35,14 @@
 
   // ---------- shared motion ----------
   // Jelly: squish on press, overshoot and settle on release. Gentle wobble on hover is CSS.
+  /* chala v3: restrained press feedback (was a squish-and-overshoot "jelly") */
   function jelly(el) {
     if (!el || el.dataset.jelly) return; el.dataset.jelly = '1';
     let a = null;
-    el.addEventListener('pointerdown', () => { if (reduce()) return; a?.cancel(); a = el.animate([{ transform: 'scale(1,1)' }, { transform: 'scale(1.018,.975)' }], { duration: 260, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' }); });
+    el.addEventListener('pointerdown', () => { if (reduce()) return; a?.cancel(); a = el.animate([{ transform: 'scale(1)' }, { transform: 'scale(.985)' }], { duration: 160, easing: 'cubic-bezier(.25,.1,.25,1)', fill: 'forwards' }); });
     const release = () => {
       if (reduce() || !a) return; a.cancel();
-      a = el.animate([{ transform: 'scale(1.018,.975)' }, { transform: 'scale(.99,1.012)' }, { transform: 'scale(1.004,.997)' }, { transform: 'scale(1,1)' }], { duration: 1100, easing: 'cubic-bezier(.25,.8,.3,1)' });
+      a = el.animate([{ transform: 'scale(.985)' }, { transform: 'scale(1)' }], { duration: 260, easing: 'cubic-bezier(.25,.1,.25,1)' });
       a.finished.then(() => { a = null; }, () => {});
     };
     el.addEventListener('pointerup', release); el.addEventListener('pointerleave', release); el.addEventListener('pointercancel', release);
