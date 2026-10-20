@@ -747,3 +747,19 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .ls-pen { margin-left: auto; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: #F4F2EF; color: var(--p-ink-2); }
 .ls-pen svg { width: 17px; height: 17px; }
 .ls-field:focus-within .ls-pen { background: var(--p-ink); color: #fff; }
+
+/* achievements, flatter and quieter: soft square tiles, no gradients, no hard outline */
+.bd-grid { gap: 16px 8px; }
+.bd-m { width: 54px; height: 54px; border-radius: 18px; }
+.bd-m svg { width: 22px; height: 22px; stroke-width: 1.6; }
+.is-got .bd-m { background: var(--tint) !important; box-shadow: none !important; color: var(--p-ink); }
+.is-locked .bd-m { background: #F4F3F0 !important; box-shadow: none !important; color: #C4C3BE; }
+.is-locked .bd-n { color: #A9A8A3; }
+.bd-n { font-weight: 500; font-size: .6875rem; letter-spacing: -.005em; }
+.bd-b .bd-m { transition: transform .2s cubic-bezier(.25,.1,.25,1), box-shadow .2s ease; }
+.bd-b:active .bd-m { transform: scale(.95); }
+.bd-b.is-on .bd-m { box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px rgba(25,25,25,.16) !important; }
+.bd-b:focus-visible .bd-m { box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px var(--p-ink) !important; }
+.bd-b.is-new::before { left: calc(50% + 19px); top: -3px; width: 9px; height: 9px; }
+.bd-sum { font-size: .875rem; }
+.bd-note { font-size: .8125rem; }

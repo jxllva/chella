@@ -552,18 +552,18 @@
     function badgesCard() {
       const list = badgeList(), got = list.filter(b => b.done);
       let seen = []; try { seen = JSON.parse(localStorage.getItem(SEEN_KEY)) || []; } catch {}
-      const tints = ['#E9BBA9', '#C9BCE5', '#EBCBD1', '#BFD6B0'];
+      const tints = ['#F6E0D6', '#E7E1F5', '#F6E3E8', '#E1EEDA'];
       return `
 <section class="bd" data-rise aria-label="Achievements">
   <div class="bd-top">
-    <div><p class="pf-k">Achievements</p><p class="bd-sum"><b>${got.length}</b> of ${list.length} caught</p></div>
+    <div><p class="pf-k">Achievements</p><p class="bd-sum"><b>${got.length}</b> of ${list.length} earned</p></div>
     <div class="bd-saved"><b data-count="${savedTotal(p)}">${m(savedTotal(p))}</b><span>saved so far</span></div>
   </div>
   <div class="bd-grid">
-    ${list.map((b, i) => `<button class="bd-b ${b.done ? 'is-got' : 'is-locked'}${b.done && !seen.includes(b.id) ? ' is-new' : ''}" data-h="badge" data-id="${b.id}" style="--tint:${tints[i % 4]};--i:${i}" aria-label="${esc(b.name)}: ${b.done ? 'caught' : 'locked'}. ${esc(b.how)}">
-      <span class="bd-m">${I(b.icon)}${b.done ? '' : '<i class="bd-lock" aria-hidden="true"></i>'}</span><span class="bd-n">${esc(b.name)}</span></button>`).join('')}
+    ${list.map((b, i) => `<button class="bd-b ${b.done ? 'is-got' : 'is-locked'}${b.done && !seen.includes(b.id) ? ' is-new' : ''}" data-h="badge" data-id="${b.id}" style="--tint:${tints[i % 4]};--i:${i}" aria-label="${esc(b.name)}: ${b.done ? 'earned' : 'locked'}. ${esc(b.how)}">
+      <span class="bd-m">${I(b.icon)}</span><span class="bd-n">${esc(b.name)}</span></button>`).join('')}
   </div>
-  <p class="bd-note" aria-live="polite">Tap a badge to see how to catch it.</p>
+  <p class="bd-note" aria-live="polite">Tap a badge to see how to earn it.</p>
 </section>`;
     }
     function catchNewBadges() {
@@ -573,7 +573,7 @@
       fresh.forEach(n => seen.push(n.dataset.id));
       try { localStorage.setItem(SEEN_KEY, JSON.stringify(seen)); } catch {}
       const note = el.querySelector('.bd-note');
-      if (note) note.textContent = fresh.length === 1 ? `New badge caught: ${fresh[0].querySelector('.bd-n').textContent}` : `${fresh.length} new badges caught`;
+      if (note) note.textContent = fresh.length === 1 ? `New badge: ${fresh[0].querySelector('.bd-n').textContent}` : `${fresh.length} new badges`;
       if (reduce()) { fresh.forEach(n => n.classList.remove('is-new')); return; }
       fresh.forEach((n, j) => {
         const md = n.querySelector('.bd-m');
@@ -853,7 +853,7 @@ ${isNew ? '' : '<button class="fz-quiet" type="button" data-s="del">Delete goal<
       else if (k === 'addgoal') editGoal('new');
       else if (k === 'logsave') logSave();
       else if (k === 'badge') { const b = badgeList().find(x => x.id === t.dataset.id), note = el.querySelector('.bd-note');
-        if (b && note) note.innerHTML = `<b>${esc(b.name)}</b> · ${b.done ? 'Caught. ' : 'Locked. '}${esc(b.how)}.`;
+        if (b && note) note.innerHTML = `<b>${esc(b.name)}</b> · ${b.done ? 'Earned. ' : ''}${esc(b.how)}.`;
         el.querySelectorAll('.bd-b.is-on').forEach(x => x.classList.remove('is-on')); t.classList.add('is-on');
         if (!reduce()) t.querySelector('.bd-m').animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-10deg) scale(1.08)' }, { transform: 'rotate(7deg)' }, { transform: 'none' }], { duration: 480, easing: 'ease-out' }); }
       else if (k === 'values') editValues();
