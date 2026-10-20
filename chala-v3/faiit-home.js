@@ -617,7 +617,6 @@
       return `
 <header class="hm-head" data-mood="${moodNow}" data-rise>
   ${logoBtn()}
-  <p class="hm-when">${esc(today.toLocaleDateString('en-US', { weekday: 'long' }))}<i class="hm-sep" aria-hidden="true">·</i>${esc(today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))}<i class="hm-sep" aria-hidden="true">·</i>${today.getFullYear()}</p>
   <h1 class="hm-hello"><span class="hm-wb">Welcome back,</span> <span class="hm-who">${esc(first || 'friend')}</span><span class="hm-dot">.</span></h1>
   <p class="hm-nudge">${esc(NUDGE[moodNow])}</p>
 </header>
@@ -781,18 +780,40 @@ ${isNew ? '' : '<button class="fz-quiet" type="button" data-s="del">Delete goal<
         del: (t, close) => { p.goals = p.goals.filter(x => x.id !== g.id); p.contributions = p.contributions.filter(c => c.goalId !== g.id); store(p); close(); paint(); }
       }).el.querySelectorAll('.fj').forEach(jelly);
     }
-    function logSave() {
+    /* where saved money can go: your goals, plain savings, or something else */
+    const BUCKETS = [
+      { group: 'Savings', id: 'savings', title: 'General savings', icon: '<path d="M5 11.5a7 6 0 0 1 12.4-3.6L20 7v4l-1.6.8A7 6 0 0 1 15 16.6V19h-2.5v-1.6a8 8 0 0 1-3 0V19H7v-2.6a6 6 0 0 1-2-4.9z"/><circle cx="15.5" cy="10.5" r=".6"/>' },
+      { group: 'Savings', id: 'emergency', title: 'Emergency fund', icon: '<path d="M3.5 12a8.5 8.5 0 0 1 17 0z"/><path d="M12 12v6.5a2 2 0 0 1-4 0"/><path d="M12 3.5V2.5"/>' },
+      { group: 'Other', id: 'investing', title: 'Investing', icon: '<path d="M4 17 9.5 11.5l3.5 3.5L20 8"/><path d="M15 8h5v5"/>' },
+      { group: 'Other', id: 'other', title: 'Something else', icon: '<circle cx="6.5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="17.5" cy="12" r="1.2"/>' }
+    ];
+    function logSave(pre) {
       const goals = p.goals.filter(g => !g.archived);
-      if (!goals.length) { editGoal('new'); return; }
-      let gid = goals[0].id;
+      let dest = pre || goals[0]?.id || 'savings';
+      const tints = ['#F6E0D6', '#E7E1F5', '#F6E3E8', '#E1EEDA'];
+      const goalIc = '<path d="M6 21V4"/><path d="M6 4.5h11l-2.2 3.6L17 11.7H6"/>';
+      const row = (id, title, sub, icon, tint, bar) => `<button type="button" class="sa-row" role="radio" data-s="pick-dest" data-v="${esc(id)}" aria-checked="${id === dest}">
+        <span class="sa-ic" style="background:${tint}">${I(icon)}</span>
+        <span class="sa-t">${esc(title)}<small>${sub}</small>${bar != null ? `<span class="sa-bar"><i style="width:${Math.max(2, bar * 100).toFixed(1)}%"></i></span>` : ''}</span>
+        <span class="sa-dot" aria-hidden="true"></span></button>`;
+      const goalRows = goals.map((g, i) => { const sv = savedFor(p, g.id), r = Math.min(1, sv / (g.target || 1)); return row(g.id, g.title, `${m(sv)} of ${m(g.target)}`, goalIc, tints[i % 4], r); }).join('');
+      const groups = ['Savings', 'Other'].map(gr => `<p class="sa-gh">${gr}</p><div class="sa-list">${BUCKETS.filter(b => b.group === gr).map((b, i) => { const sv = savedFor(p, b.id); return row(b.id, b.title, sv ? `${m(sv)} saved` : 'Nothing yet', b.icon, gr === 'Savings' ? ['#E1EEDA', '#E3EAF4'][i] : ['#F6EBD6', '#EEEDEA'][i], null); }).join('')}</div>`).join('');
       sheet(`<h2 id="fh-sheet-title" class="fh-sh-title">Set money aside</h2>
-<form class="fz-form">
+<form class="fz-form sa-form">
   <label class="fz-money-big"><span class="fw-sr">Amount</span><i>$</i><input name="amt" inputmode="decimal" placeholder="0" aria-label="Amount you set aside" required></label>
-  ${chipsOf(goals.map(g => ({ id: g.id, label: g.title })), gid, 'goal')}
+  <div class="sa" role="radiogroup" aria-label="Put it toward">
+    <p class="sa-gh">Personal goals</p>
+    <div class="sa-list">${goalRows}<button type="button" class="sa-row sa-new" data-s="newgoal"><span class="sa-ic">${I('<path d="M12 5v14M5 12h14"/>')}</span><span class="sa-t">New goal</span></button></div>
+    ${groups}
+  </div>
   <button class="fh-unwrap fj" type="submit">Add</button>
 </form>`, {
-        'pick-goal': (t, close, w) => { gid = t.dataset.v; w.querySelectorAll('[data-s="pick-goal"]').forEach(b => { const on = b.dataset.v === gid; b.setAttribute('aria-pressed', on); b.setAttribute('aria-checked', on); }); },
-        submit: (f, close) => { const c = cents(f.amt.value); if (!c) { f.amt.focus(); return; } p.contributions.push({ goalId: gid, cents: c, date: new Date().toISOString() }); store(p); close(); paint(); api.toast(`Added ${m(c)}`); }
+        'pick-dest': (t, close, w) => { dest = t.dataset.v; w.querySelectorAll('[data-s="pick-dest"]').forEach(b => b.setAttribute('aria-checked', b.dataset.v === dest)); },
+        newgoal: (t, close) => { close(); setTimeout(() => editGoal('new'), 260); },
+        submit: (f, close) => { const c = cents(f.amt.value); if (!c) { f.amt.focus(); return; }
+          p.contributions.push({ goalId: dest, cents: c, date: new Date().toISOString() }); store(p); close(); paint();
+          const name = goals.find(g => g.id === dest)?.title || BUCKETS.find(b => b.id === dest)?.title || 'savings';
+          api.toast(`Added ${m(c)} to ${name}`); }
       }).el.querySelectorAll('.fj').forEach(jelly);
     }
     function editValues() {
