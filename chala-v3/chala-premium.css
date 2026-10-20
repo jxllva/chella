@@ -837,3 +837,21 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .fz-danger { width: min(100%, 280px); margin: 12px auto 0; }
 .fz-chips-h { margin-top: 6px !important; }
 .ri-dash { display: inline-block; margin: 0 .1em; letter-spacing: 0; }
+
+/* Cards: balance light toggle + the glowing strip it turns on */
+.cl-row { appearance: none; border: 0; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 12px; margin: 0 0 6px; padding: 12px 14px 12px 12px; border-radius: var(--p-r); background: #fff; box-shadow: 0 0 0 1px var(--p-line), var(--p-shadow); text-align: left; font-family: var(--p-sans); color: var(--p-ink); }
+.cl-row:focus-visible { outline: 2px solid var(--p-ink); outline-offset: 3px; }
+.cl-ic { flex: none; width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; background: #F0EFEC; color: var(--p-ink-2); transition: background .3s ease, color .3s ease, box-shadow .3s ease; }
+.cl-ic svg { width: 20px; height: 20px; }
+.cl-row[aria-checked="true"] .cl-ic { background: #E3F4EE; color: #0E7F6C; box-shadow: 0 0 14px rgba(120,230,210,.55); }
+.cl-t { flex: 1; min-width: 0; display: grid; gap: 4px; font: 500 .9375rem/1.15 var(--p-sans); }
+.cl-t small { font: 400 .75rem/1.25 var(--p-sans); color: var(--p-ink-3); }
+.cl-sw { flex: none; position: relative; width: 46px; height: 28px; border-radius: 999px; background: #E2E1DD; transition: background .25s ease; }
+.cl-sw i { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(25,25,25,.2); transition: transform .25s cubic-bezier(.2,.8,.2,1); }
+.cl-row[aria-checked="true"] .cl-sw { background: var(--p-ink); }
+.cl-row[aria-checked="true"] .cl-sw i { transform: translateX(18px); }
+.cc.is-light .cc-strip { background: rgba(70,80,96,.18) !important; top: 14px; transition: opacity .26s ease; }
+.cc.is-light .cc-strip i { background: #fff !important; box-shadow: var(--glow) !important; transition: width .6s cubic-bezier(.2,.8,.2,1) .3s, box-shadow .5s ease !important; }
+@media (prefers-reduced-motion: reduce) { .cl-sw, .cl-sw i, .cl-ic { transition: none; } }
+.cc.is-light .cc-strip { position: absolute; left: 18px; right: 18px; height: 3px; border-radius: 2px; z-index: 2; }
+.cc.is-light .cc-strip i { display: block; height: 100%; width: 0; border-radius: 2px; }

@@ -606,6 +606,10 @@
     };
     const catIcon = n => { let v = CAT_ICONS[String(n).toLowerCase()]; if (v && !v.startsWith('<')) v = CAT_ICONS[v];
       return v || '<path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.4 1.4 0 0 1 0 2l-6.6 6.6a1.4 1.4 0 0 1-2 0z"/><circle cx="8" cy="8" r="1.3"/>'; };
+    /* Cards tab: the opt-in balance light */
+    const LIGHT_KEY = 'chala-card-light-v1';
+    let cardsCtl = null;
+    const cardLight = () => { try { return localStorage.getItem(LIGHT_KEY) === '1'; } catch { return false; } };
     const logoBtn = () => `<button class="hm-logo" data-logo aria-label="chala">${window.chalaWord ? chalaWord() : 'chala'}</button>`;
     function homeTab() {
       const goals = p.goals.filter(g => !g.archived), saved = savedTotal(p);
@@ -662,6 +666,11 @@
     function cardsTab() {
       return `
 <header class="pf-head" data-rise>${logoBtn()}<p class="pf-k">Cards</p><h1 class="pf-title">Your cards.</h1></header>
+<button class="cl-row" type="button" role="switch" data-h="cardlight" aria-checked="${cardLight()}" data-rise>
+  <span class="cl-ic" aria-hidden="true">${I('<path d="M12 3v2.5M12 18.5V21M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M3 12h2.5M18.5 12H21M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/><circle cx="12" cy="12" r="3.5"/>')}</span>
+  <span class="cl-t">Balance light<small>Your card glows with what’s left when you pay</small></span>
+  <span class="cl-sw" aria-hidden="true"><i></i></span>
+</button>
 <div class="cc" aria-label="Swipe up to pay"></div>`;
     }
     /* chala v3: profile laid out like chala's (header, goal card, then one row per action) */
@@ -707,7 +716,7 @@ ${badgesCard()}
         getStats: (md, off) => insightData(md, off),
         coinText: () => `${m(savedTotal(p))} set aside so far` });
       /* chala v3: swipe-up-to-pay cards */
-      if (tab === 'cards' && window.ChalaCards) ChalaCards.mount(el.querySelector('.cc'), { holder: user.name || '' });
+      if (tab === 'cards' && window.ChalaCards) cardsCtl = ChalaCards.mount(el.querySelector('.cc'), { holder: user.name || '', light: cardLight() });
       if (tab === 'wraps' && window.FaiitGallery) FaiitGallery.render(el.querySelector('.wg-host'), { rows: api.wrapRows?.() || [], sample: api.isSample?.(), tab: home.wrapsView, onTab: t => { home.wrapsView = t; }, onWrap: k => api.openRecap(k, 'wraps'), onBreakdown: k => api.openBreakdown(k, 'wraps') });
       if (!reduce()) el.querySelector('.fz-page')?.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 520, easing: EASE });
     }
@@ -906,6 +915,7 @@ ${isNew ? '' : `<button class="fz-danger" type="button" data-s="del">${I('<path 
       else if (k === 'goal') garden(t.dataset.id);
       else if (k === 'restore') { const g = p.goals.find(x => x.id === t.dataset.id); if (g) { g.archived = false; store(p); paint(); } }
       else if (k === 'addgoal') editGoal('new');
+      else if (k === 'cardlight') { const on = !cardLight(); try { localStorage.setItem(LIGHT_KEY, on ? '1' : '0'); } catch {} t.setAttribute('aria-checked', on); cardsCtl?.setLight(on); }
       else if (k === 'logsave') logSave();
       else if (k === 'badge') { const b = badgeList().find(x => x.id === t.dataset.id), note = el.querySelector('.bd-note');
         if (b && note) note.innerHTML = `<b>${esc(b.name)}</b> · ${esc(b.how)}.`;

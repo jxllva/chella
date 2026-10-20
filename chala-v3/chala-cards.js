@@ -30,9 +30,9 @@
 
   const CHIP = '<svg class="cc-chip" width="46" height="36" viewBox="0 0 46 36" fill="none" stroke="rgba(150,110,90,.6)" stroke-width="1.1" stroke-linecap="round" aria-hidden="true"><rect x=".75" y=".75" width="44.5" height="34.5" rx="7" fill="#E6C6B0"/><rect x="15" y="7" width="16" height="22" rx="4" fill="#EDD3C1"/><path d="M23 .75V7"/><path d="M23 29v6.25"/><path d="M15 18h16"/><path d="M.75 12H11c2.2 0 4 1.8 4 4"/><path d="M.75 24H11c2.2 0 4-1.8 4-4"/><path d="M45.25 12H35c-2.2 0-4 1.8-4 4"/><path d="M45.25 24H35c-2.2 0-4-1.8-4-4"/><path d="M.75 18H8"/><path d="M38 18h7.25"/></svg>';
 
-  function mount(host, { holder = '' } = {}) {
+  function mount(host, { holder = '', light = false } = {}) {
     if (!host) return;
-    const s = { open: false, dragging: false, dy: 0, xdrag: false, dx: 0, flip: 0, active: 'a', spent: { a: 0, b: 0, c: 0 } };
+    const s = { open: false, dragging: false, dy: 0, xdrag: false, dx: 0, flip: 0, active: 'a', spent: { a: 0, b: 0, c: 0 }, light: !!light, pulse: false };
     let startX = 0, startY = 0, axis = null, pDown = false, G = null;
     const set = patch => { Object.assign(s, patch); if (host.isConnected) render(); };
     const def = id => CARDS.find(d => d.id === id);
@@ -118,9 +118,13 @@
         el.style.transition = tr;
         el.style.transform = `translateY(${y}px) rotateX(${tilt.toFixed(1)}deg) rotateY(${rot}deg) scale(${scale})`;
         el.querySelectorAll('.cc-warm').forEach(w => { w.style.opacity = warmth.toFixed(2); });
+        // balance light (opt-in): the glowing strip shows on the front card, raised or at rest
+        const lit = s.light && isA && !s.dragging && !s.xdrag;
+        if (s.light) fill = lit ? (ratio * 100).toFixed(1) + '%' : '0%';
         const strip = el.querySelector('.cc-strip'), bar = strip.firstElementChild;
-        strip.style.opacity = isA && settled ? 1 : 0;
+        strip.style.opacity = s.light ? (lit ? 1 : 0) : (isA && settled ? 1 : 0);
         bar.style.width = fill;
+        bar.style.setProperty('--glow', isA && s.pulse ? `0 0 10px rgba(255,255,255,1), 0 0 26px ${light}, 0 0 48px ${light}` : glowLine);
         bar.style.transition = `width 600ms ${EASE} 300ms`;
         bar.style.boxShadow = glowLine;
         el.querySelector('.cc-low').hidden = ratio >= LOW;
@@ -131,6 +135,7 @@
         el.setAttribute('aria-label', `${d.name} card, ${money(avail, true)} of ${money(d.limit)} available. ${ratio < LOW ? 'Low balance. ' : ''}${isA ? (s.open ? (flipped() ? 'Activate to flip back.' : 'Activate to see the balance.') : 'Activate to bring up.') : 'Activate to switch to this card.'}`);
       });
 
+      host.classList.toggle('is-light', s.light);
       $('.cc-info').classList.toggle('is-on', settled);
       const note = $('.cc-note'), aAvail = availOf(def(s.active), s.spent[s.active] || 0), aLow = aAvail / def(s.active).limit < LOW;
       if (aLow) { note.textContent = `Low balance · ${money(aAvail, true)} left`; note.className = 'cc-note is-low'; }
@@ -181,6 +186,12 @@
     addEventListener('resize', onResize);
     measure(); render();
     requestAnimationFrame(() => { if (host.isConnected) { measure(); render(); } });
+    return {
+      setLight(on) {
+        set({ light: !!on, pulse: false });
+        if (on && !reduce()) setTimeout(() => { if (!host.isConnected) return; set({ pulse: true }); setTimeout(() => host.isConnected && set({ pulse: false }), 800); }, 900);
+      }
+    };
   }
 
   window.ChalaCards = { mount };
