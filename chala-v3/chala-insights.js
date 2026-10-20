@@ -6,11 +6,11 @@
    - spending by day (columns, tap or hover for the day)
    - pace against your limits (cumulative spending vs. an even pace to the limit)
    - where it went by category
-   Colours: spent #D9693B, saved #3D7FB5, left #E3A33C (validated for colour-blind separation);
+   Colours: spent #D9693B, saved #12A089, left #E3A33C (validated for colour-blind separation);
    every mark is labelled or in the legend, so colour is never the only cue.
    Data comes from Home through getData(mode, offset). */
 (() => {
-  const C = { spent: '#D9693B', saved: '#3D7FB5', left: '#E3A33C', pace: '#B9B5AE' };
+  const C = { spent: '#D9693B', saved: '#12A089', left: '#E3A33C', pace: '#B9B5AE' };
   const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const I = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
@@ -49,7 +49,7 @@
           <p class="ri-k">Recap</p>
           <div class="ri-pager">
             <button class="mt-arrow" data-d="-1" aria-label="Previous" ${d.hasPrev ? '' : 'disabled'}>${I('<path d="M14.5 6 8.5 12l6 6"/>')}</button>
-            <h1 class="ri-title">${esc(d.label)}</h1>
+            <h1 class="ri-title">${esc(d.label).replace(/\s*–\s*/g, '<span class="ri-dash">–</span>')}</h1>
             <button class="mt-arrow" data-d="1" aria-label="Next" ${d.hasNext ? '' : 'disabled'}>${I('<path d="M9.5 6l6 6-6 6"/>')}</button>
           </div>
           <p class="ri-head">${head}</p>

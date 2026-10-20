@@ -544,7 +544,7 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .ri-stat-k { display: flex; align-items: center; gap: 6px; font: 500 .8125rem/1 var(--p-sans); color: var(--p-ink-2); }
 .ri-stat b { display: block; margin-top: 12px; font: 600 clamp(1.25rem, 6vw, 1.625rem)/1 var(--p-sans); letter-spacing: -.04em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sw { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
-.sw-spent, .sw-line { background: #D9693B; } .sw-saved { background: #3D7FB5; } .sw-left { background: #E3A33C; } .sw-earned { background: var(--p-ink); }
+.sw-spent, .sw-line { background: #D9693B; } .sw-saved { background: #12A089; } .sw-left { background: #E3A33C; } .sw-earned { background: var(--p-ink); }
 .sw-line { width: 14px; height: 3px; border-radius: 2px; } .sw-pace { width: 14px; height: 3px; border-radius: 2px; background: #B9B5AE; }
 .ri-card { margin-top: 14px; padding: 20px 18px 18px; border-radius: 24px; background: #fff; box-shadow: 0 1px 2px rgba(120,60,30,.04), 0 12px 30px -20px rgba(150,80,40,.24); }
 .ri-h { margin: 0; font: 600 1.0625rem/1.2 var(--p-sans); letter-spacing: -.02em; }
@@ -552,7 +552,7 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .ri-flow { display: flex; gap: 2px; height: 22px; border-radius: 6px; overflow: hidden; background: #F1EEEA; }
 .ri-flow span { cursor: pointer; min-width: 4px; }
 .ri-flow span:first-child { border-radius: 6px 0 0 6px; } .ri-flow span:last-child { border-radius: 0 6px 6px 0; }
-.ri-seg-spent { background: #D9693B; } .ri-seg-saved { background: #3D7FB5; } .ri-seg-left { background: #E3A33C; }
+.ri-seg-spent { background: #D9693B; } .ri-seg-saved { background: #12A089; } .ri-seg-left { background: #E3A33C; }
 .ri-note { margin: 10px 0 0; font: 500 .8125rem/1.35 var(--p-sans); color: #B4573F; }
 .ri-legend { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
 .ri-legend li { display: flex; align-items: center; gap: 8px; font: 400 .875rem/1.2 var(--p-sans); color: var(--p-ink-2); }
@@ -836,3 +836,4 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .fz-danger:focus-visible { outline: 2px solid #B04A36; outline-offset: 3px; }
 .fz-danger { width: min(100%, 280px); margin: 12px auto 0; }
 .fz-chips-h { margin-top: 6px !important; }
+.ri-dash { display: inline-block; margin: 0 .1em; letter-spacing: 0; }
