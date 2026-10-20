@@ -444,10 +444,7 @@
     function cardsTab() {
       return `
 <header class="fz-top"><h1 class="fz-title">Cards</h1></header>
-<section class="fz-glass fz-empty" data-rise>
-  <span class="fz-empty-ico" aria-hidden="true">${I('<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h3"/>')}</span>
-  <p>Your cards will show up here.</p>
-</section>`;
+<div class="cc" aria-label="Swipe up to pay"></div>`;
     }
     function profileTab() {
       const vals = p.values.map(valueById).filter(Boolean), arch = p.goals.filter(g => g.archived);
@@ -474,6 +471,8 @@ ${arch.length ? `<section class="fz-glass fz-list"><h2 class="fz-card-h fz-pad">
       el.innerHTML = `<section class="fz" aria-label="${tab}"><div class="fz-sky" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="fz-page">${body}</div></section>${navHTML()}`;
       el.querySelectorAll('.fj').forEach(jelly);
       el.querySelectorAll('[data-count]').forEach(n => countUp(n, +n.dataset.count, m));
+      /* chala v3: swipe-up-to-pay cards */
+      if (tab === 'cards' && window.ChalaCards) ChalaCards.mount(el.querySelector('.cc'), { holder: user.name || '' });
       if (tab === 'wraps' && window.FaiitGallery) FaiitGallery.render(el.querySelector('.wg-host'), { rows: api.wrapRows?.() || [], sample: api.isSample?.(), tab: home.wrapsView, onTab: t => { home.wrapsView = t; }, onWrap: k => api.openRecap(k, 'wraps'), onBreakdown: k => api.openBreakdown(k, 'wraps') });
       if (!reduce()) el.querySelector('.fz-page')?.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 520, easing: EASE });
     }
