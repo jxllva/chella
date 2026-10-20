@@ -489,6 +489,42 @@
         tip: `${Math.round(spent / budget * 100)}% of your ${mode === 'M' ? 'monthly' : 'weekly'} limits used${elapsed < 1 ? `, ${Math.round(elapsed * 100)}% of the ${mode === 'M' ? 'month' : 'week'} gone` : ''}` };
     }
 
+    /* chala v3: shell chart data — everyday (flexible) spending by day and category, for a week or a month.
+       Rent, bills and subscriptions are left out: the chart is about habits, not fixed costs. */
+    const SH_GROUPS = [['food', ['Food delivery', 'Groceries', 'Restaurants', 'Dining']], ['cafe', ['Cafés']], ['shop', ['Shopping']], ['move', ['Transport', 'Rides', 'Gas']]];
+    const SH_FIXED = ['Rent & bills', 'Subscriptions'];
+    const shGroup = c => (SH_GROUPS.find(([, cs]) => cs.includes(c)) || ['other'])[0];
+    const addDays = (d0, n) => { const d = new Date(d0 + 'T12:00:00'); d.setDate(d.getDate() + n); return iso(d); };
+    // the sample statement ends in September; slide it forward whole weeks so the current week has days to show
+    const shShift = api.isSample?.() ? 21 : 0;
+    const todayIso = iso(today);
+    const shRows = treeRows.filter(r => !SH_FIXED.includes(r.category)).map(r => ({ date: shShift ? addDays(r.date, shShift) : r.date, cents: r.cents, g: shGroup(r.category) })).filter(r => r.date <= todayIso);
+    const shFirst = shRows.reduce((a, r) => (r.date < a ? r.date : a), todayIso);
+    const shByDay = {}; shRows.forEach(r => { const d = shByDay[r.date] || (shByDay[r.date] = { total: 0, cats: {} }); d.total += r.cents; d.cats[r.g] = (d.cats[r.g] || 0) + r.cents; });
+    function shellData(mode, off) {
+      if (off > 0) return null;
+      let start, end, label;
+      if (mode === 'M') {
+        start = new Date(today.getFullYear(), today.getMonth() + off, 1); end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+        label = start.toLocaleDateString('en-US', start.getFullYear() === today.getFullYear() ? { month: 'long' } : { month: 'long', year: 'numeric' });
+      } else {
+        const dow = (today.getDay() + 6) % 7;
+        start = new Date(today); start.setDate(today.getDate() - dow + off * 7); end = new Date(start); end.setDate(start.getDate() + 6);
+        const a = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), yr = end.getFullYear() === today.getFullYear() ? '' : `, ${end.getFullYear()}`;
+        label = start.getMonth() === end.getMonth() ? `${a}–${end.getDate()}${yr}` : `${a} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${yr}`;
+      }
+      const s0 = iso(start), e0 = iso(end);
+      if (off < 0 && e0 < shFirst) return null;
+      // a usual day: the average over the last eight weeks up to the end of this period, else what the limits allow per day
+      const upto = e0 < todayIso ? e0 : todayIso;
+      let sum = 0, n = 0; for (let k = 0; k < 56; k++) { const d = addDays(upto, -k); if (d < shFirst) break; sum += shByDay[d]?.total || 0; n++; }
+      const cats = Object.keys(p.limits).filter(c => p.limits[c] > 0 && !SH_FIXED.includes(c)), lim = cats.reduce((t, c) => t + p.limits[c], 0);
+      const usual = n >= 7 && sum ? sum / n : lim ? lim / new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate() : 2500;
+      const days = []; for (let d = s0; d <= e0; d = addDays(d, 1)) { const x = shByDay[d]; days.push({ iso: d, n: +d.slice(8), dow: (new Date(d + 'T12:00:00').getDay() + 6) % 7, total: x?.total || 0, cats: x?.cats || {}, future: d > todayIso, today: d === todayIso }); }
+      const prevEnd = addDays(s0, -1);
+      return { label, days, usual, total: days.reduce((t, d) => t + d.total, 0), hasNext: off < 0, hasPrev: prevEnd >= shFirst, money: c => m(Math.round(c / 100) * 100) };
+    }
+
     // Recap page data: earned, spent, saved, by day and category, for a week or a month
     const flowRows = (api.wrapRows?.() || []).filter(r => r.include !== false && r.date && r.cents > 0);
     function insightData(mode, off) {
@@ -614,7 +650,7 @@
       const since = new Date(p.joinedAt || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       const names = Object.keys(p.limits);
       const hNow = treeData('M', 0)?.health ?? .66, moodNow = hNow >= .8 ? 'flourishing' : hNow >= .58 ? 'growing' : hNow >= .34 ? 'thirsty' : 'wilting';
-      const NUDGE = { flourishing: 'Your money tree is thriving. Keep it up.', growing: 'Your money tree is growing nicely.', thirsty: 'Your money tree could use a slow week.', wilting: 'Your money tree needs a little care.' };
+      const NUDGE = { flourishing: 'Mostly chill days lately. Keep it up.', growing: 'Your days are looking steady.', thirsty: 'A few heavy days. A slow week would help.', wilting: 'Spending is running high. Ease up a little.' };
       const addBtn = (h, label) => `<button class="hm-add" data-h="${h}" aria-label="${label}">${I('<path d="M12 5v14M5 12h14"/>')}</button>`;
       return `
 <header class="hm-head" data-mood="${moodNow}" data-rise>
@@ -622,7 +658,7 @@
   <h1 class="hm-hello"><span class="hm-wb">Welcome back,</span> <span class="hm-who">${esc(first || 'friend')}</span><span class="hm-dot">.</span></h1>
   <p class="hm-nudge">${esc(NUDGE[moodNow])}</p>
 </header>
-<section class="mt" aria-label="Your money tree"></section>
+<section class="mt cs" aria-label="Your spending, day by day"></section>
 
 <h2 class="hm-k" data-rise>Saving</h2>
 <button class="hm-save" data-h="logsave" data-rise>
@@ -665,7 +701,7 @@ ${(() => { const past = p.goals.filter(g => g.archived || isDone(p, g)); return 
     function cardsTab() {
       return `
 <header class="pf-head" data-rise>${logoBtn()}<p class="pf-k">Cards</p><h1 class="pf-title">Your cards.</h1></header>
-<div class="cc" aria-label="Swipe up to pay"></div>`;
+<div class="cf" aria-label="Your cards. Tap a card to see its balance, swipe to flip through them."></div>`;
     }
     /* chala v3: profile laid out like chala's (header, goal card, then one row per action) */
     function profileTab() {
@@ -696,21 +732,20 @@ ${badgesCard()}
       el.innerHTML = `<section class="fz fz-tab-${tab}" aria-label="${tab}"><div class="fz-sky" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="fz-page">${body}</div></section>${navHTML()}`;
       el.querySelectorAll('.fj').forEach(jelly);
       el.querySelectorAll('[data-count]').forEach(n => countUp(n, +n.dataset.count, m));
-      /* chala v3: logo — tap the sprout */
+      /* chala v3: logo — tap the shell to open it to its pearl */
       el.querySelector('[data-logo]')?.addEventListener('click', e => {
-        const b = e.currentTarget, s = b.querySelector('.ch-sp');
-        if (!reduce()) s.animate([{ transform: 'rotate(0) scale(1)' }, { transform: 'rotate(-18deg) scale(1.25)' }, { transform: 'rotate(10deg) scale(1.1)' }, { transform: 'rotate(0) scale(1)' }], { duration: 700, easing: 'cubic-bezier(.25,.1,.25,1)' });
-        const c = document.createElement('i'); c.className = 'hm-coin'; c.textContent = '$'; b.querySelector('.ch-l').appendChild(c);
-        setTimeout(() => c.remove(), 1000);
+        const a = e.currentTarget.querySelector('.ch-a'); if (!a || reduce()) return;
+        a.classList.remove('ch-open'); void a.offsetWidth; a.classList.add('ch-open');
+        clearTimeout(a._t); a._t = setTimeout(() => a.classList.remove('ch-open'), 2800);
       });
       if (tab === 'profile') catchNewBadges();
-      /* chala v3: money tree on Home */
-      if (tab === 'home' && window.ChalaTree) ChalaTree.mount(el.querySelector('.mt'), { mode: home.treeMode, onMode: md => { home.treeMode = md; }, getData: treeData,
+      /* chala v3: shell chart on Home (replaces the money tree) */
+      if (tab === 'home' && window.ChalaShells) ChalaShells.mount(el.querySelector('.mt'), { mode: home.treeMode, onMode: md => { home.treeMode = md; }, getData: shellData,
         onWrapped: () => api.openRecap(monthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1)), 'home'), onRecap: (md, off) => { if (window.ChalaInsights) ChalaInsights.open({ mode: md, offset: off, getData: insightData, onStory: k => api.openRecap(k, 'home') }); else api.openRecap(nowKey, 'home'); },
         getStats: (md, off) => insightData(md, off),
         coinText: () => `${m(savedTotal(p))} set aside so far` });
       /* chala v3: swipe-up-to-pay cards */
-      if (tab === 'cards' && window.ChalaCards) ChalaCards.mount(el.querySelector('.cc'), { holder: user.name || '' });
+      if (tab === 'cards' && window.ChalaCards) ChalaCards.mount(el.querySelector('.cf'), { holder: user.name || '' });
       if (tab === 'wraps' && window.FaiitGallery) FaiitGallery.render(el.querySelector('.wg-host'), { rows: api.wrapRows?.() || [], sample: api.isSample?.(), tab: home.wrapsView, onTab: t => { home.wrapsView = t; }, onWrap: k => api.openRecap(k, 'wraps'), onBreakdown: k => api.openBreakdown(k, 'wraps') });
       if (!reduce()) el.querySelector('.fz-page')?.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 520, easing: EASE });
     }
@@ -953,5 +988,5 @@ ${arch.length ? `<p class="sa-gh">Archived</p><div class="sa-list">${arch.map(ro
   const reset = () => { try { localStorage.removeItem(KEY); } catch {} };
   window.FaiitHome = { plan, home, needsPlan, reset, jelly };
   home.wrapsView = 'monthly';
-  home.treeMode = 'M';
+  home.treeMode = 'W';
 })();

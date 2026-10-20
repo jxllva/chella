@@ -289,8 +289,8 @@ render=function(){
  faiitToHello()}});return}
  if(view==='decoding'){Faiit.decoding(app,{done:()=>{history.replaceState({view:faiitHome(),tab,step},'',location.pathname);startStory()}});return}
  Faiit.leave();if(view==='splash'){app.innerHTML=Faiit.splash();return}return faiitPrevRender.apply(this,arguments)};
-/* chala v3: every open starts on the splash, where the sprout in chala's "l" grows */
-const SPLASH_MS=matchMedia('(prefers-reduced-motion: reduce)').matches?700:2300;
+/* chala v3: every open starts on the splash, where the shell in chala's "a" opens to a pearl */
+const SPLASH_MS=matchMedia('(prefers-reduced-motion: reduce)').matches?700:3000;
 app.innerHTML=Faiit.splash();
 if(!Faiit.user()){splashTimer=setTimeout(()=>{view='welcome';history.replaceState({view:'welcome'},'',location.pathname);render()},SPLASH_MS)}
 else{history.replaceState({view:'connect',tab,step},'',location.pathname);splashTimer=setTimeout(()=>go(faiitHome(),false),SPLASH_MS)}
