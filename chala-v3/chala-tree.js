@@ -2,7 +2,7 @@
    One tree stands for overall spending in a week or a month:
    - Leaves fill in when you're pacing well under your limits, thin out as you overspend.
    - Over budget, some leaves turn amber and rust, and a few lie fallen on the ground.
-   - Gold coins hang in the canopy for money you've set aside.
+   - The leaves are banknotes. Tap the tree for a ring of spent / saved / left.
    Interaction: tap the tree to shake it (leaves drift down, coins swing), swipe left/right
    (or use the arrows) to move between periods, and switch Month / Week.
    Visual only: all numbers come from Home through getData(mode, offset). */
@@ -53,9 +53,11 @@
   }
   const SHAPE = grow();
 
-  const GREENS = ['#4F7A4A', '#6C9659', '#87AE66', '#A7C375', '#C6D57E', '#E3DB7C'];
-  const AUTUMN = ['#D9A45B', '#C9824E', '#B9683F'];
-  const leafPath = (x, y, s, tilt) => `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${s.toFixed(1)}" ry="${(s * .78).toFixed(1)}" transform="rotate(${tilt.toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
+  // the leaves are banknotes: money greens when healthy, faded tan when spending runs hot
+  const GREENS = ['#3F7350', '#4F8660', '#639A6F', '#7AAE80', '#96C297', '#B4D6AE'];
+  const AUTUMN = ['#D6C08E', '#C7A76C', '#B38D52'];
+  const leafPath = (x, y, s, tilt) => { const w = s * 1.7, h = s * .92;
+    return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${tilt.toFixed(0)})"><rect class="mt-b" x="${(-w / 2).toFixed(2)}" y="${(-h / 2).toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" rx="${(h * .14).toFixed(2)}"/><rect class="mt-bi" x="${(-w / 2 + h * .16).toFixed(2)}" y="${(-h / 2 + h * .16).toFixed(2)}" width="${(w - h * .32).toFixed(2)}" height="${(h * .68).toFixed(2)}" rx="${(h * .08).toFixed(2)}"/><circle class="mt-bc" r="${(h * .24).toFixed(2)}"/></g>`; };
 
   function treeSVG() {
     return `<svg class="mt-svg" viewBox="40 20 220 205" role="img" aria-hidden="true">
@@ -82,13 +84,13 @@
           <button role="tab" data-m="M" aria-label="Month">M</button><button role="tab" data-m="W" aria-label="Week">W</button>
         </div>
       </div>
-      <button class="mt-stage" aria-label="Your money tree. Tap to shake it.">${treeSVG()}<span class="mt-tip" aria-hidden="true"></span></button>
+      <button class="mt-stage" aria-label="Your money tree. Tap to shake it.">${treeSVG()}<span class="mt-tip" aria-hidden="true"></span><span class="mt-pop" aria-hidden="true"></span></button>
       <p class="mt-mood" aria-live="polite"><b></b><span></span></p>
-      <div class="mt-pager">
+      <div class="mt-pagerwrap"><div class="mt-pager">
         <button class="mt-arrow" data-d="-1" aria-label="Previous">${I('<path d="M14.5 6 8.5 12l6 6"/>')}</button>
-        <span class="mt-range"></span>
+        <span class="mt-range" aria-live="polite"></span>
         <button class="mt-arrow" data-d="1" aria-label="Next">${I('<path d="M9.5 6l6 6-6 6"/>')}</button>
-      </div>
+      </div></div>
       <div class="mt-actions">
         <button class="mt-wrapped" aria-label="Play your Wrapped">${I('<rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8.5h14V12M12 8v12.5"/><path d="M12 8c-1.5-3.5-5.5-3.5-5.5-1S10 8 12 8zM12 8c1.5-3.5 5.5-3.5 5.5-1S14 8 12 8z"/>')}</button>
         <button class="mt-recap">Recap</button>
@@ -130,12 +132,40 @@
       const mood = host.dataset.mood, drop = mood === 'flourishing' ? 2 : mood === 'growing' ? 3 : 6;
       const on = leaves.filter(l => l.classList.contains('on'));
       for (let k = 0; k < drop && on.length; k++) {
-        const src = on[Math.floor(Math.random() * on.length)].querySelector('ellipse');
-        const ghost = src.cloneNode(); ghost.setAttribute('class', 'mt-drift'); ghost.style.fill = getComputedStyle(src).fill;
-        $('.mt-svg').appendChild(ghost);
-        const dx = (Math.random() - .5) * 60, dy = 206 - +src.getAttribute('cy') + Math.random() * 8;
+        const src = on[Math.floor(Math.random() * on.length)], ly = SHAPE.leaves[+src.dataset.i].y;
+        const ghost = src.cloneNode(true); ghost.classList.add('mt-drift'); ghost.removeAttribute('data-i');
+        $('.mt-leaves').appendChild(ghost);
+        const dx = (Math.random() - .5) * 60, dy = 206 - ly + Math.random() * 8;
         ghost.animate([{ transform: 'translate(0,0) rotate(0)', opacity: 1 }, { transform: `translate(${dx * .5}px,${dy * .5}px) rotate(120deg)`, opacity: 1, offset: .5 }, { transform: `translate(${dx}px,${dy}px) rotate(240deg)`, opacity: 0 }], { duration: 1500 + Math.random() * 700, delay: k * 90, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' }).finished.then(() => ghost.remove(), () => ghost.remove());
       }
+    }
+
+    /* tap: a ring of what came in, split into spent, saved and what's left */
+    const C = { spent: '#D9693B', saved: '#3D7FB5', left: '#E3A33C' };
+    function pop() {
+      const box = $('.mt-pop'), d = opts.getStats?.(st.mode, st.offset);
+      if (!d) return false;
+      const spent = Math.max(0, d.spent), saved = Math.max(0, d.saved), earned = Math.max(0, d.earned);
+      const base = earned > 0 ? Math.max(earned, spent + saved) : spent + saved;
+      const ofWhat = !base ? 'Nothing in or out yet' : earned > 0 ? 'of what came in' : 'of what went out';
+      const pct = v => base ? Math.round(v / (earned || base) * 100) : 0;
+      const segs = [['spent', spent], ['saved', saved], ['left', Math.max(0, base - spent - saved)]].filter(([, v]) => v > 0);
+      const R = 38, L = 2 * Math.PI * R, gap = segs.length > 1 ? 3 : 0;
+      let acc = 0;
+      const arcs = segs.map(([k, v]) => { const len = Math.max(0, v / base * L - gap); const o = `<circle class="mt-arc" r="${R}" cx="50" cy="50" stroke="${C[k]}" stroke-dasharray="${len.toFixed(2)} ${L.toFixed(2)}" stroke-dashoffset="${(-acc).toFixed(2)}" style="--len:${len.toFixed(2)}"/>`; acc += v / base * L; return o; }).join('');
+      box.innerHTML = `<span class="mt-pop-card">
+        <svg class="mt-ring" viewBox="0 0 100 100"><circle r="${R}" cx="50" cy="50" class="mt-ring-bg"/><g transform="rotate(-90 50 50)">${arcs}</g>
+          <text x="50" y="49" class="mt-ring-n">${pct(spent)}%</text><text x="50" y="62" class="mt-ring-k">spent</text></svg>
+        <span class="mt-pop-rows">
+          <span class="mt-pop-r"><i style="background:${C.spent}"></i>Spent<b>${pct(spent)}%</b></span>
+          <span class="mt-pop-r"><i style="background:${C.saved}"></i>Saved<b>${pct(saved)}%</b></span>
+          ${earned > 0 ? `<span class="mt-pop-r"><i style="background:${C.left}"></i>Left<b>${Math.max(0, 100 - pct(spent) - pct(saved))}%</b></span>` : ''}
+          <span class="mt-pop-s">${ofWhat}, ${esc(d.label)}</span>
+        </span></span>`;
+      box.classList.remove('on'); void box.offsetWidth; box.classList.add('on');
+      $('.mt-stage').setAttribute('aria-description', `Spent ${pct(spent)}%, saved ${pct(saved)}% ${ofWhat}.`);
+      clearTimeout(box._t); box._t = setTimeout(() => box.classList.remove('on'), 4200);
+      return true;
     }
 
     function tip(text) {
@@ -143,17 +173,19 @@
       clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2200);
     }
 
-    const go = dir => { const d = opts.getData(st.mode, st.offset + dir); if (!d) return; st.offset += dir; paint(true); };
+    const go = dir => { const d = opts.getData(st.mode, st.offset + dir); if (!d) return; st.offset += dir; $('.mt-pop').classList.remove('on'); paint(true); };
     host.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
-      if (b.dataset.m && b.dataset.m !== st.mode) { st.mode = b.dataset.m; st.offset = 0; opts.onMode?.(st.mode); paint(true); return; }
+      if (b.dataset.m && b.dataset.m !== st.mode) { st.mode = b.dataset.m; st.offset = 0; $('.mt-pop').classList.remove('on'); opts.onMode?.(st.mode); paint(true); return; }
       if (b.dataset.d) { go(+b.dataset.d); return; }
       if (b.classList.contains('mt-wrapped')) { opts.onWrapped?.(); return; }
       if (b.classList.contains('mt-recap')) { opts.onRecap?.(st.mode, st.offset); return; }
       if (b.classList.contains('mt-stage')) {
         if (e.target.closest('.mt-coin.on')) { tip(opts.coinText?.() || ''); shake(); return; }
         shake();
-        const d = opts.getData(st.mode, st.offset); tip(d.tip);
+        const box = $('.mt-pop');
+        if (box.classList.contains('on')) { box.classList.remove('on'); return; }
+        if (!pop()) { const d = opts.getData(st.mode, st.offset); tip(d.tip); }
       }
     });
     // swipe across the tree to move between periods

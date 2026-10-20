@@ -459,7 +459,7 @@
       let start, end, label, elapsed, budget, extra = 0;
       if (mode === 'M') {
         start = new Date(today.getFullYear(), today.getMonth() + off, 1); end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
-        label = start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        label = start.toLocaleDateString('en-US', start.getFullYear() === today.getFullYear() ? { month: 'long' } : { month: 'long', year: 'numeric' });
         budget = budgetM; elapsed = off === 0 ? today.getDate() / end.getDate() : 1;
         const k = monthKey(start); extra = p.manual.filter(x => x.month === k && cats.includes(x.cat)).reduce((s, x) => s + x.cents, 0);
       } else {
@@ -467,7 +467,8 @@
         start = new Date(today); start.setDate(today.getDate() - dow + off * 7); end = new Date(start); end.setDate(start.getDate() + 6);
         budget = budgetM * 7 / new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
         const a = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        label = start.getMonth() === end.getMonth() ? `${a}–${end.getDate()}, ${end.getFullYear()}` : `${a} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${end.getFullYear()}`;
+        const yr = end.getFullYear() === today.getFullYear() ? '' : `, ${end.getFullYear()}`;
+        label = start.getMonth() === end.getMonth() ? `${a}–${end.getDate()}${yr}` : `${a} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${yr}`;
         elapsed = off === 0 ? (dow + 1) / 7 : 1;
       }
       if (off < 0 && iso(end) < firstDay) return null;
@@ -493,13 +494,14 @@
       let start, end, label, budget, mk = null;
       if (mode === 'M') {
         start = new Date(today.getFullYear(), today.getMonth() + off, 1); end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
-        label = start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); budget = budgetM; mk = monthKey(start);
+        label = start.toLocaleDateString('en-US', start.getFullYear() === today.getFullYear() ? { month: 'long' } : { month: 'long', year: 'numeric' }); budget = budgetM; mk = monthKey(start);
       } else {
         const dow = (today.getDay() + 6) % 7;
         start = new Date(today); start.setDate(today.getDate() - dow + off * 7); end = new Date(start); end.setDate(start.getDate() + 6);
         budget = budgetM * 7 / new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
         const a = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        label = start.getMonth() === end.getMonth() ? `${a}–${end.getDate()}, ${end.getFullYear()}` : `${a} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${end.getFullYear()}`;
+        const yr = end.getFullYear() === today.getFullYear() ? '' : `, ${end.getFullYear()}`;
+        label = start.getMonth() === end.getMonth() ? `${a}–${end.getDate()}${yr}` : `${a} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${yr}`;
       }
       if (off < 0 && iso(end) < firstDay) return null;
       const s0 = iso(start), e0 = iso(end), todayIso = iso(today);
@@ -581,6 +583,7 @@
       });
     }
 
+    const logoBtn = () => `<button class="hm-logo" data-logo aria-label="chala">${window.chalaWord ? chalaWord() : 'chala'}</button>`;
     function homeTab() {
       const goals = p.goals.filter(g => !g.archived), saved = savedTotal(p);
       const since = new Date(p.joinedAt || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -590,8 +593,8 @@
       const addBtn = (h, label) => `<button class="hm-add" data-h="${h}" aria-label="${label}">${I('<path d="M12 5v14M5 12h14"/>')}</button>`;
       return `
 <header class="hm-head" data-mood="${moodNow}" data-rise>
-  <button class="hm-logo" data-logo aria-label="chala">${window.chalaWord ? chalaWord() : 'chala'}</button>
-  <p class="hm-when">${esc(today.toLocaleDateString('en-US', { weekday: 'long' }))} ${esc(today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))} ${today.getFullYear()}</p>
+  ${logoBtn()}
+  <p class="hm-when">${esc(today.toLocaleDateString('en-US', { weekday: 'long' }))}<i class="hm-sep" aria-hidden="true">·</i>${esc(today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))}<i class="hm-sep" aria-hidden="true">·</i>${today.getFullYear()}</p>
   <h1 class="hm-hello">Welcome back,<br><span class="hm-who">${esc(first || 'friend')}</span><span class="hm-dot">.</span></h1>
   <p class="hm-nudge">${esc(NUDGE[moodNow])}</p>
 </header>
@@ -629,13 +632,13 @@
     }
     function wrapsTab() {
       return `
-<header class="pf-head" data-rise><p class="pf-k">Wraps</p><h1 class="pf-title">Your recaps.</h1></header>
+<header class="pf-head" data-rise>${logoBtn()}<p class="pf-k">Wraps</p><h1 class="pf-title">Your recaps.</h1></header>
 <div class="wg-host"></div>
 <button class="fz-addstmt" data-h="addstatement">${I('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>')}Add a statement</button>`;
     }
     function cardsTab() {
       return `
-<header class="pf-head" data-rise><p class="pf-k">Cards</p><h1 class="pf-title">Your cards.</h1></header>
+<header class="pf-head" data-rise>${logoBtn()}<p class="pf-k">Cards</p><h1 class="pf-title">Your cards.</h1></header>
 <div class="cc" aria-label="Swipe up to pay"></div>`;
     }
     /* chala v3: profile laid out like chala's (header, goal card, then one row per action) */
@@ -645,6 +648,7 @@
       const row = (h, icon, title, sub, cls = '') => `<button class="pf-row ${cls}" data-h="${h}"><span class="pf-ic">${I(icon)}</span><span class="pf-t">${title}${sub ? `<small>${sub}</small>` : ''}</span><span class="pf-go">${arrow}</span></button>`;
       return `
 <header class="pf-head" data-rise>
+  ${logoBtn()}
   <p class="pf-k">Profile</p>
   <h1 class="pf-title">Hi, ${esc(first || 'you')}.</h1>
 </header>
@@ -677,6 +681,7 @@ ${badgesCard()}
       /* chala v3: money tree on Home */
       if (tab === 'home' && window.ChalaTree) ChalaTree.mount(el.querySelector('.mt'), { mode: home.treeMode, onMode: md => { home.treeMode = md; }, getData: treeData,
         onWrapped: () => api.openRecap(monthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1)), 'home'), onRecap: (md, off) => { if (window.ChalaInsights) ChalaInsights.open({ mode: md, offset: off, getData: insightData, onStory: k => api.openRecap(k, 'home') }); else api.openRecap(nowKey, 'home'); },
+        getStats: (md, off) => insightData(md, off),
         coinText: () => `${m(savedTotal(p))} set aside so far` });
       /* chala v3: swipe-up-to-pay cards */
       if (tab === 'cards' && window.ChalaCards) ChalaCards.mount(el.querySelector('.cc'), { holder: user.name || '' });

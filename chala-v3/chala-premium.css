@@ -619,10 +619,6 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .ch-pop { position: absolute; left: 50%; bottom: 1.02em; width: 0; height: 0; pointer-events: none; }
 .ch-pop b { position: absolute; left: -.05em; top: -.05em; width: .1em; height: .1em; border-radius: 50%; background: #93C266; opacity: 0; }
 .hm-logo .ch-sp { transition: transform .4s cubic-bezier(.25,.1,.25,1); }
-.hm-head[data-mood="thirsty"] .ch-sp-l1 path:first-child { fill: #B9A55A; }
-.hm-head[data-mood="wilting"] .ch-sp-l1 path:first-child { fill: #C9824E; }
-.hm-head[data-mood="wilting"] .ch-sp-l2 path:first-child { fill: #D9A45B; }
-.hm-head[data-mood="wilting"] .ch-sp { transform: rotate(12deg); }
 
 /* splash: big, centred */
 .fw-splash .fw-mark.ch-wordmark { font-size: 64px !important; }
@@ -675,3 +671,47 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .bd-b.is-new::before { content: ""; position: absolute; top: 0; left: calc(50% + 17px); z-index: 1; width: 10px; height: 10px; border-radius: 50%; background: #D9693B; box-shadow: 0 0 0 2px #fff; }
 .bd-note { margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--p-line); font: 400 .8125rem/1.4 var(--p-sans); color: var(--p-ink-3); min-height: 1.4em; }
 .bd-note b { color: var(--p-ink); font-weight: 600; }
+
+
+/* =====================================================================
+   Money tree v2: banknote leaves, tap ring, one pill pager
+   ===================================================================== */
+.mt-leaf .mt-b, .mt-fl .mt-b { fill: var(--c); }
+.mt-leaf.dry .mt-b { fill: var(--a); transition: fill .6s ease; }
+.mt-bi { fill: none; stroke: rgba(255,255,255,.42); stroke-width: .45; }
+.mt-bc { fill: rgba(255,255,255,.32); }
+.mt-leaf.dry .mt-bi { stroke: rgba(255,255,255,.5); }
+.mt-fl .mt-b { opacity: .9; }
+.mt-mood { display: none !important; }
+
+/* pager: arrows live inside the date pill */
+.mt-pagerwrap { display: flex; justify-content: center; margin-top: 10px; }
+.mt-pager { display: inline-flex !important; align-items: center; gap: 0 !important; margin: 0 !important; padding: 3px; border-radius: 999px; background: #F4F2EF; }
+.mt-pager .mt-range { min-width: 108px !important; padding: 0 4px !important; background: none !important; box-shadow: none !important; font-weight: 500; }
+.mt-pager .mt-arrow { width: 34px; height: 34px; border-radius: 50%; color: var(--p-ink-2); transition: background .2s ease, color .2s ease; }
+.mt-pager .mt-arrow:not(:disabled):hover { background: #fff; color: var(--p-ink); }
+.mt-pager .mt-arrow:not(:disabled):active { background: #fff; transform: scale(.94); }
+.mt-pager .mt-arrow:disabled { opacity: .28; }
+.mt-pager .mt-arrow svg { width: 16px; height: 16px; }
+
+/* tap ring */
+.mt-pop { position: absolute; left: 50%; top: 18%; z-index: 2; transform: translate(-50%, 8px) scale(.94); opacity: 0; pointer-events: none; transition: opacity .25s ease, transform .35s cubic-bezier(.25,.1,.25,1); }
+.mt-pop.on { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.mt-pop-card { display: flex; align-items: center; gap: 14px; padding: 14px 18px 14px 14px; border-radius: 22px; background: rgba(255,255,255,.9); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2); box-shadow: 0 0 0 1px var(--p-line), 0 18px 40px -18px rgba(25,25,25,.35); text-align: left; white-space: nowrap; }
+.mt-ring { width: 92px; height: 92px; flex: none; overflow: visible; }
+.mt-ring-bg { fill: none; stroke: #F0EFEC; stroke-width: 11; }
+.mt-arc { fill: none; stroke-width: 11; stroke-linecap: butt; }
+.mt-pop.on .mt-arc { animation: mt-arc .8s cubic-bezier(.25,.1,.25,1) both; }
+@keyframes mt-arc { from { stroke-dasharray: 0 999; } }
+.mt-ring-n { font: 600 19px/1 var(--p-sans); letter-spacing: -.04em; fill: var(--p-ink); text-anchor: middle; font-variant-numeric: tabular-nums; }
+.mt-ring-k { font: 500 9px/1 var(--p-sans); fill: var(--p-ink-3); text-anchor: middle; }
+.mt-pop-rows { display: grid; gap: 7px; min-width: 112px; }
+.mt-pop-r { display: flex; align-items: center; gap: 7px; font: 500 .8125rem/1 var(--p-sans); color: var(--p-ink-2); }
+.mt-pop-r i { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+.mt-pop-r b { margin-left: auto; padding-left: 12px; font-weight: 600; color: var(--p-ink); font-variant-numeric: tabular-nums; }
+.mt-pop-s { margin-top: 2px; font: 400 .6875rem/1.25 var(--p-sans); color: var(--p-ink-3); white-space: normal; max-width: 130px; }
+@media (prefers-reduced-motion: reduce) { .mt-pop { transition: none; } .mt-pop.on .mt-arc { animation: none; } }
+
+/* logo on every tab; the date reads Monday · Oct 19 · 2026 */
+.pf-head .hm-logo { display: inline-flex; margin: 0 0 26px; }
+.hm-sep { font-style: normal; margin: 0 .5em; color: var(--p-ink-3); opacity: .7; }
