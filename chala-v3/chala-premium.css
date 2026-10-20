@@ -715,3 +715,11 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 /* logo on every tab; the date reads Monday · Oct 19 · 2026 */
 .pf-head .hm-logo { display: inline-flex; margin: 0 0 26px; }
 .hm-sep { font-style: normal; margin: 0 .5em; color: var(--p-ink-3); opacity: .7; }
+
+/* limit cards: category icon top-left, name under it */
+.lc-ic { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: #F4F2EF; color: var(--p-ink); }
+.lc-ic svg { width: 21px; height: 21px; }
+.lc .lc-top { width: 100%; align-items: flex-start; }
+.lc .lc-n { margin-top: 12px; }
+.lc .lc-num { margin-top: auto; padding-top: 14px; }
+.lc .lc-n { max-width: 100%; }

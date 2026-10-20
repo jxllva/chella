@@ -583,6 +583,29 @@
       });
     }
 
+
+    /* chala v3: a small line icon for each spending category */
+    const CAT_ICONS = {
+      'food delivery': '<path d="M4.5 9.5h15l-1.7 9.9a1.6 1.6 0 0 1-1.6 1.3H7.8a1.6 1.6 0 0 1-1.6-1.3z"/><path d="m4.5 9.5 2.3-5h10.4l2.3 5"/><path d="m10 4.5-.8 5M14 4.5l.8 5"/>',
+      'shopping': '<path d="M6 7.5h12l-1 12.5H7z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/>',
+      'cafés': '<path d="M5 9h11v5.5a4.5 4.5 0 0 1-4.5 4.5h-2A4.5 4.5 0 0 1 5 14.5z"/><path d="M16 10.5h1.2a2.3 2.3 0 0 1 0 4.6H16"/><path d="M8.5 3.5c-.6.9.6 1.6 0 2.5M12 3.5c-.6.9.6 1.6 0 2.5"/>',
+      'cafes': 'cafés',
+      'coffee & matcha': 'cafés',
+      'groceries': '<path d="M3.5 5h2.2l2.1 10.2h9.6l1.9-7.2H7"/><circle cx="9.5" cy="19" r="1.3"/><circle cx="16.5" cy="19" r="1.3"/>',
+      'rideshare': '<path d="M5 15.5V12l1.8-4.6A1.8 1.8 0 0 1 8.5 6.3h7a1.8 1.8 0 0 1 1.7 1.1L19 12v3.5"/><path d="M4 15.5h16v2.5H4z"/><path d="M5 12h14"/><circle cx="7.8" cy="18" r=".2"/>',
+      'entertainment': '<rect x="3.5" y="6" width="17" height="12" rx="2"/><path d="m10.5 9.5 4 2.5-4 2.5z"/>',
+      'subscriptions': '<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4.5h-4.5"/>',
+      'buy now, pay later': '<rect x="3.5" y="6" width="17" height="12" rx="2.5"/><path d="M3.5 10h17M7 14.5h3"/>',
+      'travel': '<path d="M10.5 13.5 4 11l1.4-1.4 7.4.8 3.7-3.7a1.8 1.8 0 0 1 2.6 2.6l-3.7 3.7.8 7.4-1.4 1.4-2.5-6.5-3 3v2.2L8 21.8l-1.4-3.3-3.3-1.4 1.3-1.3h2.2z"/>',
+      'rent & bills': '<path d="M4 11 12 4.5 20 11"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/>',
+      'transport': 'rideshare',
+      'dining': '<path d="M7 3.5v7a2 2 0 0 0 2 2v8M5 3.5v5a2 2 0 0 0 2 2h0M9 3.5v5"/><path d="M17 20.5V3.5c-2 1-3 3.5-3 6.5v3h3"/>',
+      'health': '<path d="M12 20s-7-4.3-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7 2.6C19 15.7 12 20 12 20z"/><path d="M9 12.5h1.8l1-2 1.5 3.5 1-1.5H16"/>',
+      'education': '<path d="m3 9 9-4.5L21 9l-9 4.5z"/><path d="M7 11v4.5c1.4 1.3 3 2 5 2s3.6-.7 5-2V11M21 9v5"/>',
+      'drinks & nights out': '<path d="M6 4h12l-6 8z"/><path d="M12 12v7.5M8.5 19.5h7"/>'
+    };
+    const catIcon = n => { let v = CAT_ICONS[String(n).toLowerCase()]; if (v && !v.startsWith('<')) v = CAT_ICONS[v];
+      return v || '<path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.4 1.4 0 0 1 0 2l-6.6 6.6a1.4 1.4 0 0 1-2 0z"/><circle cx="8" cy="8" r="1.3"/>'; };
     const logoBtn = () => `<button class="hm-logo" data-logo aria-label="chala">${window.chalaWord ? chalaWord() : 'chala'}</button>`;
     function homeTab() {
       const goals = p.goals.filter(g => !g.archived), saved = savedTotal(p);
@@ -612,7 +635,8 @@
   ${names.map(n => {
     const lim = p.limits[n], sp = spentNow(n), r = lim ? sp / lim : 0, k = r > 1 ? 'over' : r >= .7 ? 'near' : 'ok';
     return `<button class="lc is-${k}" data-h="limit" data-c="${esc(n)}" data-rise aria-label="${esc(n)}: ${m(sp)} spent of ${m(lim)}${k === 'over' ? ', over limit' : ''}">
-      <span class="lc-top"><span class="lc-n">${esc(n)}</span><i class="lc-dot" aria-hidden="true"></i></span>
+      <span class="lc-top"><span class="lc-ic" aria-hidden="true">${I(catIcon(n))}</span><i class="lc-dot" aria-hidden="true"></i></span>
+      <span class="lc-n">${esc(n)}</span>
       <b class="lc-num">${m(Math.round(sp / 100) * 100)}</b>
       <span class="lc-of">of ${m(lim)}</span>
       <span class="lc-bar"><i style="width:${Math.min(100, r * 100).toFixed(1)}%"></i></span>
