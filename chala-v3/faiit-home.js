@@ -85,7 +85,7 @@
       if (e.key === 'Escape') { e.preventDefault(); close(); }
       if (e.key === 'Tab') { const f = [...wrap.querySelectorAll('button,input,select,textarea')].filter(n => !n.disabled && n.offsetParent); if (!f.length) return; const i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0) { e.preventDefault(); f.at(-1).focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); } }
     };
-    wrap.addEventListener('click', e => { const t = e.target.closest('[data-s]'); if (!t || t.disabled) return; const k = t.dataset.s; if (k === 'close') close(); else handlers[k]?.(t, close, wrap); });
+    wrap.addEventListener('click', e => { if (!e.target.closest('.fh-sheet')) { close(); return; } const t = e.target.closest('[data-s]'); if (!t || t.disabled) return; const k = t.dataset.s; if (k === 'close') close(); else handlers[k]?.(t, close, wrap); });
     wrap.addEventListener('submit', e => { e.preventDefault(); handlers.submit?.(e.target, close, wrap); });
     wrap.addEventListener('input', e => handlers.input?.(e.target, wrap));
     document.addEventListener('keydown', key, true);
@@ -748,7 +748,7 @@ ${badgesCard()}
   <label class="ls-field"><span class="ls-cur">$</span><input id="ls-type" class="ls-type" name="typed" inputmode="numeric" autocomplete="off" value="${cur ? (cur / 100).toFixed(0) : ''}" placeholder="0" aria-label="Monthly limit in dollars for ${esc(name)}" size="5" style="width:${Math.max(1, cur ? String(Math.round(cur / 100)).length : 1) * .62 + .08}em"><span class="ls-per">/ month</span><span class="ls-pen" aria-hidden="true">${I('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>')}</span></label>
   <button class="fh-unwrap fj" type="submit">Save limit</button>
 </form>
-${p.limits[name] ? '<button class="fz-quiet" type="button" data-s="remove">Remove limit</button>' : ''}
+${p.limits[name] ? `<button class="fz-danger" type="button" data-s="remove">${I('<path d="M4.5 7h15M9.5 7V4.8c0-.7.5-1.3 1.2-1.3h2.6c.7 0 1.2.6 1.2 1.3V7M6.5 7l.9 12.2c.1.8.7 1.3 1.5 1.3h6.2c.8 0 1.4-.5 1.5-1.3L17.5 7"/><path d="M10 11v5.5M14 11v5.5"/>')}Remove limit</button>` : ''}
 ${txList(name)}`, {
         input: t => { if (t.name !== 'typed') return; t.value = t.value.replace(/[^0-9]/g, '').slice(0, 6); t.style.width = `${Math.max(1, t.value.length) * .62 + .08}em`; },
         submit: (f, close) => { const v = (+String(f.typed.value).replace(/[^0-9]/g, '') || 0) * 100; if (v > 0) p.limits[name] = v; else delete p.limits[name]; store(p); close(); paint(); },
@@ -771,10 +771,11 @@ ${txList(name)}`, {
 <form class="fz-form">
   <label class="fw-sr" for="fz-gt">Goal name</label><input class="fz-name" id="fz-gt" name="title" value="${esc(g.title)}" maxlength="40" placeholder="Weekend away" required>
   <label class="fz-money-big"><span class="fw-sr">Target</span><i>$</i><input name="target" inputmode="decimal" value="${g.target / 100}" aria-label="Target amount"></label>
+  <p class="sa-gh fz-chips-h">What’s it for?</p>
   ${chipsOf(VALUES, val, 'val')}
   <button class="fh-unwrap fj" type="submit">${isNew ? 'Add goal' : 'Save'}</button>
 </form>
-${isNew ? '' : '<button class="fz-quiet" type="button" data-s="del">Delete goal</button>'}`, {
+${isNew ? '' : `<button class="fz-danger" type="button" data-s="del">${I('<path d="M4.5 7h15M9.5 7V4.8c0-.7.5-1.3 1.2-1.3h2.6c.7 0 1.2.6 1.2 1.3V7M6.5 7l.9 12.2c.1.8.7 1.3 1.5 1.3h6.2c.8 0 1.4-.5 1.5-1.3L17.5 7"/><path d="M10 11v5.5M14 11v5.5"/>')}Delete goal</button>`}`, {
         'pick-val': (t, close, w) => { val = val === t.dataset.v ? '' : t.dataset.v; w.querySelectorAll('[data-s="pick-val"]').forEach(b => { const on = b.dataset.v === val; b.setAttribute('aria-pressed', on); b.setAttribute('aria-checked', on); }); },
         submit: (f, close) => { const title = f.title.value.trim(); if (!title) { f.title.focus(); return; } const upd = { ...g, title, target: cents(f.target.value) || g.target, value: val }; p.goals = isNew ? [...p.goals, upd] : p.goals.map(x => x.id === g.id ? upd : x); store(p); close(); paint(); },
         del: (t, close) => { p.goals = p.goals.filter(x => x.id !== g.id); p.contributions = p.contributions.filter(c => c.goalId !== g.id); store(p); close(); paint(); }
@@ -829,44 +830,61 @@ ${isNew ? '' : '<button class="fz-quiet" type="button" data-s="del">Delete goal<
     // ----- garden -----
     function garden(id) {
       const g = p.goals.find(x => x.id === id); if (!g) return;
-      const sv = savedFor(p, g.id), target = g.target || 1, r = Math.min(1, sv / target);
-      const SLOTS = 10, grown = Math.floor(r * SLOTS), partial = r * SLOTS - grown;
-      const days = Math.max(1, (Date.now() - new Date(p.joinedAt || Date.now())) / 864e5);
-      const perMonth = Math.round((g.weekly ? g.weekly * 4.33 : sv ? sv / Math.max(1, days / 30.4) : 0) / 100) * 100;
-      const left = Math.max(0, target - sv);
+      const SLOTS = 10, target = g.target || 1;
       const eta = n => { const d = new Date(); d.setMonth(d.getMonth() + Math.ceil(n)); return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); };
-      const pace = left === 0 ? 'Fully grown.' : perMonth > 0 ? `On pace for ${eta(left / perMonth)}.` : 'Plant your first seed below.';
+      const calc = () => {
+        const sv = savedFor(p, g.id), r = Math.min(1, sv / target), grown = Math.floor(r * SLOTS), partial = r * SLOTS - grown;
+        const days = Math.max(1, (Date.now() - new Date(p.joinedAt || Date.now())) / 864e5);
+        const perMonth = Math.round((g.weekly ? g.weekly * 4.33 : sv ? sv / Math.max(1, days / 30.4) : 0) / 100) * 100;
+        const left = Math.max(0, target - sv);
+        const pace = left === 0 ? 'Fully grown.' : perMonth > 0 ? `On pace for ${eta(left / perMonth)}.` : 'Plant your first seed below.';
+        const plants = Array.from({ length: SLOTS }, (_, i) => i < grown ? 3 : i === grown && partial > 0 ? Math.max(1, Math.round(partial * 3)) : 0);
+        return { sv, grown, left, pace, plants };
+      };
       const plantSVG = (stage, i) => {
-        const x = 18 + i * 32, h = [0, 34, 66, 100][stage], sway = (i % 3) - 1;
-        if (!stage) return `<ellipse cx="${x}" cy="150" rx="5.5" ry="3.4" fill="rgba(120,150,120,.32)"/>`;
+        const h = [0, 34, 66, 100][stage], sway = (i % 3) - 1;
+        if (!stage) return `<ellipse cx="0" cy="0" rx="5.5" ry="3.4" fill="rgba(120,150,120,.32)"/>`;
         const flower = stage === 3 ? `<g transform="translate(0 ${-h})">${[0, 72, 144, 216, 288].map(a => `<ellipse rx="6" ry="10" transform="rotate(${a}) translate(0 -9)" fill="${['#f3cfdc', '#f2e3a8', '#cfdcf5', '#f2d5c4'][i % 4]}"/>`).join('')}<circle r="5" fill="#e9c35c"/></g>` : '';
         const bud = stage === 2 ? `<ellipse cy="${-h}" rx="5" ry="7" fill="#bfe3b4"/>` : '';
-        return `<g class="fg-plant" style="--d:${i * 60}ms" transform="translate(${x} 150)"><path d="M0 0 C ${sway * 4} ${-h * .4} ${-sway * 4} ${-h * .7} 0 ${-h}" stroke="#86b98f" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M0 ${-h * .45} q 13 -8 19 -2 q -9 9 -19 2z" fill="#a9d6a0"/>${stage > 1 ? `<path d="M0 ${-h * .68} q -13 -8 -19 -2 q 9 9 19 2z" fill="#93c98d"/>` : ''}${bud}${flower}</g>`;
+        return `<g class="fg-plant" style="--d:${i * 60}ms"><path d="M0 0 C ${sway * 4} ${-h * .4} ${-sway * 4} ${-h * .7} 0 ${-h}" stroke="#86b98f" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M0 ${-h * .45} q 13 -8 19 -2 q -9 9 -19 2z" fill="#a9d6a0"/>${stage > 1 ? `<path d="M0 ${-h * .68} q -13 -8 -19 -2 q 9 9 19 2z" fill="#93c98d"/>` : ''}${bud}${flower}</g>`;
       };
-      const plants = Array.from({ length: SLOTS }, (_, i) => i < grown ? 3 : i === grown && partial > 0 ? Math.max(1, Math.round(partial * 3)) : 0);
-      const cutCat = spend.categories.filter(c => !protects(p, c.name).length && c.name !== 'Rent & bills').sort((a, b) => b.cents - a.cents)[0];
-      const cut = cutCat ? Math.max(500, Math.round(cutCat.cents * .15 / 500) * 500) : 0;
-      const weekly = Math.max(500, Math.round(left / 12 / 500) * 500);
-      const ideas = [];
-      if (left && cut) ideas.push({ k: 'cut', t: `Trim ${esc(cutCat.name)} by ${m(cut)} a month`, a: 'Set limit' });
-      if (left) ideas.push({ k: 'plan', t: `Set aside ${m(weekly)} a week`, a: g.weekly === weekly ? 'Active' : 'Start' });
-      const ev = evidence(g);
+      let st = calc();
+      const plantForm = () => `<form class="fz-log fz-log-plant"><span class="fp-money"><i>$</i><input name="amt" inputmode="decimal" placeholder="0" aria-label="Amount to plant"></span><button class="fz-logbtn fj" type="submit">Plant</button></form>`;
       const ov = sheet(`
 <div class="fg">
   <h2 id="fh-sheet-title" class="fh-sh-title">${esc(g.title)}</h2>
-  <p class="fz-sh-meta"><b>${m(sv)}</b> of ${m(target)}</p>
-  <div class="fg-bed" role="img" aria-label="${grown} of ${SLOTS} plants grown, each one 10% of the goal">
-    <svg viewBox="0 0 330 166" class="fg-svg"><path d="M0 151 Q 165 140 330 151 V166 H0z" fill="rgba(150,180,140,.18)"/>${plants.map(plantSVG).join('')}</svg>
+  <p class="fz-sh-meta"><b class="fg-sv">${m(st.sv)}</b> of ${m(target)}</p>
+  <div class="fg-bed" role="img" aria-label="${st.grown} of ${SLOTS} plants grown, each one 10% of the goal">
+    <svg viewBox="0 0 330 166" class="fg-svg"><path d="M0 151 Q 165 140 330 151 V166 H0z" fill="rgba(150,180,140,.18)"/>${st.plants.map((s, i) => `<g class="fg-slot" data-slot="${i}" transform="translate(${18 + i * 32} 150)">${plantSVG(s, i)}</g>`).join('')}</svg>
   </div>
-  <p class="fz-hint fz-center-t">${pace}</p>
-  ${left ? `<form class="fz-log fz-log-plant"><span class="fp-money"><i>$</i><input name="amt" inputmode="decimal" placeholder="0" aria-label="Amount to plant"></span><button class="fz-logbtn fj" type="submit">Plant</button></form>` : ''}
+  <p class="fz-hint fz-center-t fg-pace" aria-live="polite">${st.pace}</p>
+  ${st.left ? plantForm() : ''}
   <div class="fg-foot"><button class="fg-btn fg-edit" type="button" data-s="edit">${I('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>')}Edit goal</button><button class="fg-btn fg-arch" type="button" data-s="archive">${I('<rect x="3.5" y="4.5" width="17" height="4" rx="1"/><path d="M5 8.5V18a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 18V8.5M10 12.5h4"/>')}Archive</button></div>
 </div>`, {
-        submit: (f, close) => { const c = cents(f.amt.value); if (!c) { f.amt.focus(); return; } p.contributions.push({ goalId: g.id, cents: c, date: new Date().toISOString() }); store(p); close(); paint(); api.toast(`Planted ${m(c)}`); setTimeout(() => garden(g.id), 280); },
+        // plant: stay in the sheet and let the garden grow in place
+        submit: (f, close, w) => {
+          const c = cents(f.amt.value); if (!c) { f.amt.focus(); return; }
+          const before = st;
+          p.contributions.push({ goalId: g.id, cents: c, date: new Date().toISOString() }); store(p); paint();
+          st = calc();
+          const svEl = w.querySelector('.fg-sv');
+          if (reduce()) svEl.textContent = m(st.sv);
+          else { const t0 = performance.now(), from = before.sv, to = st.sv; const step = now => { const k = Math.min(1, (now - t0) / 700), e = 1 - Math.pow(1 - k, 3); svEl.textContent = m(Math.round(from + (to - from) * e)); if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
+          w.querySelector('.fg-bed').setAttribute('aria-label', `${st.grown} of ${SLOTS} plants grown, each one 10% of the goal`);
+          let n = 0;
+          st.plants.forEach((s, i) => {
+            if (s === before.plants[i]) return;
+            const slot = w.querySelector(`.fg-slot[data-slot="${i}"]`); slot.innerHTML = plantSVG(s, i);
+            const pl = slot.firstElementChild; pl.classList.add('fg-up');
+            if (!reduce()) pl.animate([{ transform: 'scale(.2, 0)', opacity: 0 }, { transform: 'scale(1.06, 1.12)', opacity: 1, offset: .6 }, { transform: 'scale(.98, .96)', offset: .8 }, { transform: 'none', opacity: 1 }], { duration: 900, delay: 120 + n++ * 140, easing: 'cubic-bezier(.3,1.2,.5,1)', fill: 'backwards' });
+          });
+          w.querySelector('.fg-pace').textContent = st.pace;
+          f.amt.value = '';
+          if (!st.left) { f.remove(); api.toast(`${g.title} is fully grown`); }
+          else { api.toast(`Planted ${m(c)}`); f.amt.blur(); }
+        },
         edit: (t, close) => { close(); setTimeout(() => editGoal(g.id), 260); },
-        archive: (t, close) => { g.archived = true; store(p); close(); paint(); api.toast('Archived. It’s in Profile.'); },
-        'idea-cut': (t, close) => { const cur = p.limits[cutCat.name]; p.limits[cutCat.name] = Math.max(1000, (cur || cutCat.cents) - cut); store(p); close(); paint(); api.toast(`${cutCat.name} limit set to ${m(p.limits[cutCat.name])}`); },
-        'idea-plan': (t, close) => { g.weekly = weekly; store(p); close(); paint(); api.toast(`${m(weekly)} a week toward ${g.title}`); setTimeout(() => garden(g.id), 280); }
+        archive: (t, close) => { g.archived = true; store(p); close(); paint(); api.toast('Archived. It’s in Profile.'); }
       }, 'is-garden');
       ov.el.querySelectorAll('.fj').forEach(jelly);
     }
