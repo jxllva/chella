@@ -723,3 +723,15 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .lc .lc-n { margin-top: 12px; }
 .lc .lc-num { margin-top: auto; padding-top: 14px; }
 .lc .lc-n { max-width: 100%; }
+
+/* goal / save sheets: one clean field per input */
+.fz-form .fz-name { min-height: 56px; padding: 0 18px; font: 500 1.125rem/1 var(--p-sans) !important; letter-spacing: -.01em !important; color: var(--p-ink); }
+.fz-form .fz-name::placeholder { font-weight: 400; color: var(--p-ink-3); opacity: 1; }
+.fz-form .fz-name:focus { outline: none; box-shadow: inset 0 0 0 1.5px var(--p-ink) !important; }
+.fz-money-big { display: flex; align-items: center; gap: 4px; padding: 0 18px; border-radius: 16px; background: #fff !important; box-shadow: inset 0 0 0 1px var(--p-line-2) !important; }
+.fz-money-big:focus-within { box-shadow: inset 0 0 0 1.5px var(--p-ink) !important; }
+.fz-money-big i { font: 500 1.75rem/1 var(--p-sans) !important; color: var(--p-ink-3) !important; }
+.fz-form .fz-money-big input { min-height: 64px; padding: 0 !important; background: transparent !important; box-shadow: none !important; border-radius: 0 !important; font: 600 2.25rem/1 var(--p-sans) !important; letter-spacing: -.04em !important; color: var(--p-ink); }
+.fz-form .fz-money-big input:focus { outline: none; }
+.fz-choose .fp-chip { font-weight: 500 !important; font-size: .875rem !important; color: var(--p-ink-2); }
+.fz-choose .fp-chip[aria-checked="true"] { color: #fff; }
