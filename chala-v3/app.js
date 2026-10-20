@@ -308,10 +308,10 @@ startStory=(key)=>{
  returnFromStory=configured||(imported&&!categories.some(c=>c.name!=='Rent & bills'));go('wrap')};
 render=function(){
  app.onclick=null;app.oninput=null;
- if(view==='breakdown'){Faiit.leave();FaiitRecap.render(app,{rows:imported?.rows||null,key:faiitBreakKey,openWrap:()=>startStory(),money:c=>fmt(Math.round(c),imported?.currency||'USD'),toast,back:()=>{tab=faiitReturnTab||'home';faiitReturnTab='home';history.replaceState({view:'dashboard',tab,step},'',location.pathname);go('dashboard',false)}});return}
+ if(view==='breakdown'){Faiit.leave();(window.ChalaRecap||FaiitRecap).render(app,{rows:imported?.rows||null,key:faiitBreakKey,openWrap:()=>startStory(),money:c=>fmt(Math.round(c),imported?.currency||'USD'),toast,back:()=>{tab=faiitReturnTab||'home';faiitReturnTab='home';history.replaceState({view:'dashboard',tab,step},'',location.pathname);go('dashboard',false)}});return}
  if(view==='wrap'){Faiit.leave();const wrapExit=()=>{if(returnFromStory||!FaiitHome.needsPlan()){tab=faiitReturnTab||'home';faiitReturnTab='home';history.replaceState({view:'dashboard',tab,step},'',location.pathname);go('dashboard',false)}else{step=0;history.replaceState({view:'survey',tab,step},'',location.pathname);go('survey',false)}};
  /* chala v3: chala's roast, real talk and recap take over the months they cover */
- if(window.Chala&&!faiitWrapMonth?.range&&Chala.route(faiitWrapMonth?.key,{first:FaiitHome.needsPlan(),onExit:wrapExit}))return;
+ /* chala v3: every month plays the Wrapped; chala's old recap slides are retired (Recap is chala-recap.js) */
  /* chala v3: the Wrapped is chala-wrap.js: the story, then limits, goals and the sealed envelope */
  if(window.ChalaWrap){ChalaWrap.play(app,{month:faiitWrapMonth,money:c=>fmt(Math.round(c),imported?.currency||'USD'),toast,onExit:wrapExit});return}
  FaiitWrap.play(app,{month:faiitWrapMonth,money:c=>fmt(Math.round(c),imported?.currency||'USD'),toast,onExit:()=>{if(returnFromStory||!FaiitHome.needsPlan()){tab=faiitReturnTab||'home';faiitReturnTab='home';history.replaceState({view:'dashboard',tab,step},'',location.pathname);go('dashboard',false)}else{step=0;history.replaceState({view:'survey',tab,step},'',location.pathname);go('survey',false)}}});return}

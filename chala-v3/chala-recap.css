@@ -1,0 +1,169 @@
+/* chala v3 — Recap (chala-recap.js). One idea per screen; the scroll snaps between them.
+   Light screens sit on the app's paper with one soft colour wash each, so you can feel the
+   section change as you scroll. The patterns live on chala's dark "real talk" ground. */
+.cr{--ink:#1d1b19;--ink2:#4a4640;--ink3:#6b665e;--paper:#F7F5F1;--night:#191919;
+  --cr-f:var(--p-sans,var(--f-sans,'Inter',system-ui,sans-serif));--lav:201,188,229;--peach:233,187,169;--blush:235,203,209;--mint:190,224,204;--sky:196,214,240;
+  position:fixed;inset:0;z-index:50;background:var(--paper);color:var(--ink);font-family:var(--cr-f);-webkit-font-smoothing:antialiased}
+
+/* ---------- the header: frosted glass, follows the screen under it ---------- */
+.cr-top{position:absolute;z-index:3;left:0;right:0;top:0;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 10px;pointer-events:none}
+.cr-top>*{pointer-events:auto}
+.cr-month{display:flex;align-items:center;justify-content:center;gap:4px;min-width:0}
+.cr-month b{min-width:0;padding:0 6px;font:600 1rem/1.2 var(--cr-f);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cr-gb{appearance:none;border:0;cursor:pointer;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--ink);
+  background:linear-gradient(135deg,rgba(255,255,255,.7),rgba(255,255,255,.4));-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 8px 20px -14px rgba(40,30,70,.35);transition:background .4s,color .4s}
+.cr-gb svg{width:20px;height:20px}
+.cr-gb.cr-sm{width:36px;height:36px}.cr-gb.cr-sm svg{width:17px;height:17px}
+.cr-gb:disabled{opacity:.3;cursor:default}
+.cr-prog{position:absolute;left:14px;right:14px;bottom:0;height:3px;border-radius:3px;background:rgba(29,27,25,.08);overflow:hidden}
+.cr-prog i{position:absolute;inset:0;transform-origin:0 50%;transform:scaleX(0);background:var(--ink);border-radius:3px;transition:background .4s}
+.cr[data-tone=dark] .cr-top{color:#fff}
+.cr[data-tone=dark] .cr-gb{color:#fff;background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.06));box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.cr[data-tone=dark] .cr-prog{background:rgba(255,255,255,.12)}
+.cr[data-tone=dark] .cr-prog i{background:#fff}
+
+/* ---------- the scroll: one screen at a time ---------- */
+.cr-scroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;outline:none;scrollbar-width:none}
+.cr-scroll::-webkit-scrollbar{display:none}
+.cr-s{position:relative;min-height:100vh;min-height:100dvh;scroll-snap-align:start;display:flex;align-items:center;justify-content:center;
+  padding:calc(env(safe-area-inset-top,0px) + 76px) 22px calc(env(safe-area-inset-bottom,0px) + 40px);overflow:hidden}
+.cr-in{width:100%;max-width:460px;display:flex;flex-direction:column;gap:14px}
+
+/* soft colour washes: each fades back to paper at the edges, so screens blend as you scroll */
+.cr-lav{background:radial-gradient(90% 55% at 88% 12%,rgba(var(--lav),.55),transparent 70%),radial-gradient(70% 45% at 0% 92%,rgba(var(--peach),.28),transparent 72%),var(--paper)}
+.cr-lav2{background:radial-gradient(80% 50% at 10% 15%,rgba(var(--lav),.5),transparent 70%),radial-gradient(70% 45% at 100% 90%,rgba(var(--blush),.35),transparent 72%),var(--paper)}
+.cr-peach{background:radial-gradient(90% 55% at 12% 10%,rgba(var(--peach),.55),transparent 70%),radial-gradient(70% 45% at 100% 95%,rgba(var(--lav),.25),transparent 72%),var(--paper)}
+.cr-blush{background:radial-gradient(95% 55% at 90% 8%,rgba(var(--blush),.62),transparent 70%),radial-gradient(70% 45% at 0% 95%,rgba(var(--peach),.25),transparent 72%),var(--paper)}
+.cr-mint{background:radial-gradient(90% 55% at 15% 10%,rgba(var(--mint),.6),transparent 70%),radial-gradient(70% 45% at 100% 95%,rgba(var(--sky),.3),transparent 72%),var(--paper)}
+.cr-sky{background:radial-gradient(90% 55% at 85% 10%,rgba(var(--sky),.62),transparent 70%),radial-gradient(70% 45% at 0% 95%,rgba(var(--lav),.28),transparent 72%),var(--paper)}
+/* the dark section, like chala's "real talk" */
+.cr-dark,.cr-night{color:#F2F0EC;background:radial-gradient(80% 45% at 90% 5%,rgba(var(--lav),.16),transparent 70%),radial-gradient(70% 45% at 0% 100%,rgba(var(--peach),.12),transparent 70%),var(--night)}
+.cr-dark::before{content:'';position:absolute;left:0;right:0;top:0;height:120px;background:linear-gradient(var(--paper),transparent);opacity:.0;pointer-events:none}
+
+/* ---------- type ---------- */
+.cr-k{margin:0;font:600 .8125rem/1.3 var(--cr-f);letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.cr-h{margin:0;font:600 clamp(2rem,9vw,2.6rem)/1.05 var(--cr-f);letter-spacing:-.04em}
+.cr-big{display:block;margin-top:6px;font:700 clamp(3.2rem,17vw,5rem)/1 var(--cr-f);letter-spacing:-.06em;font-variant-numeric:tabular-nums}
+.cr-h2{margin:0;font:600 clamp(1.75rem,8vw,2.25rem)/1.08 var(--cr-f);letter-spacing:-.035em}
+.cr-h2 em,.cr-h em{font-style:normal;color:var(--ink3)}
+.cr-h2 b{font-weight:700}
+.cr-p{margin:0;font:400 1.0625rem/1.45 var(--cr-f);color:var(--ink2)}
+.cr-p b{color:var(--ink);font-weight:600}
+.cr-fine{margin:0;font:400 .875rem/1.4 var(--cr-f);color:var(--ink3)}
+.cr-fine b{color:var(--ink);font-weight:600}
+.cr-cue{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);margin:0;display:flex;flex-direction:column;align-items:center;gap:2px;font:500 .8125rem/1 var(--cr-f);color:var(--ink3);animation:cr-nudge 1.9s ease-in-out infinite}
+.cr-cue svg{width:20px;height:20px}
+@keyframes cr-nudge{0%,100%{transform:translateY(0);opacity:.7}50%{transform:translateY(5px);opacity:1}}
+
+/* glass cards on the light screens */
+.cr-duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cr-duo p{margin:0;display:flex;flex-direction:column;gap:4px;padding:14px 14px 16px;border-radius:20px;
+  background:linear-gradient(135deg,rgba(255,255,255,.75),rgba(255,255,255,.45));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.85)}
+.cr-duo span{display:flex;align-items:center;gap:6px;font:500 .8125rem/1.25 var(--cr-f);color:var(--ink3)}
+.cr-duo b{font:700 1.5rem/1.1 var(--cr-f);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.cr-duo b.is-up{color:#1F6B45}.cr-duo b.is-down{color:#A8321C}
+.cr-duo small{font:400 .75rem/1.35 var(--cr-f);color:var(--ink3)}
+
+.cr-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.cr-list button,.cr-bars button{appearance:none;border:0;cursor:pointer;width:100%;text-align:left;color:inherit;font:inherit}
+.cr-list button{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;min-height:60px;padding:12px 16px;border-radius:18px;
+  background:linear-gradient(135deg,rgba(255,255,255,.78),rgba(255,255,255,.5));box-shadow:inset 0 0 0 1px rgba(255,255,255,.85)}
+.cr-list button>span{min-width:0;display:flex;flex-direction:column;gap:3px}
+.cr-list button>span b{font:600 1rem/1.25 var(--cr-f);overflow-wrap:anywhere}
+.cr-list button small{font:400 .8125rem/1.3 var(--cr-f);color:var(--ink3)}
+.cr-list button>b{font:700 1.0625rem/1 var(--cr-f);font-variant-numeric:tabular-nums}
+.cr-regs button{grid-template-columns:52px minmax(0,1fr) 18px}
+.cr-regs svg{width:18px;height:18px;color:var(--ink3)}
+.cr-x{font:700 1.25rem/1 var(--cr-f);letter-spacing:-.03em}
+
+/* where it went: bars that grow in */
+.cr-bars{list-style:none;margin:2px 0 0;padding:0;display:grid;gap:4px}
+.cr-bars button{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr) auto;align-items:center;gap:10px;min-height:44px;padding:4px 2px;border-radius:12px}
+.cr-bar-n{display:flex;flex-direction:column;font:500 .9375rem/1.2 var(--cr-f);min-width:0}
+.cr-bar-n small{font:500 .6875rem/1.2 var(--cr-f);color:var(--ink3);letter-spacing:.04em;text-transform:uppercase}
+.cr-bar-t{height:14px;border-radius:8px;background:rgba(29,27,25,.06);overflow:hidden}
+.cr-bar-t i{display:block;height:100%;width:var(--w);border-radius:8px;background:linear-gradient(90deg,#B9A8E0,#E3A994);transform-origin:0 50%;transform:scaleX(0);transition:transform .9s cubic-bezier(.22,1,.36,1) calc(.35s + var(--d,0) * 60ms)}
+.cr-s.in .cr-bar-t i{transform:none}
+.cr-bars b{font:600 .9375rem/1 var(--cr-f);font-variant-numeric:tabular-nums}
+
+/* needs vs. everything else */
+.cr-split{display:flex;gap:4px;height:22px}
+.cr-split i{display:block;height:100%;width:var(--w);border-radius:11px;transform-origin:0 50%;transform:scaleX(0);transition:transform .9s cubic-bezier(.22,1,.36,1) .3s}
+.cr-split .n{background:#8FB9A0}.cr-split .w{background:#E3A994;transition-delay:.45s}
+.cr-s.in .cr-split i{transform:none}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%}.sw.n{background:#8FB9A0}.sw.w{background:#E3A994}
+
+/* your days */
+.cr-cal{padding:14px;border-radius:22px;background:linear-gradient(135deg,rgba(255,255,255,.78),rgba(255,255,255,.5));box-shadow:inset 0 0 0 1px rgba(255,255,255,.85)}
+.cr-cal-d,.cr-cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.cr-cal-d{margin-bottom:6px}
+.cr-cal-d b{text-align:center;font:600 .6875rem/1 var(--cr-f);color:var(--ink3)}
+.cr-cal-g button{appearance:none;border:0;cursor:pointer;aspect-ratio:1;border-radius:9px;font:600 .75rem/1 var(--cr-f);color:var(--ink);
+  background:rgba(83,110,170,var(--a));transition:background .5s ease calc(var(--i,0) * 12ms)}
+.cr-cal-g button.is-dark{color:#fff}
+.cr-cal-g button.is-zero{background:transparent;box-shadow:inset 0 0 0 1.5px rgba(31,107,69,.55);color:#1F6B45}
+.cr-cal-g button.is-out{background:transparent;color:rgba(29,27,25,.25);cursor:default}
+
+/* ---------- the dark section ---------- */
+.cr-dark .cr-k,.cr-night .cr-k{color:#E9BBA9}
+.cr-dark .cr-h2{color:#fff}
+.cr-dark .cr-h2 em{color:#C9BCE5}
+.cr-dark .cr-p,.cr-night .cr-p{color:#CFCBC4}
+.cr-dark .cr-cue,.cr-night .cr-fine{color:#A9A49C}
+.cr-n{margin:0;font:600 .8125rem/1.3 var(--cr-f);letter-spacing:.06em;text-transform:uppercase;color:#A9A49C}
+.cr-stat{margin:0;font:700 clamp(2.9rem,15vw,4.4rem)/1 var(--cr-f);letter-spacing:-.055em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;
+  background:linear-gradient(118deg,#E9BBA9 0%,#EBCBD1 45%,#C9BCE5 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cr-line{margin:0;font:500 clamp(1.1875rem,5.4vw,1.375rem)/1.35 var(--cr-f);letter-spacing:-.015em;color:#F2F0EC}
+.cr-why{padding:13px 15px;border-radius:18px;font:400 .9375rem/1.45 var(--cr-f);color:#D8D4CD;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+.cr-why span{display:block;margin-bottom:4px;font:600 .6875rem/1.2 var(--cr-f);letter-spacing:.12em;text-transform:uppercase;color:#C9BCE5}
+.cr-try span{color:#A9DDB7}
+.cr-link{appearance:none;border:0;cursor:pointer;align-self:flex-start;display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 4px;background:none;color:#fff;font:600 .9375rem/1 var(--cr-f);text-decoration:underline;text-underline-offset:4px;text-decoration-color:rgba(255,255,255,.35)}
+.cr-link svg{width:16px;height:16px}
+
+/* the end */
+.cr-acts{display:grid;gap:10px;margin-top:6px}
+.cr-acts button{appearance:none;border:0;cursor:pointer;min-height:54px;border-radius:999px;font:600 1rem/1 var(--cr-f)}
+.cr-go{background:var(--ink);color:#fff}
+.cr-ghost{color:var(--ink);background:linear-gradient(135deg,rgba(255,255,255,.75),rgba(255,255,255,.45));box-shadow:inset 0 0 0 1px rgba(255,255,255,.85)}
+
+/* reveal: each screen's lines rise in as it settles */
+.cr-r{opacity:0;transform:translateY(16px);transition:opacity .7s cubic-bezier(.22,1,.36,1) calc(var(--d) * 90ms),transform .7s cubic-bezier(.22,1,.36,1) calc(var(--d) * 90ms)}
+.cr-s.in .cr-r{opacity:1;transform:none}
+.cr-list>.cr-r,.cr-bars>.cr-r{display:block}
+
+/* ---------- purchases sheet ---------- */
+.cr-sheet{position:absolute;inset:0;z-index:10;display:flex;align-items:flex-end;justify-content:center}
+.cr-scrim{position:absolute;inset:0;background:rgba(20,18,16,.35);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.cr-panel{position:relative;width:100%;max-width:520px;max-height:82dvh;display:flex;flex-direction:column;gap:10px;padding:10px 18px calc(env(safe-area-inset-bottom,0px) + 18px);border-radius:28px 28px 0 0;color:var(--ink);
+  background:linear-gradient(160deg,rgba(255,255,255,.94),rgba(248,245,255,.9) 60%,rgba(255,244,239,.9));-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);box-shadow:0 -10px 40px -20px rgba(0,0,0,.35)}
+.cr-grab{align-self:center;width:40px;height:5px;border-radius:3px;background:rgba(29,27,25,.15)}
+.cr-sh-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.cr-sh-h h2{margin:0;font:700 1.375rem/1.2 var(--cr-f);letter-spacing:-.02em}
+.cr-sh-h p{margin:4px 0 0;font:400 .9375rem/1.3 var(--cr-f);color:var(--ink3)}
+.cr-sh-h .cr-gb{background:#EEECE8;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;color:var(--ink)}
+.cr-tx{list-style:none;margin:0;padding:0;overflow-y:auto;overscroll-behavior:contain}
+.cr-tx li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 2px;border-bottom:1px solid rgba(29,27,25,.07)}
+.cr-tx li span{display:flex;flex-direction:column;gap:3px;min-width:0}
+.cr-tx li span b{font:600 .9375rem/1.25 var(--cr-f);overflow-wrap:anywhere}
+.cr-tx small{font:400 .8125rem/1.2 var(--cr-f);color:var(--ink3)}
+.cr-tx li>b{font:600 .9375rem/1 var(--cr-f);font-variant-numeric:tabular-nums}
+.cr-none{color:var(--ink3);justify-items:start}
+
+.cr button:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+
+/* small phones: tighter, still one screen each */
+@media (max-height:700px){
+  .cr-s{padding-top:calc(env(safe-area-inset-top,0px) + 68px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 28px)}
+  .cr-in{gap:10px}
+  .cr-p{font-size:1rem}
+  .cr-why{padding:10px 13px;font-size:.875rem}
+  .cr-list button{min-height:52px;padding:10px 14px}
+  .cr-cal{padding:10px}.cr-cal-g,.cr-cal-d{gap:4px}
+  .cr-duo b{font-size:1.25rem}
+  .cr-cue{display:none}
+}
+@media (max-width:350px){.cr-bars button{grid-template-columns:minmax(0,7.5em) minmax(0,1fr) auto;gap:8px}.cr-duo{gap:8px}.cr-duo p{padding:12px}}
+@media (prefers-reduced-motion:reduce){.cr-r,.cr-bar-t i,.cr-split i{transition:none!important;opacity:1;transform:none}.cr-cue{animation:none}}
+@media (prefers-reduced-transparency:reduce){.cr-gb,.cr-duo p,.cr-list button,.cr-cal,.cr-panel{background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}}

@@ -124,3 +124,7 @@
   box-shadow:inset 0 0 0 1px #fff,0 8px 18px -10px rgba(50,38,84,.4)!important}
 .fh-nav-btn.is-on svg{stroke-width:2}
 @media (prefers-reduced-transparency:reduce){.fh-nav{background:#F7F5F1!important}}
+
+/* the saved card is information only: nothing happens on tap */
+.hm-save-static{cursor:default!important;-webkit-tap-highlight-color:transparent;user-select:text}
+.hm-save-static:hover,.hm-save-static:active{transform:none!important;filter:none!important}

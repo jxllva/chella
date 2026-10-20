@@ -633,11 +633,11 @@
 <section class="mt" aria-label="Your money tree and spending"></section>
 
 <h2 class="hm-k" data-rise>Saving</h2>
-<button class="hm-save" data-h="logsave" data-rise>
+<div class="hm-save hm-save-static" data-rise>
   <span class="hm-save-k">So far, you’ve saved</span>
   <b class="hm-save-n" data-count="${saved}">${m(saved)}</b>
   <span class="hm-save-s">since ${esc(since)}</span>
-</button>
+</div>
 
 <div class="hm-kh" data-rise><h2 class="hm-k">My spending limits</h2>${addBtn('addlimit', 'Add a limit')}</div>
 <div class="hm-limits">
@@ -708,11 +708,13 @@ ${(() => { const past = p.goals.filter(g => g.archived || isDone(p, g)); return 
         setTimeout(() => c.remove(), 1000);
       });
       if (tab === 'profile') catchNewBadges();
+      /* chala v3: Recap opens the month the tree is showing (for a week, the month it starts in) */
+      const recapMonth = (md, off) => { if (md === 'M') return monthKey(new Date(today.getFullYear(), today.getMonth() + off, 1)); const s0 = new Date(today); s0.setDate(today.getDate() - (today.getDay() + 6) % 7 + off * 7); return monthKey(s0); };
       /* chala v3: money tree on Home */
       if (tab === 'home' && window.ChalaSpend && !window.ChalaTree) ChalaSpend.mount(el.querySelector('.mt'), { mode: home.treeMode, onMode: md => { home.treeMode = md; }, getData: treeData,
-        onWrap: () => api.openRecap(null, 'home'), onRecap: (md, off) => { if (window.ChalaInsights) ChalaInsights.open({ mode: md, offset: off, getData: insightData, onStory: k => api.openRecap(k, 'home') }); else api.openRecap(nowKey, 'home'); } });
+        onWrap: () => api.openRecap(null, 'home'), onRecap: (md, off) => api.openBreakdown(recapMonth(md, off), 'home') });
       else if (tab === 'home' && window.ChalaTree) ChalaTree.mount(el.querySelector('.mt'), { mode: home.treeMode, onMode: md => { home.treeMode = md; }, getData: treeData,
-        onWrapped: () => api.openRecap(null, 'home'), onRecap: (md, off) => { if (window.ChalaInsights) ChalaInsights.open({ mode: md, offset: off, getData: insightData, onStory: k => api.openRecap(k, 'home') }); else api.openRecap(nowKey, 'home'); },
+        onWrapped: () => api.openRecap(null, 'home'), onRecap: (md, off) => api.openBreakdown(recapMonth(md, off), 'home'),
         getStats: (md, off) => insightData(md, off),
         coinText: () => `${m(savedTotal(p))} set aside so far` });
       /* chala v3: swipe-up-to-pay cards */
