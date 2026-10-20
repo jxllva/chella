@@ -852,9 +852,7 @@ ${isNew ? '' : '<button class="fz-quiet" type="button" data-s="del">Delete goal<
     <span class="fg-count">${grown}/${SLOTS}</span>
   </div>
   <p class="fz-hint fz-center-t">${pace}</p>
-  ${ev.length ? `<div class="fz-chips fz-chips-row">${ev.map(e => `<span class="fz-chip is-${e.k}">${e.t}</span>`).join('')}</div>` : ''}
   ${left ? `<form class="fz-log fz-log-plant"><span class="fp-money"><i>$</i><input name="amt" inputmode="decimal" placeholder="0" aria-label="Amount to plant"></span><button class="fz-logbtn fj" type="submit">Plant</button></form>` : ''}
-  ${ideas.length ? `<div class="fz-ideas">${ideas.map(i => `<div class="fz-idea fz-glass"><span>${i.t}</span><button class="fz-pill" type="button" data-s="idea-${i.k}" ${i.a === 'Active' ? 'disabled' : ''}>${i.a}</button></div>`).join('')}</div>` : ''}
   <div class="fz-foot"><button class="fz-quiet" type="button" data-s="edit">Edit</button><button class="fz-quiet" type="button" data-s="archive">Archive</button></div>
 </div>`, {
         submit: (f, close) => { const c = cents(f.amt.value); if (!c) { f.amt.focus(); return; } p.contributions.push({ goalId: g.id, cents: c, date: new Date().toISOString() }); store(p); close(); paint(); api.toast(`Planted ${m(c)}`); setTimeout(() => garden(g.id), 280); },
