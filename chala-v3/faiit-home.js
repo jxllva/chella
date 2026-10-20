@@ -557,7 +557,6 @@
 <section class="bd" data-rise aria-label="Achievements">
   <div class="bd-top">
     <div><p class="pf-k">Achievements</p><p class="bd-sum"><b>${got.length}</b> of ${list.length} earned</p></div>
-    <div class="bd-saved"><b data-count="${savedTotal(p)}">${m(savedTotal(p))}</b><span>saved so far</span></div>
   </div>
   <div class="bd-grid">
     ${list.map((b, i) => `<button class="bd-b ${b.done ? 'is-got' : 'is-locked'}${b.done && !seen.includes(b.id) ? ' is-new' : ''}" data-h="badge" data-id="${b.id}" style="--tint:${tints[i % 4]};--i:${i}" aria-label="${esc(b.name)}: ${b.done ? 'earned' : 'locked'}. ${esc(b.how)}">

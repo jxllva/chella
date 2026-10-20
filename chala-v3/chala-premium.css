@@ -852,3 +852,35 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .cc-back-bar span, .cc-strip { background: rgba(255,255,255,.22) !important; }
 .cc-back-bar i, .cc-strip i { background: #fff !important; }
 .cc-low { background: rgba(255,255,255,.95) !important; }
+
+/* Cards in the app's palette: charcoal, peach, lavender. Ink text on light cards, white on the dark one */
+.cc-face { box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 0 0 1px rgba(255,255,255,.18), 0 2px 4px rgba(25,25,25,.08), 0 22px 40px -16px rgba(25,25,25,.34) !important; }
+.cc-sheen { background: rgba(255,255,255,.18) !important; }
+.cc-card .cc-name { color: var(--p-ink) !important; }
+.cc-card .cc-holder { color: rgba(25,25,25,.66) !important; }
+.cc-card .cc-last4 { color: rgba(25,25,25,.58) !important; }
+.cc-card .cc-back-in, .cc-card .cc-back-num { color: var(--p-ink) !important; }
+.cc-card .cc-back-top, .cc-card .cc-back-of, .cc-card .cc-back-bar em { color: rgba(25,25,25,.6) !important; }
+.cc-card .cc-back-bar span, .cc-card .cc-strip { background: rgba(25,25,25,.14) !important; }
+.cc-card .cc-back-bar i, .cc-card .cc-strip i { background: var(--p-ink) !important; }
+.cc-dark .cc-name, .cc-dark .cc-back-in, .cc-dark .cc-back-num { color: #fff !important; }
+.cc-dark .cc-holder { color: rgba(255,255,255,.78) !important; }
+.cc-dark .cc-last4, .cc-dark .cc-back-top, .cc-dark .cc-back-of, .cc-dark .cc-back-bar em { color: rgba(255,255,255,.66) !important; }
+.cc-dark .cc-back-bar span, .cc-dark .cc-strip { background: rgba(255,255,255,.2) !important; }
+.cc-dark .cc-back-bar i, .cc-dark .cc-strip i { background: #fff !important; }
+.cc-dark .cc-sheen { background: rgba(255,255,255,.07) !important; }
+
+/* balance level tag: three signal bars + label */
+.cc-lvl { display: inline-flex !important; align-items: center; gap: 7px; padding: 6px 10px 6px 9px !important; border-radius: 999px; background: rgba(255,255,255,.88) !important; color: var(--p-ink) !important; font: 600 .6875rem/1 var(--p-sans) !important; letter-spacing: 0 !important; }
+.cc-lvl > i { display: none !important; }
+.cc-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 10px; }
+.cc-bars i { display: block; width: 3px; border-radius: 1px; background: rgba(25,25,25,.16); }
+.cc-bars i:nth-child(1) { height: 4px; } .cc-bars i:nth-child(2) { height: 7px; } .cc-bars i:nth-child(3) { height: 10px; }
+.cc-lvl.is-high .cc-bars i { background: #5E8F52; }
+.cc-lvl.is-mid .cc-bars i:nth-child(-n+2) { background: #C9922E; }
+.cc-lvl.is-low .cc-bars i:nth-child(1) { background: #C9553F; }
+.cc-lvl.is-low { color: #A8473A !important; }
+.cc-lvl .cc-bars i { background: rgba(25,25,25,.16) !important; box-shadow: none !important; animation: none !important; }
+.cc-lvl.is-high .cc-bars i { background: #5E8F52 !important; }
+.cc-lvl.is-mid .cc-bars i:nth-child(-n+2) { background: #C9922E !important; }
+.cc-lvl.is-low .cc-bars i:nth-child(1) { background: #C9553F !important; }

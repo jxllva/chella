@@ -17,13 +17,13 @@
 
   const CARDS = [
     { id: 'a', name: 'Everyday', last4: '4021', limit: 3000, pct: 62,
-      base: 'radial-gradient(120% 140% at 100% 0%, #9C8BE0 0%, transparent 55%), linear-gradient(135deg, #3E3270 0%, #5B4A9E 55%, #7462B8 100%)',
+      dark: true, base: 'radial-gradient(120% 140% at 100% 0%, rgba(201,188,229,.42) 0%, transparent 55%), linear-gradient(135deg, #1C1C1E 0%, #2A292F 60%, #3A3842 100%)',
       light: 'rgba(120,230,235,.75)' },
     { id: 'b', name: 'Travel', last4: '7716', limit: 5000, pct: 48,
-      base: 'radial-gradient(120% 140% at 100% 0%, #F7B48E 0%, transparent 55%), linear-gradient(135deg, #B9502E 0%, #D96D45 55%, #E8895E 100%)',
+      base: 'radial-gradient(120% 140% at 100% 0%, #F8E1D7 0%, transparent 55%), linear-gradient(135deg, #D69A82 0%, #E3B19D 55%, #EDC5B5 100%)',
       light: 'rgba(140,235,160,.8)' },
     { id: 'c', name: 'Groceries', last4: '0388', limit: 800, pct: 9,
-      base: 'radial-gradient(120% 140% at 100% 0%, #6FD1B4 0%, transparent 55%), linear-gradient(135deg, #0F5E52 0%, #167A68 55%, #22957E 100%)',
+      base: 'radial-gradient(120% 140% at 100% 0%, #E2DBF4 0%, transparent 55%), linear-gradient(135deg, #A897D6 0%, #BBAEE0 55%, #CEC5EA 100%)',
       light: 'rgba(170,200,255,.75)' }
   ];
   const WARM = 'linear-gradient(118deg, rgba(233,187,169,.55) 0%, rgba(240,210,196,.45) 50%, rgba(233,187,169,.5) 100%)';
@@ -41,14 +41,14 @@
 
     host.innerHTML = `
       ${CARDS.map(d => `
-      <div class="cc-card" data-card="${d.id}" role="button" tabindex="0">
+      <div class="cc-card${d.dark ? ' cc-dark' : ''}" data-card="${d.id}" role="button" tabindex="0">
         <div class="cc-face cc-front">
           <div class="cc-layer" style="background:${d.base}"></div>
           <div class="cc-layer cc-warm" style="background:${WARM}"></div>
           <div class="cc-sheen"></div>
           <div class="cc-strip"><i></i></div>
           <span class="cc-name">${esc(d.name)}</span>
-          <span class="cc-low" hidden><i></i>Low balance</span>
+          <span class="cc-low cc-lvl"><span class="cc-bars" aria-hidden="true"><i></i><i></i><i></i></span><b></b></span>
           ${CHIP}
           <span class="cc-holder">${esc(holder || 'Card holder')}</span>
           <span class="cc-last4">•••• ${d.last4}</span>
@@ -123,12 +123,14 @@
         bar.style.width = fill;
         bar.style.transition = `width 600ms ${EASE} 300ms`;
         bar.style.boxShadow = glowLine;
-        el.querySelector('.cc-low').hidden = ratio >= LOW;
+        // balance level on every card: high (half or more left), medium, low (under 25%)
+        const lvl = ratio >= .5 ? 'high' : ratio >= LOW ? 'mid' : 'low', tag = el.querySelector('.cc-lvl');
+        tag.className = `cc-low cc-lvl is-${lvl}`; tag.querySelector('b').textContent = { high: 'High balance', mid: 'Medium balance', low: 'Low balance' }[lvl];
         el.querySelector('.cc-back-num').textContent = money(avail, true);
         const bb = el.querySelector('.cc-back-bar i');
         bb.style.width = (ratio * 100).toFixed(1) + '%'; bb.style.boxShadow = glowLine;
         el.querySelector('.cc-back-bar em').textContent = Math.round(ratio * 100) + '%';
-        el.setAttribute('aria-label', `${d.name} card, ${money(avail, true)} of ${money(d.limit)} available. ${ratio < LOW ? 'Low balance. ' : ''}${isA ? (s.open ? (flipped() ? 'Activate to flip back.' : 'Activate to see the balance.') : 'Activate to bring up.') : 'Activate to switch to this card.'}`);
+        el.setAttribute('aria-label', `${d.name} card, ${money(avail, true)} of ${money(d.limit)} available. ${ratio >= .5 ? 'High balance. ' : ratio >= LOW ? 'Medium balance. ' : 'Low balance. '}${isA ? (s.open ? (flipped() ? 'Activate to flip back.' : 'Activate to see the balance.') : 'Activate to bring up.') : 'Activate to switch to this card.'}`);
       });
 
       $('.cc-info').classList.toggle('is-on', settled);
