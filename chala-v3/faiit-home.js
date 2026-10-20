@@ -618,7 +618,7 @@
 <header class="hm-head" data-mood="${moodNow}" data-rise>
   ${logoBtn()}
   <p class="hm-when">${esc(today.toLocaleDateString('en-US', { weekday: 'long' }))}<i class="hm-sep" aria-hidden="true">·</i>${esc(today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))}<i class="hm-sep" aria-hidden="true">·</i>${today.getFullYear()}</p>
-  <h1 class="hm-hello">Welcome back,<br><span class="hm-who">${esc(first || 'friend')}</span><span class="hm-dot">.</span></h1>
+  <h1 class="hm-hello"><span class="hm-wb">Welcome back,</span> <span class="hm-who">${esc(first || 'friend')}</span><span class="hm-dot">.</span></h1>
   <p class="hm-nudge">${esc(NUDGE[moodNow])}</p>
 </header>
 <section class="mt" aria-label="Your money tree"></section>
@@ -724,6 +724,21 @@ ${badgesCard()}
     // ----- popups: a title, one control, one action -----
     const chipsOf = (list, sel, name) => `<div class="fz-choose" role="radiogroup">${list.map(v => `<button type="button" class="fp-chip" role="radio" data-s="pick-${name}" data-v="${v.id}" aria-checked="${v.id === sel}" aria-pressed="${v.id === sel}">${v.icon || ''}<span>${esc(v.label)}</span></button>`).join('')}</div>`;
 
+    /* past purchases in one category: date, vendor, amount, grouped by month */
+    function txList(name) {
+      const rows = treeRows.filter(r => r.category === name).sort((a, b) => (a.date < b.date ? 1 : -1));
+      if (!rows.length) return '';
+      const SHOW = 8, months = [];
+      rows.forEach((r, i) => { const k = r.date.slice(0, 7); let g = months[months.length - 1]; if (!g || g.k !== k) months.push(g = { k, rows: [], total: 0 }); g.rows.push({ ...r, i }); g.total += r.cents; });
+      const mName = k => { const d = new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 1); return d.toLocaleDateString('en-US', d.getFullYear() === today.getFullYear() ? { month: 'long' } : { month: 'long', year: 'numeric' }); };
+      const day = d => new Date(d + 'T12:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      return `<section class="tx" aria-label="Past ${esc(name.toLowerCase())} purchases">
+  <h3 class="tx-h">Past purchases</h3>
+  ${months.map(g => `<div class="tx-m${g.rows[0].i >= SHOW ? ' tx-more' : ''}"><p class="tx-mh"><span>${esc(mName(g.k))}</span><span>${m(g.total)} · ${g.rows.length} ${g.rows.length === 1 ? 'purchase' : 'purchases'}</span></p>
+    <ul class="tx-list">${g.rows.map(r => `<li class="tx-r${r.i >= SHOW ? ' tx-more' : ''}"><span class="tx-v">${esc(r.merchant || 'Purchase')}<small>${esc(day(r.date))}</small></span><b class="tx-a">${m(r.cents)}</b></li>`).join('')}</ul></div>`).join('')}
+  ${rows.length > SHOW ? `<button class="tx-all" type="button" data-s="txmore">Show all ${rows.length}</button>` : ''}
+</section>`;
+    }
     function editLimit(name) {
       const cur = p.limits[name] || 0, prot = protects(p, name).length > 0;
       /* chala v3: one clear field for the limit — tap it and type */
@@ -734,10 +749,12 @@ ${badgesCard()}
   <label class="ls-field"><span class="ls-cur">$</span><input id="ls-type" class="ls-type" name="typed" inputmode="numeric" autocomplete="off" value="${cur ? (cur / 100).toFixed(0) : ''}" placeholder="0" aria-label="Monthly limit in dollars for ${esc(name)}" size="5" style="width:${Math.max(1, cur ? String(Math.round(cur / 100)).length : 1) * .62 + .08}em"><span class="ls-per">/ month</span><span class="ls-pen" aria-hidden="true">${I('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>')}</span></label>
   <button class="fh-unwrap fj" type="submit">Save limit</button>
 </form>
-${p.limits[name] ? '<button class="fz-quiet" type="button" data-s="remove">Remove limit</button>' : ''}`, {
+${p.limits[name] ? '<button class="fz-quiet" type="button" data-s="remove">Remove limit</button>' : ''}
+${txList(name)}`, {
         input: t => { if (t.name !== 'typed') return; t.value = t.value.replace(/[^0-9]/g, '').slice(0, 6); t.style.width = `${Math.max(1, t.value.length) * .62 + .08}em`; },
         submit: (f, close) => { const v = (+String(f.typed.value).replace(/[^0-9]/g, '') || 0) * 100; if (v > 0) p.limits[name] = v; else delete p.limits[name]; store(p); close(); paint(); },
-        remove: (t, close) => { delete p.limits[name]; store(p); close(); paint(); }
+        remove: (t, close) => { delete p.limits[name]; store(p); close(); paint(); },
+        txmore: (t, close, w) => { w.querySelector('.tx').classList.add('is-all'); t.remove(); }
       }).el.querySelectorAll('.fj').forEach(jelly);
     }
     function addLimit() {
