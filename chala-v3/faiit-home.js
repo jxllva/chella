@@ -623,7 +623,7 @@ ${goal}
 
     function editLimit(name) {
       const cur = p.limits[name] || 0, last = spend.categories.find(c => c.name === name)?.cents || 0, now = spentNow(name), prot = protects(p, name).length > 0;
-      let max = Math.max(last * 2, cur * 1.5, 20000);
+      let max = Math.ceil(Math.max(last * 2, cur * 1.5, 20000) / 1000) * 1000; // whole $10s at the end of the scale
       /* chala v3: a clearer "set your limit" sheet — no purchase logging here */
       const pct = v => (v / max * 100).toFixed(2) + '%';
       const rel = v => !v ? 'No limit set' : now > v ? `You’ve already spent ${m(now - v)} more than this` : `${m(v - now)} left to spend this month`;
@@ -631,7 +631,8 @@ ${goal}
 <h2 id="fh-sheet-title" class="fh-sh-title ls-title">${esc(name)}</h2>
 <p class="ls-sub">How much do you want to spend on ${esc(name.toLowerCase())} each month?${prot ? ' <span class="fz-tag">Protected</span>' : ''}</p>
 <form class="fz-form ls-form">
-  <label class="ls-big" for="ls-type"><span class="ls-cur">$</span><input id="ls-type" class="ls-type" name="typed" inputmode="decimal" autocomplete="off" value="${(cur / 100).toFixed(0)}" aria-label="Type a monthly limit for ${esc(name)}" size="5"><span class="ls-per">/ month</span><span class="ls-edit" aria-hidden="true">${I('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>')}</span></label>
+  <div class="ls-big"><span class="ls-cur">$</span><input id="ls-type" class="ls-type" name="typed" inputmode="numeric" autocomplete="off" value="${(cur / 100).toFixed(0)}" aria-label="Monthly limit in dollars for ${esc(name)}" size="5" readonly tabindex="-1"><span class="ls-per">/ month</span>
+    <button class="ls-edit" type="button" data-s="editnum" aria-label="Type an amount">${I('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>')}</button></div>
   <div class="ls-track" style="--p:${pct(cur)};--s:${pct(Math.min(now, max))}">
     <input class="ls-range" type="range" name="v" min="0" max="${max}" step="1000" value="${cur}" aria-label="Monthly limit for ${esc(name)}" aria-describedby="fz-ln">
     ${now ? `<span class="ls-spent" aria-hidden="true"><i></i><em>spent ${m(Math.round(now / 100) * 100)}</em></span>` : ''}
@@ -656,7 +657,14 @@ ${p.limits[name] ? '<button class="fz-quiet" type="button" data-s="remove">Remov
           const r = w.querySelector('#fz-ln'); r.textContent = rel(v); r.classList.toggle('is-over', !!v && now > v);
         },
         submit: (f, close) => { const typedV = (+String(f.typed.value).replace(/[^0-9]/g, '') || 0) * 100, v = typedV || +f.v.value; if (v > 0) p.limits[name] = v; else delete p.limits[name]; store(p); close(); paint(); },
-        remove: (t, close) => { delete p.limits[name]; store(p); close(); paint(); }
+        remove: (t, close) => { delete p.limits[name]; store(p); close(); paint(); },
+        // the pencil turns the number into a field; leaving it turns it back
+        editnum: (t, close, w) => {
+          const box = w.querySelector('.ls-big'), inp = w.querySelector('.ls-type');
+          if (box.classList.contains('is-editing')) { inp.blur(); return; }
+          box.classList.add('is-editing'); inp.readOnly = false; inp.tabIndex = 0; inp.focus(); inp.select();
+          inp.addEventListener('blur', () => { box.classList.remove('is-editing'); inp.readOnly = true; inp.tabIndex = -1; if (!inp.value) inp.value = '0'; }, { once: true });
+        }
       }).el.querySelectorAll('.fj').forEach(jelly);
     }
     function addLimit() {

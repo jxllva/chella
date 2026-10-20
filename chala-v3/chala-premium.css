@@ -521,3 +521,13 @@ button:active:not(:disabled), [role=button]:active { transform: scale(.98); }
 .ls-big { padding-bottom: 8px; box-shadow: inset 0 -1px 0 transparent; transition: box-shadow .25s var(--p-ease); }
 .ls-big:focus-within { box-shadow: inset 0 -1.5px 0 #E8743F; }
 .ls-big { gap: 0 !important; } .ls-big .ls-per { margin-left: 10px; }
+/* the number is display-only until the pencil is tapped */
+.ls-big { cursor: default; }
+.ls-big:focus-within { box-shadow: none; }
+.ls-type[readonly] { pointer-events: none; caret-color: transparent; user-select: none; }
+.ls-big.is-editing { box-shadow: inset 0 -1.5px 0 #E8743F !important; }
+.ls-edit { appearance: none; border: 0; cursor: pointer; background: #F0EEEA; color: var(--p-ink); transition: background .2s var(--p-ease), color .2s var(--p-ease); }
+.ls-edit:hover { background: #E7E4DF; }
+.ls-big:focus-within .ls-edit { background: #F0EEEA; color: var(--p-ink); }
+.ls-big.is-editing .ls-edit { background: var(--p-ink); color: #fff; }
+.ls-edit:focus-visible { outline: 2px solid var(--p-ink); outline-offset: 2px; }
