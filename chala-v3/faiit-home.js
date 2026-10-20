@@ -624,18 +624,26 @@ ${goal}
     function editLimit(name) {
       const cur = p.limits[name] || 0, last = spend.categories.find(c => c.name === name)?.cents || 0, now = spentNow(name), prot = protects(p, name).length > 0;
       const max = Math.max(last * 2, cur * 1.5, 20000);
-      sheet(`<h2 id="fh-sheet-title" class="fh-sh-title">${esc(name)}</h2>
-<p class="fz-sh-meta">${m(now)} spent this month${prot ? '<span class="fz-tag">Protected</span>' : ''}</p>
-<form class="fz-form"><output class="fz-big" id="fz-lv">${m(cur)}</output>
-<input type="range" name="v" min="0" max="${max}" step="1000" value="${cur}" aria-label="Monthly limit for ${esc(name)}">
-<p class="fz-hint" id="fz-ln">${last ? `${m(last)} in ${esc(lastMonthName)}` : ''}</p>
-<button class="fh-unwrap fj" type="submit">Save</button></form>
-<div class="fz-log"><span class="fp-money"><i>$</i><input name="buy" inputmode="decimal" placeholder="0" aria-label="Purchase amount"></span><button class="fz-logbtn fj" type="button" data-s="buy">Log purchase</button></div>
+      /* chala v3: a clearer "set your limit" sheet — no purchase logging here */
+      const pct = v => (v / max * 100).toFixed(2) + '%';
+      const rel = v => !v ? 'No limit set' : now > v ? `You’ve already spent ${m(now - v)} more than this` : `${m(v - now)} left to spend this month`;
+      sheet(`<p class="ls-k">Monthly limit</p>
+<h2 id="fh-sheet-title" class="fh-sh-title ls-title">${esc(name)}</h2>
+<p class="ls-sub">How much do you want to spend on ${esc(name.toLowerCase())} each month?${prot ? ' <span class="fz-tag">Protected</span>' : ''}</p>
+<form class="fz-form ls-form">
+  <p class="ls-big"><output id="fz-lv">${m(cur)}</output><span>/ month</span></p>
+  <div class="ls-track" style="--p:${pct(cur)};--s:${pct(Math.min(now, max))}">
+    <input class="ls-range" type="range" name="v" min="0" max="${max}" step="1000" value="${cur}" aria-label="Monthly limit for ${esc(name)}" aria-describedby="fz-ln">
+    ${now ? `<span class="ls-spent" aria-hidden="true"><i></i><em>spent ${m(Math.round(now / 100) * 100)}</em></span>` : ''}
+  </div>
+  <div class="ls-scale" aria-hidden="true"><span>$0</span><span>${m(max)}</span></div>
+  <p class="ls-rel" id="fz-ln">${rel(cur)}</p>
+  <button class="fh-unwrap fj" type="submit">Save limit</button>
+</form>
 ${p.limits[name] ? '<button class="fz-quiet" type="button" data-s="remove">Remove limit</button>' : ''}`, {
-        input: (t, w) => { if (t.name === 'v') w.querySelector('#fz-lv').textContent = m(+t.value); },
+        input: (t, w) => { if (t.name === 'v') { const v = +t.value; w.querySelector('#fz-lv').textContent = m(v); w.querySelector('.ls-track').style.setProperty('--p', pct(v)); const r = w.querySelector('#fz-ln'); r.textContent = rel(v); r.classList.toggle('is-over', !!v && now > v); } },
         submit: (f, close) => { const v = +f.v.value; if (v > 0) p.limits[name] = v; else delete p.limits[name]; store(p); close(); paint(); },
-        remove: (t, close) => { delete p.limits[name]; store(p); close(); paint(); },
-        buy: (t, close, w) => { const c = cents(w.querySelector('[name=buy]').value); if (!c) { w.querySelector('[name=buy]').focus(); return; } if (!p.limits[name]) p.limits[name] = cur || last || c; p.manual.push({ cat: name, cents: c, month: nowKey, date: new Date().toISOString() }); store(p); close(); paint(); api.toast(`Logged ${m(c)}`); }
+        remove: (t, close) => { delete p.limits[name]; store(p); close(); paint(); }
       }).el.querySelectorAll('.fj').forEach(jelly);
     }
     function addLimit() {
