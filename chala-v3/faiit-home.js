@@ -448,17 +448,16 @@
     }
     /* chala v3: profile laid out like chala's (header, goal card, then one row per action) */
     function profileTab() {
-      const vals = p.values.map(valueById).filter(Boolean), arch = p.goals.filter(g => g.archived);
+      const vals = p.values.map(valueById).filter(Boolean);
       const g = p.goals.find(x => !x.archived);
-      const since = new Date(p.joinedAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       const arrow = I('<path d="M5 12h14m-6-6 6 6-6 6"/>');
-      const row = (h, icon, title, sub, cls = '') => `<button class="pf-row fj ${cls}" data-h="${h}"><span class="pf-ic">${I(icon)}</span><span class="pf-t">${title}${sub ? `<small>${sub}</small>` : ''}</span><span class="pf-go">${arrow}</span></button>`;
+      const row = (h, icon, title, sub, cls = '') => `<button class="pf-row ${cls}" data-h="${h}"><span class="pf-ic">${I(icon)}</span><span class="pf-t">${title}${sub ? `<small>${sub}</small>` : ''}</span><span class="pf-go">${arrow}</span></button>`;
       let goal;
       if (g) {
         const sv = savedFor(p, g.id), r = Math.min(1, sv / (g.target || 1));
         goal = `
-<section class="pf-goal fz-glass" data-rise>
-  <div class="pf-goal-top"><span class="pf-k">Your goal</span><button class="pf-add fj" data-h="logsave" aria-label="Set money aside for ${esc(g.title)}">${I('<path d="M12 5v14M5 12h14"/>')}</button></div>
+<section class="pf-goal" data-rise>
+  <div class="pf-goal-top"><span class="pf-k">Your goal</span><button class="pf-add" data-h="logsave" aria-label="Set money aside for ${esc(g.title)}">${I('<path d="M12 5v14M5 12h14"/>')}</button></div>
   <button class="pf-goal-main" data-h="goal" data-id="${g.id}">
     <h2 class="pf-goal-t">${esc(g.title)}</h2>
     <p class="pf-goal-n"><b>${m(sv)}</b> of ${m(g.target)}</p>
@@ -468,8 +467,8 @@
 </section>`;
       } else {
         goal = `
-<section class="pf-goal fz-glass" data-rise>
-  <div class="pf-goal-top"><span class="pf-k">Your goal</span><button class="pf-add fj" data-h="addgoal" aria-label="Add a goal">${I('<path d="M12 5v14M5 12h14"/>')}</button></div>
+<section class="pf-goal" data-rise>
+  <div class="pf-goal-top"><span class="pf-k">Your goal</span><button class="pf-add" data-h="addgoal" aria-label="Add a goal">${I('<path d="M12 5v14M5 12h14"/>')}</button></div>
   <button class="pf-goal-main" data-h="addgoal"><h2 class="pf-goal-t">Pick a goal</h2><p class="pf-goal-n">Something to save toward</p></button>
 </section>`;
       }
@@ -477,24 +476,23 @@
 <header class="pf-head" data-rise>
   <p class="pf-k">Profile</p>
   <h1 class="pf-title">Hi, ${esc(first || 'you')}.</h1>
-  <p class="pf-sub">${esc(api.phone())} · since ${esc(since)}</p>
 </header>
 ${goal}
 <div class="pf-rows">
-  ${row('chalaplan', '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/><path d="M12 10v4M10 12h4"/>', 'Change my plan', 'Goal, habits and limits')}
-  ${row('values', '<path d="M12 20s-7-4.3-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7 2.6C19 15.7 12 20 12 20z"/>', 'What matters to you', vals.length ? esc(vals.map(v => v.label).join(', ')) : 'Nothing picked yet')}
-  ${row('rename', '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/>', 'Your name', esc(user.name || 'Add your name'))}
-  ${row('addstatement', '<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>', 'Add a statement', 'PDF, CSV or a photo')}
-  ${row('review', '<path d="M5 2.5h14v19l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>', 'Review purchases', 'Check and fix what we found')}
+  ${row('chalaplan', '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/><path d="M12 10v4M10 12h4"/>', 'Change my plan', 'Goal, habits and limits', 'h-sage')}
+  ${row('values', '<path d="M12 20s-7-4.3-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7 2.6C19 15.7 12 20 12 20z"/>', 'What matters to you', vals.length ? esc(vals.map(v => v.label).join(', ')) : 'Nothing picked yet', 'h-clay')}
+  ${row('rename', '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/>', 'Your name', esc(user.name || 'Add your name'), 'h-slate')}
+  ${row('addstatement', '<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>', 'Add a statement', 'PDF, CSV or a photo', 'h-ochre')}
+  ${row('review', '<path d="M5 2.5h14v19l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>', 'Review purchases', 'Check and fix what we found', 'h-teal')}
   ${row('signout', '<path d="M15 12H4m4-4-4 4 4 4"/><path d="M11 4h7a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7"/>', 'Sign out', '', 'is-danger')}
 </div>
-${arch.length ? `<section class="fz-glass fz-list pf-arch"><h2 class="fz-card-h fz-pad">Archived goals</h2>${arch.map(a => `<div class="fz-li"><span>${esc(a.title)}</span><button class="fz-pill" data-h="restore" data-id="${a.id}">Restore</button></div>`).join('')}</section>` : ''}`;
+`;
     }
     const navHTML = () => `<nav class="fh-nav" aria-label="Main">${NAV.map(([id, label, ic]) => `<button class="fh-nav-btn fj ${id === tab ? 'is-on' : ''}" data-tab="${id}" aria-label="${label}" ${id === tab ? 'aria-current="page"' : ''}>${ic}<span>${label}</span></button>`).join('')}</nav>`;
 
     function paint() {
       const body = tab === 'wraps' ? wrapsTab() : tab === 'cards' ? cardsTab() : tab === 'profile' ? profileTab() : homeTab();
-      el.innerHTML = `<section class="fz" aria-label="${tab}"><div class="fz-sky" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="fz-page">${body}</div></section>${navHTML()}`;
+      el.innerHTML = `<section class="fz fz-tab-${tab}" aria-label="${tab}"><div class="fz-sky" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="fz-page">${body}</div></section>${navHTML()}`;
       el.querySelectorAll('.fj').forEach(jelly);
       el.querySelectorAll('[data-count]').forEach(n => countUp(n, +n.dataset.count, m));
       /* chala v3: swipe-up-to-pay cards */

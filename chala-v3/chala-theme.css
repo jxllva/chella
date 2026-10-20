@@ -188,33 +188,40 @@ html.ch-open, html.ch-open body { overflow: hidden; }
 @keyframes cc-low { 50% { box-shadow: 0 0 0 5px rgba(212,104,63,.05); } }
 @media (prefers-reduced-motion: reduce) { .cc-low i { animation: none; } }
 
-/* ---------- Profile: chala's structure (header, goal card, one row per action), Faiit's look ---------- */
-.pf-head { margin: 6px 6px 22px; }
-.pf-k { margin: 0; font: 700 .6875rem/1 var(--f-sans); letter-spacing: .16em; text-transform: uppercase; color: var(--f-ink-3); }
-.pf-title { margin: 10px 0 0; font: 800 clamp(2.25rem, 11vw, 2.75rem)/.98 var(--f-sans); letter-spacing: -.055em; color: var(--f-ink); }
-.pf-sub { margin: 10px 0 0; font: 500 1rem/1.3 var(--f-sans); color: var(--f-ink-2); }
-.pf-goal { position: relative; padding: 22px 22px 20px; border-radius: 30px; margin-bottom: 14px; }
+/* ---------- Profile: chala's structure, minimal and high-contrast, neutral hues ----------
+   Plain paper instead of the pink/peach sky, solid white cards, near-black text,
+   and one muted hue per row (sage, clay, slate, ochre, teal). */
+.fz-tab-profile { background: #f3f2ee; }
+.fz-tab-profile .fz-sky { display: none; }
+.pf-head { margin: 10px 4px 24px; }
+.pf-k { margin: 0; font: 700 .6875rem/1 var(--f-sans); letter-spacing: .16em; text-transform: uppercase; color: #6b675f; }
+.pf-title { margin: 10px 0 0; font: 800 clamp(2.25rem, 11vw, 2.75rem)/.98 var(--f-sans); letter-spacing: -.055em; color: #161512; }
+.pf-goal { position: relative; padding: 22px; border-radius: 24px; margin-bottom: 20px; background: #fff; border: 1px solid #e3e1db; }
 .pf-goal-top { display: flex; justify-content: space-between; align-items: center; }
-.pf-add { appearance: none; border: 0; cursor: pointer; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: #3f7a5a; background: rgba(214,236,222,.85); box-shadow: inset 0 0 0 1px rgba(255,255,255,.9); }
-.pf-add svg { width: 22px; height: 22px; }
+.pf-add { appearance: none; border: 0; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #2f6b4f; }
+.pf-add svg { width: 20px; height: 20px; }
 .pf-goal-main { appearance: none; display: block; width: 100%; padding: 0; margin: 0; border: 0; background: none; text-align: left; color: inherit; font: inherit; cursor: pointer; }
-.pf-goal-t { margin: 18px 0 0; font: 800 2.25rem/1 var(--f-sans); letter-spacing: -.055em; color: var(--f-ink); }
-.pf-goal-n { margin: 10px 0 0; font: 600 1.0625rem/1.2 var(--f-sans); color: var(--f-ink-3); }
-.pf-goal-n b { font-weight: 700; color: #3f7a5a; }
-.pf-bar { display: block; height: 8px; margin-top: 18px; border-radius: 8px; background: rgba(34,32,29,.08); overflow: hidden; }
-.pf-bar i { display: block; height: 100%; border-radius: 8px; background: #3f7a5a; }
-.pf-goal-f { display: flex; justify-content: space-between; margin-top: 10px; font: 500 .875rem/1 var(--f-sans); color: var(--f-ink-3); }
-.pf-rows { display: grid; gap: 10px; }
-.pf-row { appearance: none; border: 0; cursor: pointer; display: grid; grid-template-columns: 40px 1fr 24px; align-items: center; gap: 14px; min-height: 78px; padding: 14px 20px; border-radius: 24px; text-align: left; color: var(--f-ink); font: inherit;
-  background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.9), 0 10px 26px -18px rgba(60,50,100,.35); }
-.pf-ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: var(--f-accent); background: rgba(255,255,255,.7); }
-.pf-ic svg { width: 22px; height: 22px; }
-.pf-t { font: 700 1.0625rem/1.2 var(--f-sans); letter-spacing: -.02em; min-width: 0; }
-.pf-t small { display: block; margin-top: 4px; font: 500 .875rem/1.25 var(--f-sans); letter-spacing: 0; color: var(--f-ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pf-go { color: var(--f-ink-3); display: grid; }
-.pf-go svg { width: 22px; height: 22px; }
-.pf-row.is-danger, .pf-row.is-danger .pf-ic { color: #a8432b; }
+.pf-goal-t { margin: 16px 0 0; font: 800 2.125rem/1 var(--f-sans); letter-spacing: -.05em; color: #161512; }
+.pf-goal-n { margin: 8px 0 0; font: 600 1rem/1.2 var(--f-sans); color: #57534c; }
+.pf-goal-n b { font-weight: 800; color: #2f6b4f; }
+.pf-bar { display: block; height: 6px; margin-top: 18px; border-radius: 6px; background: #e8eee9; overflow: hidden; }
+.pf-bar i { display: block; height: 100%; border-radius: 6px; background: #2f6b4f; }
+.pf-goal-f { display: flex; justify-content: space-between; margin-top: 10px; font: 600 .8125rem/1 var(--f-sans); color: #6b675f; }
+.pf-rows { display: grid; background: #fff; border: 1px solid #e3e1db; border-radius: 24px; overflow: hidden; }
+.pf-row { --h-bg: #ecebe7; --h-fg: #3a3833; appearance: none; border: 0; cursor: pointer; display: grid; grid-template-columns: 38px 1fr 20px; align-items: center; gap: 14px; min-height: 72px; padding: 12px 18px; text-align: left; color: #161512; font: inherit; background: transparent; }
+.pf-row + .pf-row { border-top: 1px solid #ecebe7; }
+.pf-row:active { background: #f7f6f3; }
+.pf-ic { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; color: var(--h-fg); background: var(--h-bg); }
+.pf-ic svg { width: 20px; height: 20px; }
+.h-sage  { --h-bg: #e1ece4; --h-fg: #2f6b4f; }
+.h-clay  { --h-bg: #f1e3dc; --h-fg: #93492f; }
+.h-slate { --h-bg: #e0e7ef; --h-fg: #2f5375; }
+.h-ochre { --h-bg: #f2ead3; --h-fg: #7d5d12; }
+.h-teal  { --h-bg: #dcecea; --h-fg: #1f6560; }
+.pf-t { font: 700 1rem/1.2 var(--f-sans); letter-spacing: -.015em; min-width: 0; }
+.pf-t small { display: block; margin-top: 3px; font: 500 .8125rem/1.25 var(--f-sans); letter-spacing: 0; color: #6b675f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-go { color: #a19c93; display: grid; }
+.pf-go svg { width: 18px; height: 18px; }
+.pf-row.is-danger { --h-bg: #f6e1dc; --h-fg: #a3341f; color: #a3341f; }
 .pf-row.is-danger .pf-go { display: none; }
-.pf-arch { margin-top: 14px; }
-.pf-row:focus-visible, .pf-add:focus-visible, .pf-goal-main:focus-visible { outline: 2px solid var(--f-ink); outline-offset: 3px; }
+.pf-row:focus-visible, .pf-add:focus-visible, .pf-goal-main:focus-visible { outline: 2px solid #161512; outline-offset: -2px; }
