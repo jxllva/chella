@@ -448,9 +448,81 @@
 </section>`;
     }
 
+    /* ===== chala v3: Home laid out like the wireframe ===== */
+    // money tree data: spending in limited categories against the limits, for a week or a month
+    const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const treeRows = (api.wrapRows?.() || []).filter(r => r.kind === 'expense' && r.include !== false && r.date);
+    const firstDay = treeRows.reduce((a, r) => (r.date < a ? r.date : a), iso(today));
+    function treeData(mode, off) {
+      if (off > 0) return null;
+      const cats = Object.keys(p.limits).filter(n => p.limits[n] > 0), budgetM = cats.reduce((s, n) => s + p.limits[n], 0);
+      let start, end, label, elapsed, budget, extra = 0;
+      if (mode === 'M') {
+        start = new Date(today.getFullYear(), today.getMonth() + off, 1); end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+        label = start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        budget = budgetM; elapsed = off === 0 ? today.getDate() / end.getDate() : 1;
+        const k = monthKey(start); extra = p.manual.filter(x => x.month === k && cats.includes(x.cat)).reduce((s, x) => s + x.cents, 0);
+      } else {
+        const dow = (today.getDay() + 6) % 7;
+        start = new Date(today); start.setDate(today.getDate() - dow + off * 7); end = new Date(start); end.setDate(start.getDate() + 6);
+        budget = budgetM * 7 / new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+        const a = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        label = start.getMonth() === end.getMonth() ? `${a}–${end.getDate()}, ${end.getFullYear()}` : `${a} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${end.getFullYear()}`;
+        elapsed = off === 0 ? (dow + 1) / 7 : 1;
+      }
+      if (off < 0 && iso(end) < firstDay) return null;
+      const s0 = iso(start), e0 = iso(end);
+      const spent = treeRows.filter(r => r.date >= s0 && r.date <= e0 && cats.includes(r.category)).reduce((s, r) => s + r.cents, 0) + extra;
+      const saved = savedTotal(p);
+      const prevEnd = mode === 'M' ? new Date(start.getFullYear(), start.getMonth(), 0) : new Date(start.getFullYear(), start.getMonth(), start.getDate() - 1);
+      const base = { label, saved, hasNext: off < 0, hasPrev: iso(prevEnd) >= firstDay };
+      if (!budget) return { ...base, health: .66, caption: 'Set a limit to grow your tree', tip: 'Add a spending limit to see how it grows' };
+      const u = spent / Math.max(1, budget * elapsed);
+      let health = u <= .6 ? 1 : u <= 1 ? 1 - (u - .6) / .4 * .42 : Math.max(.05, .58 - (u - 1) * .9);
+      if (saved > 0) health = Math.min(1, health + .05);
+      const left = budget - spent, w = c => m(Math.round(Math.abs(c) / 100) * 100);
+      return { ...base, health, caption: left >= 0 ? `${w(left)} left of ${w(budget)}` : `${w(left)} over ${w(budget)}`,
+        tip: `${Math.round(spent / budget * 100)}% of your ${mode === 'M' ? 'monthly' : 'weekly'} limits used${elapsed < 1 ? `, ${Math.round(elapsed * 100)}% of the ${mode === 'M' ? 'month' : 'week'} gone` : ''}` };
+    }
+
     function homeTab() {
+      const goals = p.goals.filter(g => !g.archived), saved = savedTotal(p);
+      const since = new Date(p.joinedAt || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      const names = Object.keys(p.limits);
+      const addBtn = (h, label) => `<button class="hm-add" data-h="${h}" aria-label="${label}">${I('<path d="M12 5v14M5 12h14"/>')}</button>`;
       return `
-<div class="fx-colors">${heroFX()}${limitTiles()}${savingsBlob()}</div>${room()}`;
+<header class="hm-head" data-rise><span class="hm-mark">chala</span><p class="hm-hi">welcome back</p><h1 class="hm-name">${esc(user.name || first || 'there')}</h1></header>
+<section class="mt" aria-label="Your money tree"></section>
+
+<h2 class="hm-k" data-rise>Saving</h2>
+<button class="hm-save" data-h="logsave" data-rise>
+  <span class="hm-save-k">So far, you’ve saved</span>
+  <b class="hm-save-n" data-count="${saved}">${m(saved)}</b>
+  <span class="hm-save-s">since ${esc(since)}</span>
+</button>
+
+<div class="hm-kh" data-rise><h2 class="hm-k">My spending limits</h2>${addBtn('addlimit', 'Add a limit')}</div>
+<div class="hm-limits">
+  ${names.map(n => {
+    const lim = p.limits[n], sp = spentNow(n), r = lim ? sp / lim : 0, k = r > 1 ? 'over' : r >= .7 ? 'near' : 'ok';
+    return `<button class="lc is-${k}" data-h="limit" data-c="${esc(n)}" data-rise aria-label="${esc(n)}: ${m(sp)} spent of ${m(lim)}${k === 'over' ? ', over limit' : ''}">
+      <span class="lc-top"><span class="lc-n">${esc(n)}</span><i class="lc-dot" aria-hidden="true"></i></span>
+      <b class="lc-num">${m(Math.round(sp / 100) * 100)}</b>
+      <span class="lc-of">of ${m(lim)}</span>
+      <span class="lc-bar"><i style="width:${Math.min(100, r * 100).toFixed(1)}%"></i></span>
+    </button>`; }).join('') || '<button class="lc lc-empty" data-h="addlimit"><span>Add your first limit</span></button>'}
+</div>
+
+<div class="hm-kh" data-rise><h2 class="hm-k">My goals</h2>${addBtn('addgoal', 'Add a goal')}</div>
+<div class="hm-goals">
+  ${goals.map(g => { const s = savedFor(p, g.id), r = g.target ? Math.min(1, s / g.target) : 0; return `
+  <button class="gc" data-h="goal" data-id="${g.id}" data-rise aria-label="${esc(g.title)}: ${m(s)} of ${m(g.target)}">
+    <span class="gc-t">${esc(g.title)}</span>
+    <span class="gc-n"><b>${m(s)}</b> of ${m(g.target)}</span>
+    <span class="gc-bar"><i style="width:${Math.max(2, r * 100).toFixed(1)}%"></i></span>
+    <span class="gc-f"><span>${Math.round(r * 100)}% there</span><span>Tap to add funds</span></span>
+  </button>`; }).join('') || '<button class="gc gc-empty" data-h="addgoal"><span class="gc-t">Pick a goal</span><span class="gc-n">Something to save toward</span></button>'}
+</div>`;
     }
     function wrapsTab() {
       return `
@@ -512,6 +584,10 @@ ${goal}
       el.innerHTML = `<section class="fz fz-tab-${tab}" aria-label="${tab}"><div class="fz-sky" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="fz-page">${body}</div></section>${navHTML()}`;
       el.querySelectorAll('.fj').forEach(jelly);
       el.querySelectorAll('[data-count]').forEach(n => countUp(n, +n.dataset.count, m));
+      /* chala v3: money tree on Home */
+      if (tab === 'home' && window.ChalaTree) ChalaTree.mount(el.querySelector('.mt'), { mode: home.treeMode, onMode: md => { home.treeMode = md; }, getData: treeData,
+        onWrapped: () => api.openRecap(monthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1)), 'home'), onRecap: () => api.openRecap(nowKey, 'home'),
+        coinText: () => `${m(savedTotal(p))} set aside so far` });
       /* chala v3: swipe-up-to-pay cards */
       if (tab === 'cards' && window.ChalaCards) ChalaCards.mount(el.querySelector('.cc'), { holder: user.name || '' });
       if (tab === 'wraps' && window.FaiitGallery) FaiitGallery.render(el.querySelector('.wg-host'), { rows: api.wrapRows?.() || [], sample: api.isSample?.(), tab: home.wrapsView, onTab: t => { home.wrapsView = t; }, onWrap: k => api.openRecap(k, 'wraps'), onBreakdown: k => api.openBreakdown(k, 'wraps') });
@@ -677,4 +753,5 @@ ${isNew ? '' : '<button class="fz-quiet" type="button" data-s="del">Delete goal<
   const reset = () => { try { localStorage.removeItem(KEY); } catch {} };
   window.FaiitHome = { plan, home, needsPlan, reset, jelly };
   home.wrapsView = 'monthly';
+  home.treeMode = 'M';
 })();
