@@ -623,7 +623,7 @@ ${goal}
 
     function editLimit(name) {
       const cur = p.limits[name] || 0, last = spend.categories.find(c => c.name === name)?.cents || 0, now = spentNow(name), prot = protects(p, name).length > 0;
-      const max = Math.max(last * 2, cur * 1.5, 20000);
+      let max = Math.max(last * 2, cur * 1.5, 20000);
       /* chala v3: a clearer "set your limit" sheet — no purchase logging here */
       const pct = v => (v / max * 100).toFixed(2) + '%';
       const rel = v => !v ? 'No limit set' : now > v ? `You’ve already spent ${m(now - v)} more than this` : `${m(v - now)} left to spend this month`;
@@ -631,18 +631,31 @@ ${goal}
 <h2 id="fh-sheet-title" class="fh-sh-title ls-title">${esc(name)}</h2>
 <p class="ls-sub">How much do you want to spend on ${esc(name.toLowerCase())} each month?${prot ? ' <span class="fz-tag">Protected</span>' : ''}</p>
 <form class="fz-form ls-form">
-  <p class="ls-big"><output id="fz-lv">${m(cur)}</output><span>/ month</span></p>
+  <label class="ls-big" for="ls-type"><span class="ls-cur">$</span><input id="ls-type" class="ls-type" name="typed" inputmode="decimal" autocomplete="off" value="${(cur / 100).toFixed(0)}" aria-label="Type a monthly limit for ${esc(name)}" size="5"><span class="ls-per">/ month</span><span class="ls-edit" aria-hidden="true">${I('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>')}</span></label>
   <div class="ls-track" style="--p:${pct(cur)};--s:${pct(Math.min(now, max))}">
     <input class="ls-range" type="range" name="v" min="0" max="${max}" step="1000" value="${cur}" aria-label="Monthly limit for ${esc(name)}" aria-describedby="fz-ln">
     ${now ? `<span class="ls-spent" aria-hidden="true"><i></i><em>spent ${m(Math.round(now / 100) * 100)}</em></span>` : ''}
   </div>
-  <div class="ls-scale" aria-hidden="true"><span>$0</span><span>${m(max)}</span></div>
+  <div class="ls-scale" aria-hidden="true"><span>$0</span><span class="ls-max">${m(max)}</span></div>
   <p class="ls-rel" id="fz-ln">${rel(cur)}</p>
   <button class="fh-unwrap fj" type="submit">Save limit</button>
 </form>
 ${p.limits[name] ? '<button class="fz-quiet" type="button" data-s="remove">Remove limit</button>' : ''}`, {
-        input: (t, w) => { if (t.name === 'v') { const v = +t.value; w.querySelector('#fz-lv').textContent = m(v); w.querySelector('.ls-track').style.setProperty('--p', pct(v)); const r = w.querySelector('#fz-ln'); r.textContent = rel(v); r.classList.toggle('is-over', !!v && now > v); } },
-        submit: (f, close) => { const v = +f.v.value; if (v > 0) p.limits[name] = v; else delete p.limits[name]; store(p); close(); paint(); },
+        input: (t, w) => {
+          const range = w.querySelector('.ls-range'), typed = w.querySelector('.ls-type'), track = w.querySelector('.ls-track');
+          let v;
+          if (t.name === 'typed') {
+            // typing: keep digits only, grow the slider if the number goes past its end
+            t.value = t.value.replace(/[^0-9]/g, '').slice(0, 6);
+            v = (+t.value || 0) * 100;
+            if (v > max) { max = Math.ceil(v * 1.25 / 10000) * 10000; range.max = max; w.querySelector('.ls-max').textContent = m(max); track.style.setProperty('--s', pct(Math.min(now, max))); }
+            range.value = v;
+          } else if (t.name === 'v') { v = +t.value; typed.value = Math.round(v / 100); }
+          else return;
+          track.style.setProperty('--p', pct(v));
+          const r = w.querySelector('#fz-ln'); r.textContent = rel(v); r.classList.toggle('is-over', !!v && now > v);
+        },
+        submit: (f, close) => { const typedV = (+String(f.typed.value).replace(/[^0-9]/g, '') || 0) * 100, v = typedV || +f.v.value; if (v > 0) p.limits[name] = v; else delete p.limits[name]; store(p); close(); paint(); },
         remove: (t, close) => { delete p.limits[name]; store(p); close(); paint(); }
       }).el.querySelectorAll('.fj').forEach(jelly);
     }
