@@ -369,6 +369,18 @@
     }
 
     const TONES = ['teal', 'sunset', 'iris', 'meadow'];
+    const LT_ICON = n => I(({
+      'Food delivery': '<circle cx="7" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/><path d="M9 17.5h6M3.5 13.5h7l2.5 4M14 7h3l3.5 10.5"/><rect x="3.5" y="7.5" width="6" height="6" rx="1"/>',
+      Shopping: '<path d="M3 7.2 12 3l9 4.2v9.6L12 21l-9-4.2z"/><path d="M3 7.2 12 11.4l9-4.2M12 11.4V21"/>',
+      'Cafés': '<path d="M4.5 9h12v4.5A5.5 5.5 0 0 1 11 19h-1a5.5 5.5 0 0 1-5.5-5.5z"/><path d="M16.5 10.5h1.2a2.6 2.6 0 0 1 0 5.2h-1.6"/>',
+      Dining: '<path d="M7 3v8a2 2 0 0 0 4 0V3M9 13v8"/><path d="M17 3c-2 0-3 3-3 6s1 4 3 4v8"/>',
+      Groceries: '<path d="M3 9h18l-2 11H5z"/><path d="M8 9l4-6 4 6"/>',
+      Transport: '<rect x="5.5" y="3" width="13" height="14" rx="3"/><path d="M5.5 10.5h13M9 21l1.2-4M15 21l-1.2-4"/>',
+      Subscriptions: '<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>',
+      Travel: '<path d="M21.5 2.5 10.8 13.2"/><path d="M21.5 2.5 14.8 21.5l-4-8.3-8.3-4z"/>',
+      Health: '<path d="M12 20s-7-4.3-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7 2.6C19 15.7 12 20 12 20z"/>',
+      Education: '<path d="M4 6.5C6.5 5 9.5 5 12 6.8 14.5 5 17.5 5 20 6.5V19c-2.5-1.5-5.5-1.5-8 .3-2.5-1.8-5.5-1.8-8-.3z"/>'
+    })[n] || '<circle cx="12" cy="12" r="8"/>');
     function limitTiles() {
       const names = Object.keys(p.limits);
       return `
@@ -377,14 +389,18 @@
   <h2 class="fx-h" id="fx-lim-h" data-rise>Limits</h2>
   <div class="fx-tiles">
     ${names.map((n, i) => {
+      /* chala v3: chala's "left to spend" card layout */
       const lim = p.limits[n], sp = spentNow(n), r = lim ? sp / lim : 0, k = r > 1 ? 'over' : r >= .8 ? 'near' : 'ok', prot = protects(p, n).length > 0;
-      return `<button class="fx-tile fj tone-${TONES[i % 4]} is-${k}${r >= 1 ? ' is-out' : ''}" data-h="limit" data-c="${esc(n)}" data-rise
-        aria-label="${esc(n)}: ${k === 'over' ? `${m(sp - lim)} over` : `${m(lim - sp)} left`} of ${m(lim)}${prot ? ', protected' : ''}">
-        <span class="fx-tile-bg" aria-hidden="true"><i></i><i></i></span>
-        <span class="fx-tile-name">${esc(n)}${prot ? `<span class="fx-shield" aria-hidden="true">${I('<path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z"/>')}</span>` : ''}</span>
-        <span class="fx-gauge">${arcFX(r)}<span class="fx-tile-num"><b>${m(Math.abs(lim - sp))}</b><i>${k === 'over' ? 'over' : 'left'}</i></span></span>
+      const left = lim - sp, whole = c => m(Math.round(Math.abs(c) / 100) * 100), perDay = left > 0 ? `${m(Math.floor(left / Math.max(1, daysLeft + 1)))}/day` : 'pause it';
+      return `<button class="lt fj is-${k}" data-h="limit" data-c="${esc(n)}" data-rise
+        aria-label="${esc(n)}: ${k === 'over' ? `${m(-left)} over` : `${m(left)} left`} of ${m(lim)}${prot ? ', protected' : ''}">
+        <span class="lt-k">${left >= 0 ? 'Left to spend' : 'Over by'}</span>
+        <span class="lt-n">${LT_ICON(n)}<span>${esc(n)}</span>${prot ? `<span class="lt-shield" aria-hidden="true">${I('<path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z"/>')}</span>` : ''}</span>
+        <b class="lt-num">${whole(left)}</b>
+        <span class="lt-of">of ${whole(lim)} · ${perDay}</span>
+        <span class="lt-bar"><i style="width:${Math.max(0, Math.min(100, (1 - r) * 100)).toFixed(1)}%"></i></span>
       </button>`; }).join('')}
-    <button class="fx-tile fx-add fj" data-h="addlimit" data-rise>${I('<path d="M12 5v14M5 12h14"/>')}<span>Add a limit</span></button>
+    <button class="lt lt-add fj" data-h="addlimit" data-rise><span class="lt-plus">${I('<path d="M12 5v14M5 12h14"/>')}</span><span>Add a limit</span></button>
   </div>
 </section>`;
     }

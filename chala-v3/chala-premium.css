@@ -322,3 +322,26 @@ button:active:not(:disabled), [role=button]:active { transform: scale(.98); }
 #chala-layer .lr-free, #chala-layer .limit-sum b { color: var(--p-ink) !important; font-weight: 600; }
 .rc-page .day.is-lit { background: rgba(25,25,25,var(--a)) !important; }
 .rc-page .slice { transition: transform .35s var(--p-ease), opacity .3s var(--p-ease) !important; }
+
+/* =====================================================================
+   Home: limit cards in chala's "left to spend" layout
+   ===================================================================== */
+.fx-tiles { gap: 12px !important; }
+.lt { appearance: none; border: 0; cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: flex-start; text-align: left; min-width: 0; min-height: 188px; padding: 18px 18px 18px; border-radius: var(--p-r);
+  font-family: var(--p-sans); color: var(--p-ink); background: var(--p-card); box-shadow: 0 0 0 1px var(--p-line), var(--p-shadow); }
+.lt:focus-visible { outline: 2px solid var(--p-ink); outline-offset: 3px; }
+.lt-k { font: 500 .6875rem/1 var(--p-sans); letter-spacing: .14em; text-transform: uppercase; color: var(--p-ink-3); }
+.lt-n { display: flex; align-items: center; gap: 7px; max-width: 100%; margin-top: 9px; font: 600 .9375rem/1.2 var(--p-sans); letter-spacing: -.015em; }
+.lt-n > span:first-of-type { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lt-n svg { flex: none; width: 17px; height: 17px; stroke-width: 1.7; color: var(--p-ink); }
+.lt-shield svg { width: 13px; height: 13px; color: var(--p-ink-3); }
+.lt-num { margin-top: auto; padding-top: 18px; font: 700 clamp(2.125rem, 10.5vw, 2.75rem)/1 var(--p-sans); letter-spacing: -.055em; font-variant-numeric: tabular-nums; color: var(--p-ink); }
+.lt-of { margin-top: 8px; font: 500 .8125rem/1.25 var(--p-sans); color: var(--p-ink-3); font-variant-numeric: tabular-nums; }
+.lt-bar { display: block; width: 100%; height: 5px; margin-top: 14px; border-radius: 5px; background: #ECEAE6; overflow: hidden; }
+.lt-bar i { display: block; height: 100%; border-radius: 5px; background: var(--p-ink); transition: width .6s var(--p-ease); }
+.lt.is-near .lt-bar i { background: #C98A75; }
+.lt.is-over .lt-num { color: #B4573F; }
+.lt-add { align-items: center; justify-content: center; gap: 10px; background: transparent; box-shadow: inset 0 0 0 1px var(--p-line-2); color: var(--p-ink-2); font: 500 .9375rem/1 var(--p-sans); }
+.lt-plus { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--p-ink); color: #fff; }
+.lt-plus svg { width: 20px; height: 20px; }
+.fz-glow { display: none !important; } /* old decorative glows behind sections */
