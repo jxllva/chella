@@ -735,3 +735,15 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .fz-form .fz-money-big input:focus { outline: none; }
 .fz-choose .fp-chip { font-weight: 500 !important; font-size: .875rem !important; color: var(--p-ink-2); }
 .fz-choose .fp-chip[aria-checked="true"] { color: #fff; }
+
+/* limit sheet: the amount is its own field */
+.ls-field { display: flex; align-items: center; gap: 2px; margin: 26px 0 22px; padding: 0 16px 0 20px; min-height: 84px; border-radius: 20px; background: #fff; box-shadow: inset 0 0 0 1px var(--p-line-2); cursor: text; transition: box-shadow .2s ease; }
+.ls-field:focus-within { box-shadow: inset 0 0 0 1.5px var(--p-ink); }
+.ls-field .ls-cur { font: 500 2rem/1 var(--p-sans); color: var(--p-ink-3); }
+.fz-form .ls-field .ls-type { flex: none; min-width: 0; max-width: 60%; min-height: 0; padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; border-radius: 0 !important; font: 600 2.75rem/1 var(--p-sans) !important; letter-spacing: -.045em !important; color: var(--p-ink); font-variant-numeric: tabular-nums; field-sizing: content; }
+.fz-form .ls-field .ls-type:focus { outline: none; }
+.ls-field .ls-type::placeholder { color: var(--p-ink-3); opacity: 1; }
+.ls-field .ls-per { margin-left: 8px; font: 400 1rem/1 var(--p-sans); color: var(--p-ink-3); }
+.ls-pen { margin-left: auto; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: #F4F2EF; color: var(--p-ink-2); }
+.ls-pen svg { width: 17px; height: 17px; }
+.ls-field:focus-within .ls-pen { background: var(--p-ink); color: #fff; }
