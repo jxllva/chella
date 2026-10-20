@@ -17,13 +17,13 @@
 
   const CARDS = [
     { id: 'a', name: 'Everyday', last4: '4021', limit: 3000, pct: 62,
-      base: 'linear-gradient(118deg, #E6E0F3 0%, #DCD3EF 45%, #EFEAF6 100%)',
+      base: 'radial-gradient(120% 140% at 100% 0%, #9C8BE0 0%, transparent 55%), linear-gradient(135deg, #3E3270 0%, #5B4A9E 55%, #7462B8 100%)',
       light: 'rgba(120,230,235,.75)' },
     { id: 'b', name: 'Travel', last4: '7716', limit: 5000, pct: 48,
-      base: 'linear-gradient(118deg, #F3E1D8 0%, #ECCBBD 50%, #F6E9E2 100%)',
+      base: 'radial-gradient(120% 140% at 100% 0%, #F7B48E 0%, transparent 55%), linear-gradient(135deg, #B9502E 0%, #D96D45 55%, #E8895E 100%)',
       light: 'rgba(140,235,160,.8)' },
     { id: 'c', name: 'Groceries', last4: '0388', limit: 800, pct: 9,
-      base: 'linear-gradient(118deg, #F4E5E8 0%, #ECD0D6 50%, #F7ECEE 100%)',
+      base: 'radial-gradient(120% 140% at 100% 0%, #6FD1B4 0%, transparent 55%), linear-gradient(135deg, #0F5E52 0%, #167A68 55%, #22957E 100%)',
       light: 'rgba(170,200,255,.75)' }
   ];
   const WARM = 'linear-gradient(118deg, rgba(233,187,169,.55) 0%, rgba(240,210,196,.45) 50%, rgba(233,187,169,.5) 100%)';

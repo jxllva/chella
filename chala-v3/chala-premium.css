@@ -837,3 +837,18 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .fz-danger { width: min(100%, 280px); margin: 12px auto 0; }
 .fz-chips-h { margin-top: 6px !important; }
 .ri-dash { display: inline-block; margin: 0 .1em; letter-spacing: 0; }
+
+/* Cards: bold, saturated cards that stand off the page */
+.cc-face { box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.12), 0 2px 4px rgba(25,25,25,.10), 0 24px 44px -16px rgba(25,25,25,.42) !important; }
+.cc-warm { display: none !important; }
+.cc-sheen { background: rgba(255,255,255,.14) !important; }
+.cc-name { color: #fff !important; }
+.cc-holder { color: rgba(255,255,255,.82) !important; }
+.cc-last4 { color: rgba(255,255,255,.72) !important; }
+.cc-back-in { color: #fff !important; }
+.cc-back-top { color: rgba(255,255,255,.72) !important; }
+.cc-back-num { color: #fff !important; }
+.cc-back-of, .cc-back-bar em { color: rgba(255,255,255,.72) !important; }
+.cc-back-bar span, .cc-strip { background: rgba(255,255,255,.22) !important; }
+.cc-back-bar i, .cc-strip i { background: #fff !important; }
+.cc-low { background: rgba(255,255,255,.95) !important; }
