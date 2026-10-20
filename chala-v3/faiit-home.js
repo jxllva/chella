@@ -32,6 +32,9 @@
   const store = p => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch {} };
   const savedFor = (plan, goalId) => plan.contributions.filter(c => c.goalId === goalId).reduce((s, c) => s + c.cents, 0);
   const savedTotal = plan => plan.contributions.reduce((s, c) => s + c.cents, 0);
+  /* chala v3: a goal is done once it has its target; done and archived goals live under Past goals */
+  const isDone = (plan, g) => !!g.target && savedFor(plan, g.id) >= g.target;
+  const doneOn = (plan, g) => g.doneAt || plan.contributions.filter(c => c.goalId === g.id).map(c => c.date).sort().pop() || '';
 
   // ---------- shared motion ----------
   // Jelly: squish on press, overshoot and settle on release. Gentle wobble on hover is CSS.
@@ -643,14 +646,15 @@
 
 <div class="hm-kh" data-rise><h2 class="hm-k">My goals</h2>${addBtn('addgoal', 'Add a goal')}</div>
 <div class="hm-goals">
-  ${goals.map(g => { const s = savedFor(p, g.id), r = g.target ? Math.min(1, s / g.target) : 0; return `
+  ${goals.filter(g => !isDone(p, g)).map(g => { const s = savedFor(p, g.id), r = g.target ? Math.min(1, s / g.target) : 0; return `
   <button class="gc" data-h="goal" data-id="${g.id}" data-rise aria-label="${esc(g.title)}: ${m(s)} of ${m(g.target)}">
     <span class="gc-t">${esc(g.title)}</span>
     <span class="gc-n"><b>${m(s)}</b> of ${m(g.target)}</span>
     <span class="gc-bar"><i style="width:${Math.max(2, r * 100).toFixed(1)}%"></i></span>
     <span class="gc-f"><span>${Math.round(r * 100)}% there</span><span>Tap to add funds</span></span>
   </button>`; }).join('') || '<button class="gc gc-empty" data-h="addgoal"><span class="gc-t">Pick a goal</span><span class="gc-n">Something to save toward</span></button>'}
-</div>`;
+</div>
+${(() => { const past = p.goals.filter(g => g.archived || isDone(p, g)); return past.length ? `<button class="gc-past" data-h="pastgoals" data-rise><span class="gc-past-ic">${I('<path d="M4 12.5 9 17.5 20 6.5"/>')}</span><span class="gc-past-t">View past goals</span><span class="gc-past-n">${past.length}</span>${I('<path d="M9.5 6l6 6-6 6"/>')}</button>` : ''; })()}`;
     }
     function wrapsTab() {
       return `
@@ -788,7 +792,7 @@ ${isNew ? '' : `<button class="fz-danger" type="button" data-s="del">${I('<path 
       { group: 'Other', id: 'other', title: 'Something else', icon: '<circle cx="6.5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="17.5" cy="12" r="1.2"/>' }
     ];
     function logSave(pre) {
-      const goals = p.goals.filter(g => !g.archived);
+      const goals = p.goals.filter(g => !g.archived && !isDone(p, g));
       let dest = pre || goals[0]?.id || 'savings';
       const tints = ['#F6E0D6', '#E7E1F5', '#F6E3E8', '#E1EEDA'];
       const goalIc = '<path d="M6 21V4"/><path d="M6 4.5h11l-2.2 3.6L17 11.7H6"/>';
@@ -811,7 +815,9 @@ ${isNew ? '' : `<button class="fz-danger" type="button" data-s="del">${I('<path 
         'pick-dest': (t, close, w) => { dest = t.dataset.v; w.querySelectorAll('[data-s="pick-dest"]').forEach(b => b.setAttribute('aria-checked', b.dataset.v === dest)); },
         newgoal: (t, close) => { close(); setTimeout(() => editGoal('new'), 260); },
         submit: (f, close) => { const c = cents(f.amt.value); if (!c) { f.amt.focus(); return; }
-          p.contributions.push({ goalId: dest, cents: c, date: new Date().toISOString() }); store(p); close(); paint();
+          p.contributions.push({ goalId: dest, cents: c, date: new Date().toISOString() });
+          const dg = p.goals.find(x => x.id === dest); if (dg && !dg.doneAt && isDone(p, dg)) dg.doneAt = new Date().toISOString();
+          store(p); close(); paint();
           const name = goals.find(g => g.id === dest)?.title || BUCKETS.find(b => b.id === dest)?.title || 'savings';
           api.toast(`Added ${m(c)} to ${name}`); }
       }).el.querySelectorAll('.fj').forEach(jelly);
@@ -827,6 +833,25 @@ ${isNew ? '' : `<button class="fz-danger" type="button" data-s="del">${I('<path 
     }
 
     // ----- garden -----
+    function pastGoals() {
+      const past = p.goals.filter(g => g.archived || isDone(p, g)).sort((a, b) => (doneOn(p, b) > doneOn(p, a) ? 1 : -1));
+      const day = d => d ? new Date(d.length === 10 ? d + 'T12:00' : d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      const row = g => { const sv = savedFor(p, g.id), done = isDone(p, g);
+        return `<div class="pg-row">
+          <button type="button" class="pg-main" data-s="open" data-id="${g.id}">
+            <span class="sa-ic" style="background:${done ? '#E1EEDA' : '#F0EFEC'}">${I(done ? '<path d="M4 12.5 9 17.5 20 6.5"/>' : '<rect x="3.5" y="4.5" width="17" height="4" rx="1"/><path d="M5 8.5V18a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 18V8.5M10 12.5h4"/>')}</span>
+            <span class="sa-t">${esc(g.title)}<small>${done ? `Completed ${esc(day(doneOn(p, g)))} · ${m(sv)} saved` : `Archived · ${m(sv)} of ${m(g.target)}`}</small></span>
+          </button>
+          ${g.archived ? `<button type="button" class="pg-restore" data-s="restore" data-id="${g.id}">Restore</button>` : ''}
+        </div>`; };
+      const done = past.filter(g => isDone(p, g) && !g.archived), arch = past.filter(g => g.archived);
+      const ov = sheet(`<h2 id="fh-sheet-title" class="fh-sh-title">Past goals</h2>
+${done.length ? `<p class="sa-gh">Completed</p><div class="sa-list">${done.map(row).join('')}</div>` : ''}
+${arch.length ? `<p class="sa-gh">Archived</p><div class="sa-list">${arch.map(row).join('')}</div>` : ''}`, {
+        open: (t, close) => { close(); setTimeout(() => garden(t.dataset.id), 260); },
+        restore: (t, close) => { const g = p.goals.find(x => x.id === t.dataset.id); if (g) { g.archived = false; store(p); close(); paint(); api.toast(`${g.title} is back in your goals`); } }
+      });
+    }
     function garden(id) {
       const g = p.goals.find(x => x.id === id); if (!g) return;
       const SLOTS = 10, target = g.target || 1;
@@ -879,11 +904,11 @@ ${isNew ? '' : `<button class="fz-danger" type="button" data-s="del">${I('<path 
           });
           w.querySelector('.fg-pace').textContent = st.pace;
           f.amt.value = '';
-          if (!st.left) { f.remove(); api.toast(`${g.title} is fully grown`); }
+          if (!st.left) { f.remove(); g.doneAt = new Date().toISOString(); store(p); paint(); api.toast(`${g.title} is fully grown. It’s in past goals now.`); }
           else { api.toast(`Planted ${m(c)}`); f.amt.blur(); }
         },
         edit: (t, close) => { close(); setTimeout(() => editGoal(g.id), 260); },
-        archive: (t, close) => { g.archived = true; store(p); close(); paint(); api.toast('Archived. It’s in Profile.'); }
+        archive: (t, close) => { g.archived = true; store(p); close(); paint(); api.toast('Archived. It’s in past goals.'); }
       }, 'is-garden');
       ov.el.querySelectorAll('.fj').forEach(jelly);
     }
@@ -905,6 +930,7 @@ ${isNew ? '' : `<button class="fz-danger" type="button" data-s="del">${I('<path 
       else if (k === 'goal') garden(t.dataset.id);
       else if (k === 'restore') { const g = p.goals.find(x => x.id === t.dataset.id); if (g) { g.archived = false; store(p); paint(); } }
       else if (k === 'addgoal') editGoal('new');
+      else if (k === 'pastgoals') pastGoals();
       else if (k === 'logsave') logSave();
       else if (k === 'badge') { const b = badgeList().find(x => x.id === t.dataset.id), note = el.querySelector('.bd-note');
         if (b && note) note.innerHTML = `<b>${esc(b.name)}</b> · ${esc(b.how)}.`;
