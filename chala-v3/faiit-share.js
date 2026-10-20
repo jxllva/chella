@@ -125,7 +125,7 @@
   <g font-family="Bricolage Grotesque" font-weight="800" font-size="120" fill="${CREAM}" text-anchor="middle" letter-spacing="-3"><text x="540" y="470">${gs.length ? 'Next up,' : 'Not every'}</text><text x="540" y="600">${gs.length ? 'I’m saving' : 'month is a'}</text><text x="540" y="730">${gs.length ? 'for these.' : 'plot twist.'}</text></g>
   <g transform="translate(0 ${up})"><rect x="200" y="980" width="680" height="480" fill="${CREAM}"/>
     <text x="540" y="1060" font-family="Courier Prime" font-weight="700" font-size="36" fill="#6E0F14" text-anchor="middle" letter-spacing="3">${gs.length ? 'SEALED GOALS' : 'NOTE TO SELF'}</text>
-    ${gs.length ? gs.map((g, k) => `<text x="540" y="${1150 + k * 78}" font-family="Bricolage Grotesque" font-weight="700" font-size="54" fill="${INK}" text-anchor="middle">${esc(g.length > 22 ? g.slice(0, 21) + '…' : g)}</text>`).join('') : `${para(d.note + '.', { x: 540, y: 1150, size: 58, max: 22, fill: INK, anchor: 'middle' })}`}</g>
+    ${gs.length ? gs.map((g, k) => `<circle cx="262" cy="${1132 + k * 82}" r="11" fill="#B71C25"/><text x="296" y="${1150 + k * 82}" font-family="Bricolage Grotesque" font-weight="700" font-size="52" fill="${INK}" text-anchor="start">${esc(g.length > 21 ? g.slice(0, 20) + '…' : g)}</text>`).join('') : `${para(d.note + '.', { x: 540, y: 1150, size: 58, max: 22, fill: INK, anchor: 'middle' })}`}</g>
   <path d="M170 1200 H910 V1620 H170 Z" fill="#B71C25"/>
   <path d="M170 1200 L540 1450 L910 1200" fill="#D1232E"/>
   <path d="M170 1620 L470 1400 M910 1620 L610 1400" stroke="#8E1219" stroke-width="5"/>

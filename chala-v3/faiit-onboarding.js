@@ -66,7 +66,8 @@
   const S = { open: false, mode: 'up', step: 'phone', dir: 'from-right', iso: guessCountry(), phone: '', code: '', first: '', last: '', error: '', resendAt: 0, verifying: false, known: null };
   let root = null, api = null, resendTimer = null, kbBound = false;
 
-  const stepsFor = () => (S.mode === 'in' && S.known) ? ['phone', 'code'] : ['phone', 'code', 'name'];
+  // Log in is just the number and the code; only sign up asks for a name
+  const stepsFor = () => S.mode === 'in' ? ['phone', 'code'] : ['phone', 'code', 'name'];
 
   // ---------- splash ----------
   const F_PATH = 'M-22 0Q-36 0 -36 10Q-36 21 -16 24L4 27Q26 30 34.5 37.5Q43 45 47 66L183 654Q188 675 183.0 682.0Q178 689 158 693L138 697Q125 700 125 708Q125 720 143 720H465Q490 720 485 697L455 531Q452 514 439 514Q425 514 427 527L429 562Q434 631 407.0 663.0Q380 695 338 695Q295 695 275.0 681.0Q255 667 248 638L194 402Q191 388 205 388H242Q285 388 306 435L329 484Q332 490 335.0 493.5Q338 497 344 497Q349 497 353.0 492.5Q357 488 355 480L303 257Q298 240 287 240Q275 240 275 253V301Q275 336 266.0 347.0Q257 358 234 358H198Q183 358 180 344L116 71Q111 50 116.0 41.5Q121 33 141 30L194 23Q206 22 206 12Q206 0 189 0Z';
@@ -347,6 +348,11 @@ ${S.mode === 'in' ? '<p class="fw-sub">Enter the number you signed up with.</p>'
       root.querySelector('#fw-code')?.blur();
       setTimeout(() => {
         S.verifying = false;
+        if (S.mode === 'in') { // chala v3: log in goes straight to the dashboard
+          const u = S.known || { iso: S.iso, phone: S.phone, name: '', nameSource: '', createdAt: new Date().toISOString() };
+          setUser({ ...u, sourced: true, helloSeen: true });
+          const done = api.done; leave(); done({ returning: true, login: true }); return;
+        }
         if (S.known) { const done = api.done; leave(); done({ returning: true }); return; }
         setStep('name');
       }, reduceMotion() ? 50 : 650);

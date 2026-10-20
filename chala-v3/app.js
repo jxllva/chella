@@ -320,7 +320,7 @@ render=function(){
  if(window.Chala){app.innerHTML='';Chala.survey({onExit:()=>{tab='home';history.replaceState({view:'dashboard',tab,step},'',location.pathname);go('dashboard',false)}});return}
  FaiitHome.plan(app,faiitApi());return}}
  if(view==='dashboard'){Faiit.leave();if(FaiitHome.needsPlan()){FaiitHome.plan(app,faiitApi());return}if(!['home','wraps','cards','profile'].includes(tab))tab='home';FaiitHome.home(app,faiitApi(),tab);return}
- if(view==='welcome'){if(Faiit.user()){go(faiitHome(),false);return}Faiit.render(app,{done:()=>{history.replaceState({view:faiitHome(),tab,step},'',location.pathname);go(faiitHome(),false)}});return}
+ if(view==='welcome'){if(Faiit.user()){go(faiitHome(),false);return}Faiit.render(app,{done:o=>{/* chala v3: a log-in lands on the dashboard, never the setup screens */if(o?.login){tab='home';try{const p=JSON.parse(localStorage.getItem('faiit-plan-v1'))||{};if(!p.done)localStorage.setItem('faiit-plan-v1',JSON.stringify({values:[],goals:[],limits:{},contributions:[],manual:[],joinedAt:new Date().toISOString(),...p,done:true}))}catch{}}history.replaceState({view:faiitHome(),tab,step},'',location.pathname);go(faiitHome(),false)}});return}
  if(view==='hello'){if(!faiitSourced()){go('connect',false);return}Faiit.hello(app,{go:()=>{history.replaceState({view:'decoding',tab,step},'',location.pathname);go('decoding',false)}});return}
  if(view==='connect'){Faiit.source(app,{bank:()=>{if(window.FaiitPlaid?.ready())FaiitPlaid.open();else go('fbank')},importFiles:faiitImportFiles,done:faiitToHello,signout:faiitSignOut});return}
  if(view==='fbank'){Faiit.bank(app,{connected:(name,accts)=>{bank=name;selectedAccounts=accts;
