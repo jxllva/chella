@@ -66,7 +66,7 @@
         <path class="mt-trunk" d="M144 214 C146 200 146 196 147 186 L153 186 C154 196 154 200 157 214 Z"/>
         <g class="mt-branches">${SHAPE.branches.map(b => `<path d="${b.d}" stroke-width="${b.w.toFixed(2)}"/>`).join('')}</g>
         <g class="mt-leaves">${SHAPE.leaves.map((l, i) => `<g class="mt-leaf" data-i="${i}" style="--c:${GREENS[Math.floor(l.hue * GREENS.length)]};--a:${AUTUMN[Math.floor(l.hue * 3)]};--d:${(i % 40) * 9}ms">${leafPath(l.x, l.y, l.s, l.tilt)}</g>`).join('')}</g>
-        <g class="mt-coins">${SHAPE.coins.map(([x, y], i) => `<g class="mt-coin" data-i="${i}" style="--d:${i * 70}ms"><line x1="${x.toFixed(1)}" y1="${(y - 2).toFixed(1)}" x2="${x.toFixed(1)}" y2="${(y + 6).toFixed(1)}"/><circle cx="${x.toFixed(1)}" cy="${(y + 11).toFixed(1)}" r="6.2" fill="url(#mt-coin)"/><text x="${x.toFixed(1)}" y="${(y + 13.6).toFixed(1)}">$</text></g>`).join('')}</g>
+<g class="mt-coins"></g>
       </g>
     </svg>`;
   }
@@ -113,7 +113,7 @@
       const nFallen = Math.round(Math.max(0, .7 - h) * 26);
       fallen.forEach((el, i) => el.classList.toggle('on', i < nFallen));
       const nCoins = d.saved > 0 ? Math.min(coins.length, Math.max(1, Math.round(d.saved / 6000))) : 0;
-      coins.forEach((el, i) => el.classList.toggle('on', i < nCoins));
+      // coins removed: the tree is leaves only
       const mood = MOOD.find(([t]) => h >= t)[1];
       host.dataset.mood = mood.toLowerCase();
       $('.mt-mood b').textContent = mood;
@@ -149,7 +149,7 @@
       if (b.dataset.m && b.dataset.m !== st.mode) { st.mode = b.dataset.m; st.offset = 0; opts.onMode?.(st.mode); paint(true); return; }
       if (b.dataset.d) { go(+b.dataset.d); return; }
       if (b.classList.contains('mt-wrapped')) { opts.onWrapped?.(); return; }
-      if (b.classList.contains('mt-recap')) { opts.onRecap?.(); return; }
+      if (b.classList.contains('mt-recap')) { opts.onRecap?.(st.mode, st.offset); return; }
       if (b.classList.contains('mt-stage')) {
         if (e.target.closest('.mt-coin.on')) { tip(opts.coinText?.() || ''); shake(); return; }
         shake();

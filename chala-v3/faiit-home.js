@@ -485,20 +485,56 @@
         tip: `${Math.round(spent / budget * 100)}% of your ${mode === 'M' ? 'monthly' : 'weekly'} limits used${elapsed < 1 ? `, ${Math.round(elapsed * 100)}% of the ${mode === 'M' ? 'month' : 'week'} gone` : ''}` };
     }
 
+    // Recap page data: earned, spent, saved, by day and category, for a week or a month
+    const flowRows = (api.wrapRows?.() || []).filter(r => r.include !== false && r.date && r.cents > 0);
+    function insightData(mode, off) {
+      if (off > 0) return null;
+      const cats = Object.keys(p.limits).filter(n => p.limits[n] > 0), budgetM = cats.reduce((s, n) => s + p.limits[n], 0);
+      let start, end, label, budget, mk = null;
+      if (mode === 'M') {
+        start = new Date(today.getFullYear(), today.getMonth() + off, 1); end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+        label = start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); budget = budgetM; mk = monthKey(start);
+      } else {
+        const dow = (today.getDay() + 6) % 7;
+        start = new Date(today); start.setDate(today.getDate() - dow + off * 7); end = new Date(start); end.setDate(start.getDate() + 6);
+        budget = budgetM * 7 / new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+        const a = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        label = start.getMonth() === end.getMonth() ? `${a}–${end.getDate()}, ${end.getFullYear()}` : `${a} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${end.getFullYear()}`;
+      }
+      if (off < 0 && iso(end) < firstDay) return null;
+      const s0 = iso(start), e0 = iso(end), todayIso = iso(today);
+      const inP = flowRows.filter(r => r.date >= s0 && r.date <= e0);
+      const exp = inP.filter(r => r.kind === 'expense'), manual = mk ? p.manual.filter(x => x.month === mk) : [];
+      const spent = exp.reduce((s, r) => s + r.cents, 0) + manual.reduce((s, x) => s + x.cents, 0);
+      const earned = inP.filter(r => r.kind === 'credit').reduce((s, r) => s + r.cents, 0);
+      const saved = p.contributions.filter(c => { const d = (c.date || '').slice(0, 10); return d >= s0 && d <= e0; }).reduce((s, c) => s + c.cents, 0);
+      const byCat = {}; exp.forEach(r => { byCat[r.category] = (byCat[r.category] || 0) + r.cents; }); manual.forEach(x => { byCat[x.cat] = (byCat[x.cat] || 0) + x.cents; });
+      const days = [];
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const k = iso(d), list = exp.filter(r => r.date === k);
+        days.push({ date: k, cents: list.reduce((s, r) => s + r.cents, 0), limited: list.filter(r => cats.includes(r.category)).reduce((s, r) => s + r.cents, 0),
+          short: mode === 'W' ? d.toLocaleDateString('en-US', { weekday: 'short' }) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          long: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }), future: k > todayIso });
+      }
+      const prevEnd = mode === 'M' ? new Date(start.getFullYear(), start.getMonth(), 0) : new Date(start.getFullYear(), start.getMonth(), start.getDate() - 1);
+      const wrapMonth = window.MW?.PERSONA?.wrapMonth;
+      const storyKey = mode === 'M' && (mk === nowKey || mk === wrapMonth) ? mk : null;
+      return { label, earned, spent, saved, budget, days, cats: Object.entries(byCat).map(([name, cents]) => ({ name, cents })).sort((a, b) => b.cents - a.cents),
+        hasPrev: iso(prevEnd) >= firstDay, hasNext: off < 0, storyKey, storyName: mk === nowKey ? `${start.toLocaleDateString('en-US', { month: 'long' })} so far` : `${start.toLocaleDateString('en-US', { month: 'long' })} Wrapped` };
+    }
+
     function homeTab() {
       const goals = p.goals.filter(g => !g.archived), saved = savedTotal(p);
       const since = new Date(p.joinedAt || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       const names = Object.keys(p.limits);
       const hNow = treeData('M', 0)?.health ?? .66, moodNow = hNow >= .8 ? 'flourishing' : hNow >= .58 ? 'growing' : hNow >= .34 ? 'thirsty' : 'wilting';
-      const hr = today.getHours(), partOfDay = hr < 5 ? 'Night' : hr < 12 ? 'Morning' : hr < 17 ? 'Afternoon' : hr < 22 ? 'Evening' : 'Night';
-      const greet = hr < 5 ? 'Still up' : hr < 12 ? 'Morning' : hr < 17 ? 'Afternoon' : hr < 22 ? 'Evening' : 'Night owl';
       const NUDGE = { flourishing: 'Your money tree is thriving. Keep it up.', growing: 'Your money tree is growing nicely.', thirsty: 'Your money tree could use a slow week.', wilting: 'Your money tree needs a little care.' };
       const addBtn = (h, label) => `<button class="hm-add" data-h="${h}" aria-label="${label}">${I('<path d="M12 5v14M5 12h14"/>')}</button>`;
       return `
 <header class="hm-head" data-mood="${moodNow}" data-rise>
-  <button class="hm-logo" data-logo aria-label="chala">cha<span class="hm-l">l<svg class="hm-sprout" viewBox="0 0 24 24" aria-hidden="true"><path class="hm-stem" d="M12 22c0-5 0-8 1-11"/><path class="hm-leaf1" d="M13 11c-1-4 2-7 7-7 0 5-3 8-7 7z"/><path class="hm-leaf2" d="M12.4 14c-.6-3-3.4-4.8-7.4-4.4.2 3.8 3 5.6 7.4 4.4z"/></svg></span>a</button>
-  <p class="hm-when">${esc(today.toLocaleDateString('en-US', { weekday: 'long' }))} ${esc(partOfDay.toLowerCase())} · ${esc(today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))}</p>
-  <h1 class="hm-hello">${esc(greet)},<br><span class="hm-who">${esc(first || 'friend')}</span><span class="hm-dot">.</span></h1>
+  <button class="hm-logo" data-logo aria-label="chala">cha<span class="hm-l" aria-hidden="true"><svg class="hm-sprout" viewBox="0 0 14 30"><path class="hm-stem" d="M7 29.5V9.5"/><path class="hm-leaf1" d="M7.4 11.5C6.6 6.3 9 2.4 13.6 1.6c.6 5-1.9 9-6.2 9.9z"/><path class="hm-leaf2" d="M6.6 16.8C6.9 12.4 4.2 9.6.4 9.4c-.4 4.2 2 7.2 6.2 7.4z"/></svg></span>a</button>
+  <p class="hm-when">${esc(today.toLocaleDateString('en-US', { weekday: 'long' }))} ${esc(today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))} ${today.getFullYear()}</p>
+  <h1 class="hm-hello">Welcome back,<br><span class="hm-who">${esc(first || 'friend')}</span><span class="hm-dot">.</span></h1>
   <p class="hm-nudge">${esc(NUDGE[moodNow])}</p>
 </header>
 <section class="mt" aria-label="Your money tree"></section>
@@ -535,47 +571,25 @@
     }
     function wrapsTab() {
       return `
-<header class="fz-top"><h1 class="fz-title">Wraps</h1></header>
+<header class="pf-head" data-rise><p class="pf-k">Wraps</p><h1 class="pf-title">Your recaps.</h1></header>
 <div class="wg-host"></div>
 <button class="fz-addstmt" data-h="addstatement">${I('<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>')}Add a statement</button>`;
     }
     function cardsTab() {
       return `
-<header class="fz-top"><h1 class="fz-title">Cards</h1></header>
+<header class="pf-head" data-rise><p class="pf-k">Cards</p><h1 class="pf-title">Your cards.</h1></header>
 <div class="cc" aria-label="Swipe up to pay"></div>`;
     }
     /* chala v3: profile laid out like chala's (header, goal card, then one row per action) */
     function profileTab() {
       const vals = p.values.map(valueById).filter(Boolean);
-      const g = p.goals.find(x => !x.archived);
       const arrow = I('<path d="M5 12h14m-6-6 6 6-6 6"/>');
       const row = (h, icon, title, sub, cls = '') => `<button class="pf-row ${cls}" data-h="${h}"><span class="pf-ic">${I(icon)}</span><span class="pf-t">${title}${sub ? `<small>${sub}</small>` : ''}</span><span class="pf-go">${arrow}</span></button>`;
-      let goal;
-      if (g) {
-        const sv = savedFor(p, g.id), r = Math.min(1, sv / (g.target || 1));
-        goal = `
-<section class="pf-goal" data-rise>
-  <div class="pf-goal-top"><span class="pf-k">Your goal</span><button class="pf-add" data-h="logsave" aria-label="Set money aside for ${esc(g.title)}">${I('<path d="M12 5v14M5 12h14"/>')}</button></div>
-  <button class="pf-goal-main" data-h="goal" data-id="${g.id}">
-    <h2 class="pf-goal-t">${esc(g.title)}</h2>
-    <p class="pf-goal-n"><b>${m(sv)}</b> of ${m(g.target)}</p>
-    <span class="pf-bar"><i style="width:${Math.max(2, r * 100).toFixed(1)}%"></i></span>
-    <span class="pf-goal-f"><span>${Math.round(r * 100)}% there</span><span>Tap to add money</span></span>
-  </button>
-</section>`;
-      } else {
-        goal = `
-<section class="pf-goal" data-rise>
-  <div class="pf-goal-top"><span class="pf-k">Your goal</span><button class="pf-add" data-h="addgoal" aria-label="Add a goal">${I('<path d="M12 5v14M5 12h14"/>')}</button></div>
-  <button class="pf-goal-main" data-h="addgoal"><h2 class="pf-goal-t">Pick a goal</h2><p class="pf-goal-n">Something to save toward</p></button>
-</section>`;
-      }
       return `
 <header class="pf-head" data-rise>
   <p class="pf-k">Profile</p>
   <h1 class="pf-title">Hi, ${esc(first || 'you')}.</h1>
 </header>
-${goal}
 <div class="pf-rows">
   ${row('chalaplan', '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/><path d="M12 10v4M10 12h4"/>', 'Change my plan', 'Goal, habits and limits', 'h-sage')}
   ${row('values', '<path d="M12 20s-7-4.3-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7 2.6C19 15.7 12 20 12 20z"/>', 'What matters to you', vals.length ? esc(vals.map(v => v.label).join(', ')) : 'Nothing picked yet', 'h-clay')}
@@ -602,7 +616,7 @@ ${goal}
       });
       /* chala v3: money tree on Home */
       if (tab === 'home' && window.ChalaTree) ChalaTree.mount(el.querySelector('.mt'), { mode: home.treeMode, onMode: md => { home.treeMode = md; }, getData: treeData,
-        onWrapped: () => api.openRecap(monthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1)), 'home'), onRecap: () => api.openRecap(nowKey, 'home'),
+        onWrapped: () => api.openRecap(monthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1)), 'home'), onRecap: (md, off) => { if (window.ChalaInsights) ChalaInsights.open({ mode: md, offset: off, getData: insightData, onStory: k => api.openRecap(k, 'home') }); else api.openRecap(nowKey, 'home'); },
         coinText: () => `${m(savedTotal(p))} set aside so far` });
       /* chala v3: swipe-up-to-pay cards */
       if (tab === 'cards' && window.ChalaCards) ChalaCards.mount(el.querySelector('.cc'), { holder: user.name || '' });
