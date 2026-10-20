@@ -182,10 +182,7 @@
       if (b.classList.contains('mt-recap')) { opts.onRecap?.(st.mode, st.offset); return; }
       if (b.classList.contains('mt-stage')) {
         if (e.target.closest('.mt-coin.on')) { tip(opts.coinText?.() || ''); shake(); return; }
-        shake();
-        const box = $('.mt-pop');
-        if (box.classList.contains('on')) { box.classList.remove('on'); return; }
-        if (!pop()) { const d = opts.getData(st.mode, st.offset); tip(d.tip); }
+        shake(); // tap just shakes the tree; the numbers live on the Recap page
       }
     });
     // swipe across the tree to move between periods
