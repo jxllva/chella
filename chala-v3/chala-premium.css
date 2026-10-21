@@ -1123,3 +1123,28 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .cs .cs-detail { margin-top: 10px; }
 .cs:not(.is-month) .cs-legend { display: none; }
 .cs .cs-stage { margin-top: 4px !important; }
+
+/* selected day: a clear card, and a stronger mark on the day itself */
+.cs .cs-detail { min-height: 0; margin: 14px 0 0; text-align: left; }
+.cs .cs-sum { display: block; text-align: center; padding: 6px 0; }
+.cs-day { padding: 14px 16px; border-radius: 18px; background: #FBF7F4; box-shadow: inset 0 0 0 1px rgba(25,25,25,.05); animation: cs-day-in .32s cubic-bezier(.2,.8,.2,1); }
+.cs-day-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cs-day-when { display: flex; flex-direction: column; gap: 3px; }
+.cs-day-when b { font: 600 1.125rem/1.05 var(--p-sans); letter-spacing: -.02em; color: var(--p-ink); }
+.cs-day-when span { font: 400 .8125rem/1 var(--p-sans); color: var(--p-ink-3); }
+.cs-day-r { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.cs-day-amt { font: 600 1.75rem/1 var(--p-sans); letter-spacing: -.045em; color: var(--p-ink); font-variant-numeric: tabular-nums; }
+.cs-day-lv { padding: 3px 8px; border-radius: 999px; background: #EFEBE6; font: 600 .6875rem/1.2 var(--p-sans); color: var(--p-ink-2); }
+.cs-day.lv-1 .cs-day-lv { background: #FDE8DE; color: #B4573F; }
+.cs-day.lv-2 .cs-day-lv { background: #FAD9C9; color: #A9472B; }
+.cs-day.lv-3 .cs-day-lv { background: #F6C4AF; color: #93351C; }
+.cs-day.lv-4 .cs-day-lv { background: #A93A1E; color: #fff; }
+.cs-day-parts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(25,25,25,.06); }
+.cs-day-p { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 8px; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px rgba(25,25,25,.06); font: 500 .75rem/1 var(--p-sans); color: var(--p-ink-2); }
+.cs-day-p i { width: 8px; height: 8px; border-radius: 50%; }
+.cs-day-p b { font-weight: 600; color: var(--p-ink); font-variant-numeric: tabular-nums; }
+@keyframes cs-day-in { from { opacity: 0; transform: translateY(6px); } }
+.cs .cs-cell.is-sel { background: #fff; box-shadow: inset 0 0 0 1.5px var(--p-ink); }
+.cs .cs-cell.is-sel .cs-n { color: var(--p-ink); font-weight: 700; }
+.cs .cs-col.is-sel { background: linear-gradient(rgba(25,25,25,0), rgba(25,25,25,.05)); box-shadow: inset 0 -2px 0 var(--p-ink); }
+@media (prefers-reduced-motion: reduce) { .cs-day { animation: none; } }

@@ -43,6 +43,17 @@
       const parts = KINDS.filter(([k]) => d.cats[k]).map(([k, n]) => `${n} ${money(d.cats[k])}`).join(', ');
       return `${name} · <b>${money(d.total)}</b> · ${LEVELS[level(d.total, D.usual)][2].toLowerCase()} day<span class="cs-parts">${parts}</span>`;
     };
+    // the selected day as a small card: date and amount up front, how heavy it was, then what it went on
+    const dayCard = d => {
+      const wd = new Date(d.iso + 'T12:00:00'), day = wd.toLocaleDateString('en-US', { weekday: 'long' }), date = wd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const lv = d.future ? -1 : level(d.total, D.usual);
+      const tag = d.future ? 'Still to come' : !d.total ? 'Nothing spent' : LEVELS[lv][2] + ' day';
+      const parts = KINDS.filter(([k]) => d.cats[k]).sort((a, b) => d.cats[b[0]] - d.cats[a[0]]).map(([k, n, c]) => `<span class="cs-day-p"><i style="background:${c}"></i>${n}<b>${money(d.cats[k])}</b></span>`).join('');
+      return `<div class="cs-day lv-${lv}">
+        <div class="cs-day-top"><span class="cs-day-when"><b>${date}</b><span>${day}</span></span>
+          <span class="cs-day-r"><b class="cs-day-amt">${d.future ? '–' : money(d.total)}</b><span class="cs-day-lv">${tag}</span></span></div>
+        ${parts ? `<div class="cs-day-parts">${parts}</div>` : ''}</div>`;
+    };
     const label = x => esc(dayLine(x).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '));
 
     function week() {
@@ -101,7 +112,7 @@
     host.classList.toggle('no-anim', !animate || reduce());
     $('.cs-stage').innerHTML = mode === 'M' ? month() : week();
     const s = sel && D.days.find(x => x.iso === sel);
-    $('.cs-detail').innerHTML = s ? dayLine(s) : '<span class="cs-sum">Tap a day to see spending details</span>';
+    $('.cs-detail').innerHTML = s ? dayCard(s) : '<span class="cs-sum">Tap a day to see spending details</span>';
     $('.cs-legend').innerHTML = mode === 'M'
       ? `<span class="cs-scale">Chill ${LEVELS.slice(1).map(([, c]) => shell(c, 'cs-key')).join('')} Heavy</span>`
       : '';
