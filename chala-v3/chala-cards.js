@@ -2,7 +2,8 @@
    - The chosen card sits up top; the rest peek out of a wallet at the bottom.
    - Tap the card to flip it: the back shows what's available, against the limit.
    - Swipe it sideways to flip through your cards, or tap / swipe up a card in the wallet to bring it up.
-   - Minimal faces: no balance tags; the bar on the back turns red when a card runs low. */
+   - Minimal faces. A card under 25% of its limit is visibly low: a red Low pill (it shows in the wallet too),
+     a nearly empty red line on the front, and a red bar and 'running low' on the back. */
 (() => {
   const EASE = 'cubic-bezier(.2,.8,.2,1)';
   const LOW = .25, MID = .5;
@@ -28,15 +29,16 @@
     host.innerHTML = `${CARDS.map(d => {
       const avail = d.limit * d.pct / 100, r = avail / d.limit, [lk, lt] = level(r);
       return `
-      <div class="cf-card${d.dark ? ' is-dark' : ''}" data-card="${d.id}" role="button" tabindex="0" style="--bg:${d.bg};--ink:${d.ink}">
+      <div class="cf-card${d.dark ? ' is-dark' : ''}${lk === 'low' ? ' is-low' : ''}" data-card="${d.id}" role="button" tabindex="0" style="--bg:${d.bg};--ink:${d.ink}">
         <div class="cf-face cf-front">
-          <div class="cf-row"><span class="cf-name">${esc(d.name)}</span></div>
+          <div class="cf-row"><span class="cf-name">${esc(d.name)}</span>${lk === 'low' ? `<span class="cf-lowpill"><i aria-hidden="true">!</i>Low</span>` : ''}</div>
           ${CHIP}
+          ${lk === 'low' ? `<div class="cf-lowline"><span><i style="--w:${Math.max(4, r * 100).toFixed(1)}%"></i></span><em>${whole(avail)} left</em></div>` : ''}
           <div class="cf-row cf-foot"><span class="cf-holder"><b>${esc(hFirst)}</b>${hRest ? ' ' + esc(hRest) : ''}</span><span class="cf-last">•••• ${d.last4}</span></div>
         </div>
         <div class="cf-face cf-back">
           <div class="cf-row"><span class="cf-k">Available</span><span class="cf-last cf-last-s">•••• ${d.last4}</span></div>
-          <div class="cf-amt"><b>${money(avail)}</b><span>of ${whole(d.limit)} limit</span></div>
+          <div class="cf-amt"><b>${money(avail)}</b><span>of ${whole(d.limit)} limit${lk === 'low' ? ' · <strong class="cf-lowtxt">running low</strong>' : ''}</span></div>
           <div class="cf-bar is-${lk}"><span><i style="--w:${(r * 100).toFixed(1)}%"></i></span><em>${Math.round(r * 100)}%</em></div>
         </div>
       </div>`; }).join('')}
@@ -79,7 +81,9 @@
         el.setAttribute('aria-label', `${d.name} card ending ${d.last4}, ${money(avail)} of ${whole(d.limit)} available. ${isA ? (s.flip ? 'Tap to flip back.' : 'Tap to see the balance.') : 'Tap to bring it up.'}`);
       });
       host.querySelectorAll('[data-dot]').forEach(i => i.classList.toggle('on', i.dataset.dot === act));
-      $('.cf-hint').textContent = s.flip ? 'Tap to flip back · swipe for your next card' : 'Tap to see your balance · swipe for your next card';
+      const ad = CARDS.find(c => c.id === act), aLow = ad.pct / 100 < LOW;
+      $('.cf-hint').textContent = aLow ? `${ad.name} is running low · ${whole(ad.limit * ad.pct / 100)} left of ${whole(ad.limit)}` : s.flip ? 'Tap to flip back · swipe for your next card' : 'Tap to see your balance · swipe for your next card';
+      $('.cf-hint').classList.toggle('is-low', aLow);
     }
 
     const bring = id => { if (id === s.order[0]) return; s.order = [id, ...s.order.filter(x => x !== id)]; s.flip = false; render(); };

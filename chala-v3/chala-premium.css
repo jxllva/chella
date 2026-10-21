@@ -1266,3 +1266,24 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .jr-lab { font: 500 10px/1 var(--p-sans); fill: var(--p-ink-3); font-variant-numeric: tabular-nums; transition: fill .3s; }
 .jr-lab.on { fill: var(--p-ink); font-weight: 700; }
 .jr-sh use { filter: drop-shadow(0 1px 0 rgba(120,50,20,.2)); }
+
+/* a card running low looks low: red pill (shows in the wallet too), a nearly empty red line, red bar on the back */
+.cf-lowpill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px 4px 4px; border-radius: 999px; background: #E5402A; color: #fff; font: 600 .6875rem/1 var(--p-sans); letter-spacing: .02em; box-shadow: 0 4px 10px -4px rgba(229,64,42,.6); }
+.cf-lowpill i { width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: #E5402A; font: 800 .625rem/1 var(--p-sans); font-style: normal; }
+.cf-card.is-low.is-up .cf-lowpill { animation: cf-low-pulse 2.4s ease-in-out infinite; }
+@keyframes cf-low-pulse { 0%, 100% { box-shadow: 0 4px 10px -4px rgba(229,64,42,.6), 0 0 0 0 rgba(229,64,42,.45); } 50% { box-shadow: 0 4px 10px -4px rgba(229,64,42,.6), 0 0 0 6px rgba(229,64,42,0); } }
+.cf-lowline { display: flex; align-items: center; gap: 10px; margin-top: auto; margin-bottom: 12px; }
+.cf-lowline span { flex: 1; height: 4px; border-radius: 4px; background: rgba(255,255,255,.22); overflow: hidden; }
+.cf-card:not(.is-dark) .cf-lowline span { background: rgba(0,0,0,.1); }
+.cf-lowline i { display: block; height: 100%; width: var(--w); border-radius: 4px; background: #FF5A43; }
+.cf-lowline em { font: 600 .75rem/1 var(--p-sans); font-style: normal; color: #FF7A66; font-variant-numeric: tabular-nums; }
+.cf-card:not(.is-dark) .cf-lowline em { color: #C9331D; }
+.cf-card.is-low .cf-front { justify-content: flex-start; }
+.cf-card.is-low .cf-front .cf-chip { margin: 14px 0 0; }
+.cf-card.is-low .cf-front .cf-foot { margin-top: 0; }
+.cf-card.is-low .cf-bar i { background: #FF5A43 !important; }
+.cf-card.is-low .cf-bar em { padding: 3px 7px; border-radius: 999px; background: #E5402A; color: #fff; }
+.cf-lowtxt { font-weight: 700; color: #FF7A66; }
+.cf-card:not(.is-dark) .cf-lowtxt { color: #C9331D; }
+.cf-hint.is-low { color: #C9331D; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .cf-lowpill { animation: none !important; } }
