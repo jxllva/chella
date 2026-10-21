@@ -1,0 +1,107 @@
+/* chala v3 — soft grain backgrounds for the story slides and the interactive Wrapped.
+   Loaded last. Only backgrounds and text colours change here; layout, art and copy are untouched.
+
+   Each screen gets ONE colour: a soft wash from the top-left corner that fades into a pale
+   tint of the same colour, a faint echo of it lower down, and a fine film grain.
+   The text on each screen is a deep shade of that same colour, the second line a mid shade.
+
+   Palette: yellow, green, sky blue, dark blue, lime green, ochre.
+     --wa  wash colour      --wd  deep text      --wc  mid accent (second line, highlights)
+   The dark interludes (the story's "Jokes aside" pause and the Wrapped's "Spot the trick")
+   stay dark on purpose. */
+
+:root {
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .2  0 0 0 0 .24  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.32'/></svg>");
+}
+
+/* ---------- the six colours ---------- */
+.bgw-yellow { --wa: #EBDC8C; --wd: #5C4310; --wc: #C29129; }
+.bgw-green  { --wa: #A7E2C3; --wd: #1F5039; --wc: #2F8A5C; }
+.bgw-sky    { --wa: #A8D3F1; --wd: #1B4369; --wc: #2F78BF; }
+.bgw-navy   { --wa: #B6C2F2; --wd: #1C2468; --wc: #3A4FC4; }
+.bgw-lime   { --wa: #CBE89A; --wd: #2C4710; --wc: #5E9A26; }
+.bgw-ochre  { --wa: #E8C88C; --wd: #5A3A0E; --wc: #A8701F; }
+
+/* The story slides keep their own hue names; each maps onto one of the six. */
+#chala-layer .hue-butter { --wa: #EBDC8C; --wd: #5C4310; --wc: #C29129; }
+#chala-layer .hue-mint   { --wa: #A7E2C3; --wd: #1F5039; --wc: #2F8A5C; }
+#chala-layer .hue-sky    { --wa: #A8D3F1; --wd: #1B4369; --wc: #2F78BF; }
+#chala-layer .hue-peri,
+#chala-layer .hue-lav    { --wa: #B6C2F2; --wd: #1C2468; --wc: #3A4FC4; }
+#chala-layer .hue-lime   { --wa: #CBE89A; --wd: #2C4710; --wc: #5E9A26; }
+#chala-layer .hue-peach,
+#chala-layer .hue-pink   { --wa: #E8C88C; --wd: #5A3A0E; --wc: #A8701F; }
+
+/* ---------- the wash (shared) ---------- */
+#chala-layer .story-frame, #chala-layer .slide, .cw {
+  --wash:
+    radial-gradient(118% 62% at 0% 0%, color-mix(in srgb, var(--wa) 96%, transparent) 0%, color-mix(in srgb, var(--wa) 52%, transparent) 34%, transparent 72%),
+    radial-gradient(80% 42% at 100% 84%, color-mix(in srgb, var(--wa) 30%, transparent), transparent 72%),
+    linear-gradient(180deg, color-mix(in srgb, var(--wa) 20%, #EEF0F2) 0%, color-mix(in srgb, var(--wa) 8%, #F3F3F1) 100%);
+}
+
+/* =====================================================================
+   Story slides (roast Wrapped and the live recap)
+   ===================================================================== */
+#chala-layer .t-blend .slide:not(.is-pause)[class*='hue-']:not(.hue-night) {
+  --bg: var(--wash);
+  --ink: var(--wd); --text: var(--wd); --l1: var(--wd); --acc: var(--wc);
+  --grain-op: .55; --grain-blend: multiply;
+  --chip-fg: var(--wd);
+}
+/* the slide's grain layer, finer and a touch stronger, like film */
+#chala-layer .t-blend .slide:not(.is-pause):not(.hue-night) .bg .grain { background-image: var(--grain); background-size: 220px 220px; }
+#chala-layer .t-blend .slide:not(.is-pause):not(.hue-night) .s-kicker { color: var(--wd); opacity: .82; }
+#chala-layer .t-blend .slide:not(.is-pause):not(.hue-night) .s-sub { color: var(--wd); }
+#chala-layer .t-blend .slide:not(.is-pause):not(.hue-night) .s-punch .l2 { color: var(--wc); }
+#chala-layer .t-blend .slide:not(.is-pause):not(.hue-night) .bar-top,
+#chala-layer .t-blend .slide:not(.is-pause):not(.hue-night) .s-foot { color: var(--wd); }
+/* the chrome over the slide (progress, wordmark, pause, close) takes the same deep shade */
+#chala-layer .story-frame.t-blend[class*='hue-']:not(.hue-night) { --text: var(--wd); background: var(--wash); }
+
+/* =====================================================================
+   Interactive Wrapped (chala-wrap.js)
+   ===================================================================== */
+.cw[data-genre=cold],
+.cw[data-genre=box]      { --wa: #EBDC8C; --wd: #5C4310; --wc: #C29129; }
+.cw[data-genre=stream],
+.cw[data-genre=letter]   { --wa: #A7E2C3; --wd: #1F5039; --wc: #2F8A5C; }
+.cw[data-genre=court],
+.cw[data-genre=finale],
+.cw[data-genre=question] { --wa: #A8D3F1; --wd: #1B4369; --wc: #2F78BF; }
+.cw[data-genre=receipt],
+.cw[data-genre=lineup],
+.cw[data-genre=turn]     { --wa: #B6C2F2; --wd: #1C2468; --wc: #3A4FC4; }
+.cw[data-genre=matcha]   { --wa: #CBE89A; --wd: #2C4710; --wc: #5E9A26; }
+.cw[data-genre=crime],
+.cw[data-genre=sitcom],
+.cw[data-genre=limits]   { --wa: #E8C88C; --wd: #5A3A0E; --wc: #A8701F; }
+
+.cw[data-genre]:not([data-genre=tricks]) {
+  --cw-fg: var(--wd);
+  --cw-bg: color-mix(in srgb, var(--wa) 34%, #fff);
+  background: var(--grain), var(--wash);
+  background-size: 220px 220px, auto, auto, auto;
+  color: var(--wd);
+}
+/* second half of each headline in the mid shade, like the stories */
+.cw[data-genre]:not([data-genre=tricks]) .ew-h em { color: var(--wc) !important; }
+
+/* Screens that used to sit on a dark or brand-red fill now sit on a light wash:
+   their white text goes back to the screen's deep shade. */
+.cw:is([data-genre=crime],[data-genre=lineup],[data-genre=turn]) .ew-kicker,
+.cw:is([data-genre=crime],[data-genre=lineup],[data-genre=turn]) .ew-ask,
+.cw:is([data-genre=crime],[data-genre=lineup],[data-genre=turn]) .ew-verdict,
+.cw:is([data-genre=crime],[data-genre=lineup],[data-genre=turn]) .ew-hint,
+.cw:is([data-genre=crime],[data-genre=lineup],[data-genre=turn]) .ew-big span,
+.cw:is([data-genre=crime],[data-genre=lineup],[data-genre=turn]) .ew-guess span,
+.cw:is([data-genre=crime],[data-genre=lineup],[data-genre=turn]) .ew-brand { color: color-mix(in srgb, var(--wd) 86%, transparent); }
+.cw[data-genre=crime] .cw-brand { color: #B81C00; }
+.cw.is-dark:not([data-genre=tricks]) .ew-x { background: rgba(255,255,255,.5); color: var(--wd); box-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px rgba(255,255,255,.7); }
+.cw.is-dark:not([data-genre=tricks]) .ew-chip[aria-checked=true] { background: #1d1b19; color: #fff; }
+.cw.is-dark:not([data-genre=tricks]) .cw-gate:not(.is-blocked) { background: color-mix(in srgb, var(--cw-bg) 70%, #fff); color: var(--wd); }
+.cw[data-genre=turn] .ew-facts li { background: rgba(255,255,255,.55); color: var(--wd); }
+.cw[data-genre=turn] .cw-steps li { background: rgba(255,255,255,.55); }
+.cw[data-genre=turn] .cw-steps li::before { background: var(--wd); color: #fff; }
+.cw[data-genre=turn] .cw-steps b { color: var(--wd); }
+.cw[data-genre=turn] .cw-steps span { color: color-mix(in srgb, var(--wd) 80%, transparent); }
