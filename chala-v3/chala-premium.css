@@ -1278,3 +1278,23 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .cf-hint.is-stowed::before { content: ""; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 8px solid currentColor; opacity: .7; animation: cf-nudge 1.6s ease-in-out infinite; }
 @keyframes cf-nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) { .cf-hint.is-stowed::before { animation: none; } }
+
+/* Yearly wraps: the deck in the app's own card style. White, soft shadow, no outlines; two tinted cards peek out behind. */
+.wg-decks { gap: 30px !important; padding: 10px 4px 24px !important; }
+.wg-deck { height: 214px !important; max-width: 360px !important; color: var(--p-ink) !important; }
+.wg-layer, .wg-front { border: 0 !important; border-radius: var(--p-r) !important; }
+.wg-layer.l2 { transform: translate(0, 12px) scale(.95) !important; background: #E6DEF3 !important; box-shadow: 0 8px 20px -16px rgba(25,25,25,.3); }
+.wg-layer.l3 { transform: translate(0, 24px) scale(.9) !important; background: #F4D9CC !important; box-shadow: 0 8px 20px -16px rgba(25,25,25,.3); }
+.wg-front { padding: 20px 20px 18px !important; background: #fff !important; box-shadow: 0 0 0 1px rgba(25,25,25,.04), 0 14px 32px -20px rgba(40,30,20,.35) !important; transition: transform .45s var(--p-ease) !important; }
+.wg-deck:hover .wg-front, .wg-deck:focus-visible .wg-front { transform: translateY(-4px) !important; }
+.wg-deck:focus-visible .wg-front { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--p-ink) !important; }
+.wg-yr { font: 600 3.5rem/1 var(--p-sans) !important; letter-spacing: -.05em !important; font-variant-numeric: tabular-nums; }
+.wg-strip { gap: 4px !important; margin-top: 18px !important; }
+.wg-strip i { height: 18px !important; border-radius: 6px !important; box-shadow: none !important; }
+.wg-strip i.is-empty { background: #F0EFEC; }
+.wg-meta { margin-top: 12px !important; font: 400 .875rem/1.3 var(--p-sans) !important; letter-spacing: 0 !important; color: var(--p-ink-2); }
+.wg-open { display: inline-flex; align-items: center; gap: 4px; margin-top: auto !important; padding: 10px 14px 10px 16px; border-radius: 999px; background: var(--p-ink); color: #fff; font: 500 .875rem/1 var(--p-sans) !important; text-decoration: none !important; }
+.wg-open svg { width: 15px; height: 15px; }
+.wg-tab-ind { background: var(--p-ink) !important; }
+.wg-tabs button { color: var(--p-ink) !important; font-weight: 600 !important; }
+.wg-tabs button[aria-selected=true] { color: #fff !important; }
