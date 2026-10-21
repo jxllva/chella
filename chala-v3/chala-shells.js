@@ -8,16 +8,16 @@
   const I = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
   // an upright scallop: the logo's shell turned so the hinge sits at the bottom
   const SYMBOL = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="cs-shell" viewBox="0 0 70.4 65.4"><g transform="translate(70.4 0) rotate(90)"><path d="M 56.7 32.9 L 39.9 7.2 C 32.7 0.0 17.2 5.3 24.4 12.5 L 56.0 33.3Z"/><path d="M 55.8 33.4 L 22.7 13.4 C 14.8 10.0 4.0 18.9 12.0 22.3 L 55.3 34.1Z"/><path d="M 55.3 34.3 L 11.0 23.6 C 3.9 22.7 0.0 33.6 7.1 34.5 L 55.1 35.1Z"/><path d="M 55.1 35.3 L 7.1 35.9 C 0.0 36.8 3.9 47.7 11.0 46.8 L 55.3 36.1Z"/><path d="M 55.3 36.3 L 12.0 48.1 C 4.0 51.5 14.8 60.4 22.7 57.0 L 55.8 37.0Z"/><path d="M 56.0 37.1 L 24.4 57.9 C 17.2 65.1 32.7 70.4 39.9 63.2 L 56.7 37.5Z"/><path d="M 58.3 12.7 Q 64.1 12.7 63.8 18.2 Q 65.4 35.2 63.8 52.2 Q 64.1 57.7 58.3 57.7 Q 51.7 57.7 52.8 52.2 Q 53.6 35.2 52.8 18.2 Q 51.7 12.7 58.3 12.7Z"/></g></symbol></defs></svg>`;
-  const KINDS = [['food', 'Food', '#3E8E70'], ['cafe', 'Cafés', '#E3A33C'], ['shop', 'Shopping', '#9C8BD6'], ['move', 'Transport', '#4E9C8B'], ['other', 'Other', '#BDB5AA']];
+  const KINDS = [['food', 'Food', '#601A21'], ['cafe', 'Cafés', '#E3A33C'], ['shop', 'Shopping', '#9C8BD6'], ['move', 'Transport', '#4E9C8B'], ['other', 'Other', '#BDB5AA']];
   // month shades, chill to heavy, against a usual day
   // four levels: nothing, chill, usual, heavy (anything well above your usual day)
-  const LEVELS = [[0, '#EFEBE6', 'No spending'], [.6, '#EAEB98', 'Chill'], [1.35, '#50A182', 'Usual'], [Infinity, '#763A26', 'Heavy']];
+  const LEVELS = [[0, '#EFEBE6', 'No spending'], [.6, '#B4D9F3', 'Chill'], [1.35, '#5E9BD0', 'Usual'], [Infinity, '#601A21', 'Heavy']];
   const level = (c, usual) => !c ? 0 : LEVELS.findIndex(([t], i) => i > 0 && c / usual <= t);
   const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'], DOWL = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const shell = (fill, cls = '', style = '') => `<svg class="cs-sh ${cls}" viewBox="0 0 70.4 65.4" style="${style}" aria-hidden="true"><use href="#cs-shell" fill="${fill}"></use></svg>`;
   const UNITS = [500, 1000, 2000, 2500, 5000, 10000, 20000, 50000];
   const MAXSTACK = 9;
-  const SHELL = '#50A182';
+  const SHELL = '#5E9BD0';
 
   // draws the chart into a card that already has .cs-stage, .cs-detail and .cs-legend
   function render(host, D, { mode = 'W', animate = true, hide = false } = {}) {
@@ -133,9 +133,9 @@
     };
     const id = 'csm' + Math.random().toString(36).slice(2, 7);
     el.innerHTML = `${SYMBOL.replace('id="cs-shell"', `id="${id}s"`)}<svg class="csm-sh" viewBox="0 0 70.4 65.4" aria-hidden="true">
-      <defs><linearGradient id="${id}g" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#50A182"></stop><stop offset="1" stop-color="#B9DCC9"></stop></linearGradient>
+      <defs><linearGradient id="${id}g" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#5E9BD0"></stop><stop offset="1" stop-color="#B4D9F3"></stop></linearGradient>
       <clipPath id="${id}c"><path d="${wedge(reduce() ? pct : 0)}"></path></clipPath></defs>
-      <use href="#${id}s" fill="#E6F2EC"></use><use href="#${id}s" fill="url(#${id}g)" clip-path="url(#${id}c)"></use></svg>
+      <use href="#${id}s" fill="#EAF4FB"></use><use href="#${id}s" fill="url(#${id}g)" clip-path="url(#${id}c)"></use></svg>
       <span class="csm-pct">${goal > 0 ? Math.round(pct * 100) + '%' : ''}</span>`;
     el.setAttribute('role', 'img');
     el.setAttribute('aria-label', goal > 0 ? `Shell ${Math.round(pct * 100)}% full: ${hide ? '' : money(saved) + ' saved of ' + money(goal)}` : 'Shell empty: no goal set yet');
