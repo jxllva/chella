@@ -666,6 +666,14 @@
       const since = new Date(p.joinedAt || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       const names = Object.keys(p.limits);
       // same rule as the spending jar, so the greeting and the jar always agree
+      /* chala v3: the greeting says what this week actually looks like against your usual day, without judging it */
+      const paceLine = () => {
+        const W = shellData('W', 0); if (!W) return '';
+        const past = W.days.filter(x => !x.future), avg = past.length ? W.total / past.length : 0;
+        if (!W.total) return 'Nothing spent yet this week.';
+        const r = W.usual ? avg / W.usual : 1, per = m(Math.round(avg / 100) * 100);
+        return r < .8 ? `About ${per} a day this week, lighter than your usual.` : r <= 1.2 ? `About ${per} a day this week, close to your usual.` : `About ${per} a day this week, a little more than your usual.`;
+      };
       const dNow = treeData('M', 0), paceNow = dNow?.budget ? dNow.spent / Math.max(1, dNow.budget * dNow.elapsed) : 0;
       const moodNow = !dNow?.budget ? 'none' : dNow.spent > dNow.budget ? 'wilting' : paceNow > 1.1 ? 'thirsty' : paceNow > .85 ? 'growing' : 'flourishing';
       const NUDGE = { flourishing: 'Spending is comfortably below budget this month.', growing: 'Spending is on pace with your budget this month.', thirsty: 'Spending is running high this month.', wilting: 'You’re over budget this month.', none: 'Set a spending limit to see how your month is going.' };
@@ -674,7 +682,7 @@
 <header class="hm-head" data-mood="${moodNow}" data-rise>
   ${logoBtn()}
   <h1 class="hm-hello"><span class="hm-wb">Welcome back,</span> <span class="hm-who">${esc(first || 'friend')}</span><span class="hm-dot">.</span></h1>
-  <p class="hm-nudge">${esc(NUDGE[moodNow])}</p>
+  <p class="hm-nudge">${esc(paceLine())}</p>
 </header>
 <section class="mt" aria-label="Your spending, day by day"></section>
 

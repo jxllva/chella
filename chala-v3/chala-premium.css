@@ -1240,3 +1240,14 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .hm-save-meter { width: 52% !important; max-width: 176px; height: auto !important; aspect-ratio: 70.4 / 72; }
 .csm-sh { height: auto !important; aspect-ratio: 70.4 / 65.4; }
 .hm-sample { display: inline-block; margin-left: 4px; padding: 2px 7px; border-radius: 999px; background: #F4F2EF; font: 500 .625rem/1.3 var(--p-sans); font-style: normal; letter-spacing: .06em; text-transform: uppercase; color: var(--p-ink-3); vertical-align: 1px; }
+
+/* average line and tag in neutral ink, so an average never reads as a mistake */
+.cs .cs-avg { border-top-color: rgba(25,25,25,.28) !important; }
+.cs-avg-tag { background: #F1EFEC !important; color: var(--p-ink-2) !important; }
+.cs-avg-tag b { color: var(--p-ink); }
+.cs .cs-unit .cs-dash { border-top-color: rgba(25,25,25,.35) !important; }
+/* Home: the name in chala's warm coral so it stands out */
+.hm-hello .hm-who { background: linear-gradient(100deg, #D9572E 0%, #E8743F 50%, #F09A62 100%) !important; -webkit-background-clip: text !important; background-clip: text !important; color: transparent !important; -webkit-text-fill-color: transparent; padding: 0 .04em .06em 0; }
+.hm-hello .hm-dot { color: #E8743F !important; }
+.cs .cs-dow.is-heavy { color: var(--p-ink) !important; font-weight: 700; }
+.cs .cs-dow.is-today.is-heavy { background: var(--p-ink) !important; color: #fff !important; }

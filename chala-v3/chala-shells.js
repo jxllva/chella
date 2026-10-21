@@ -124,11 +124,12 @@
      as far as what you've saved has come toward your goals. */
   function meter(el, saved, goal, { hide = false, money = c => '$' + Math.round(c / 100) } = {}) {
     if (!el) return;
-    const pct = goal > 0 ? Math.max(0, Math.min(1, saved / goal)) : 0, cx = 35.2, cy = 57, R = 80;
+    // the sweep pivots at the bottom of the hinge, so the base fills left to right along with the ribs
+    const pct = goal > 0 ? Math.max(0, Math.min(1, saved / goal)) : 0, cx = 35.2, cy = 66, R = 96;
     const wedge = t => {
       if (t <= 0) return 'M0 0Z';
       const a = Math.PI * (1 - t), x = cx + R * Math.cos(a), y = cy - R * Math.sin(a);
-      return `M${cx} ${cy}L${cx - R} ${cy}A${R} ${R} 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)}Z M${cx - R} ${cy}H${cx + R}V${cy + 20}H${cx - R}Z`;
+      return `M${cx} ${cy}L${cx - R} ${cy}A${R} ${R} 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)}Z`;
     };
     const id = 'csm' + Math.random().toString(36).slice(2, 7);
     el.innerHTML = `${SYMBOL.replace('id="cs-shell"', `id="${id}s"`)}<svg class="csm-sh" viewBox="0 0 70.4 65.4" aria-hidden="true">
