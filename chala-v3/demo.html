@@ -13,18 +13,18 @@
   --ui:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
   --screen-w:393px; --screen-h:852px; --bez:12px; --status:54px;
 }
-html,body{height:100%}
+html,body{height:100%;margin:0;overflow:hidden}
 body{background:var(--stage);color:var(--ink);font-family:var(--ui);overflow:hidden;transition:background .3s;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 body[data-bg="dark"]{--stage:#0E0E10}
 body[data-bg="white"]{--stage:#FFFFFF}
 body[data-bg="green"]{--stage:#00B140}
 
-.stage{position:fixed;inset:0;display:grid;place-items:center}
+.stage{position:fixed;inset:0;overflow:hidden}
 .phone{position:relative;width:calc(var(--screen-w) + 2*var(--bez));height:calc(var(--screen-h) + 2*var(--bez));
-  padding:var(--bez);border-radius:68px;background:var(--bezel);
+  position:absolute;left:50%;top:50%;padding:var(--bez);border-radius:68px;background:var(--bezel);
   box-shadow:inset 0 0 0 2px var(--bezel-edge),0 0 0 1px rgba(0,0,0,.25),0 30px 80px -20px rgba(0,0,0,.35);
-  transform-origin:center center;flex:none}
+  transform:translate(-50%,-50%);transform-origin:center center;flex:none}
 body[data-bg="green"] .phone,body[data-bg="white"] .phone{box-shadow:inset 0 0 0 2px var(--bezel-edge),0 0 0 1px rgba(0,0,0,.25)}
 .screen{position:relative;width:100%;height:100%;border-radius:56px;overflow:hidden;background:#F7F7F5;cursor:none;isolation:isolate}
 .status{position:absolute;inset:0 0 auto;height:var(--status);display:flex;align-items:center;justify-content:space-between;
@@ -100,7 +100,7 @@ let scale=1;
 function fit(){
   const w=phone.offsetWidth,h=phone.offsetHeight,pad=24;
   scale=Math.min((innerHeight-pad*2)/h,(innerWidth-pad*2)/w);
-  phone.style.transform=`scale(${scale})`;
+  phone.style.transform=`translate(-50%,-50%) scale(${scale})`;
 }
 addEventListener('resize',fit);fit();
 
