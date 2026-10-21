@@ -1298,3 +1298,18 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .wg-tab-ind { background: var(--p-ink) !important; }
 .wg-tabs button { color: var(--p-ink) !important; font-weight: 600 !important; }
 .wg-tabs button[aria-selected=true] { color: #fff !important; }
+
+/* Year deck page: the app's paper, type and buttons instead of the cream poster look */
+.wg-open-deck { background: var(--p-atmos, none), var(--p-bg) !important; color: var(--p-ink); padding-left: 20px !important; padding-right: 20px !important; }
+.wg-od-k { font: 500 .75rem/1 var(--p-sans) !important; letter-spacing: .12em !important; text-transform: uppercase; color: var(--p-ink-3); opacity: 1 !important; }
+.wg-od-t { margin-top: 10px !important; font: 600 3.25rem/1 var(--p-sans) !important; letter-spacing: -.05em !important; font-variant-numeric: tabular-nums; }
+.wg-od-s { margin: 10px auto 20px !important; font: 400 .9375rem/1.4 var(--p-sans) !important; color: var(--p-ink-2); opacity: 1 !important; }
+.wg-x { border: 0 !important; width: 44px !important; height: 44px !important; background: #fff !important; color: var(--p-ink) !important; box-shadow: 0 0 0 1px var(--p-line), 0 8px 20px -14px rgba(25,25,25,.3); }
+.wg-x svg { width: 18px !important; height: 18px !important; }
+.wg-grid { gap: 12px !important; }
+.wg-grid .wg-card { border-radius: var(--p-r) !important; box-shadow: 0 10px 26px -18px rgba(40,30,20,.35) !important; padding: 16px 16px 14px !important; }
+.wg-grid .wg-card:active { transform: scale(.98); box-shadow: 0 6px 16px -14px rgba(40,30,20,.35) !important; }
+.wg-grid .wg-y { font: 500 .6875rem/1 var(--p-sans) !important; letter-spacing: .1em !important; opacity: .6 !important; }
+.wg-grid .wg-m { margin-top: 8px !important; font: 600 2.5rem/1 var(--p-sans) !important; letter-spacing: -.045em !important; }
+.wg-grid .wg-g { width: 36px !important; height: 36px !important; opacity: .85; }
+.wg-grid .wg-s { font: 500 .875rem/1.2 var(--p-sans) !important; }
