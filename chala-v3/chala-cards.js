@@ -12,7 +12,7 @@
   const whole = n => '$' + Math.max(0, n).toLocaleString('en-US', { maximumFractionDigits: 0 });
 
   const CARDS = [
-    { id: 'a', name: 'Everyday', last4: '4021', limit: 3000, pct: 62, bg: '#F5C6B1', ink: '#2A1A14' },
+    { id: 'a', name: 'Everyday', last4: '4021', limit: 3000, pct: 62, bg: '#8FD18E', ink: '#0F3317' },
     { id: 'b', name: 'Travel', last4: '7716', limit: 5000, pct: 48, bg: '#1D1C20', ink: '#F7F3EF', dark: true },
     { id: 'c', name: 'Groceries', last4: '0388', limit: 800, pct: 9, bg: '#D5CBEF', ink: '#211A33' }
   ];
