@@ -131,9 +131,13 @@
     function togglePop() {
       if (!infoPop.hidden) { closePop(); return; }
       const month = host.classList.contains('is-month'), unit = $('.cs-unit'), key = $('.cs-keybox');
-      infoPop.innerHTML = `<p class="sp-pop-h">How to read this</p>
-        ${month ? (key ? `<div class="sp-pop-key">${key.outerHTML}</div>` : '') + '<p>Each shell is a day. Deeper shells are days you spent more than usual.</p>' : (unit ? `<p class="sp-pop-unit">${unit.innerHTML}</p>` : '') + '<p>Each column is a day. Stacked shells show what you spent.</p>'}
-        <p>Tap a day to see what you spent on it.</p>`;
+      infoPop.innerHTML = month
+        ? `<p class="sp-pop-lead">Each shell is a day. Deeper shells are days you spent more than usual.</p>
+          <p class="sp-pop-sub">Tap a day to see what you spent.</p>
+          ${key ? `<div class="sp-pop-key">${key.outerHTML}</div>` : ''}`
+        : `<p class="sp-pop-lead">Each column is a day. Stacked shells show what you spent.</p>
+          <p class="sp-pop-sub">Tap a day to see what you spent.</p>
+          ${unit ? `<p class="sp-pop-unit">${unit.innerHTML}</p>` : ''}`;
       infoPop.hidden = false; infoBtn.setAttribute('aria-expanded', 'true');
       if (!reduce()) infoPop.animate([{ opacity: 0, transform: 'translateY(-6px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.22,1,.36,1)' });
       setTimeout(() => { document.addEventListener('pointerdown', outside, true); document.addEventListener('keydown', esc, true); });

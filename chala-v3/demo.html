@@ -1,0 +1,222 @@
+<title>chala Phone Demo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one phone, centred and scaled to fill the window height, on a flat backdrop for screen recording. Single deliberate look. */
+:root{
+  color-scheme:light;
+  --stage:#E9E7E2;          /* backdrop, cycles with B */
+  --bezel:#121214;
+  --bezel-edge:#2B2B2F;
+  --ink:#191919;
+  --hint-bg:rgba(25,25,25,.86);
+  --hint-fg:#F4F3F0;
+  --ui:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  --screen-w:393px; --screen-h:852px; --bez:12px; --status:54px;
+}
+html,body{height:100%}
+body{background:var(--stage);color:var(--ink);font-family:var(--ui);overflow:hidden;transition:background .3s;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body[data-bg="dark"]{--stage:#0E0E10}
+body[data-bg="white"]{--stage:#FFFFFF}
+body[data-bg="green"]{--stage:#00B140}
+
+.stage{position:fixed;inset:0;display:grid;place-items:center}
+.phone{position:relative;width:calc(var(--screen-w) + 2*var(--bez));height:calc(var(--screen-h) + 2*var(--bez));
+  padding:var(--bez);border-radius:68px;background:var(--bezel);
+  box-shadow:inset 0 0 0 2px var(--bezel-edge),0 0 0 1px rgba(0,0,0,.25),0 30px 80px -20px rgba(0,0,0,.35);
+  transform-origin:center center;flex:none}
+body[data-bg="green"] .phone,body[data-bg="white"] .phone{box-shadow:inset 0 0 0 2px var(--bezel-edge),0 0 0 1px rgba(0,0,0,.25)}
+.screen{position:relative;width:100%;height:100%;border-radius:56px;overflow:hidden;background:#F7F7F5;cursor:none;isolation:isolate}
+.status{position:absolute;inset:0 0 auto;height:var(--status);display:flex;align-items:center;justify-content:space-between;
+  padding:6px 34px 0 46px;font:600 17px/1 -apple-system,BlinkMacSystemFont,'SF Pro Text',var(--ui);letter-spacing:-.01em;
+  color:var(--sb-fg,#000);background:var(--sb-bg,#F7F7F5);transition:background .35s,color .35s;z-index:2}
+.status .icons{display:flex;gap:6px;align-items:center}
+.status svg{display:block;fill:currentColor}
+.island{position:absolute;top:11px;left:50%;width:124px;height:36px;margin-left:-62px;border-radius:20px;background:#000;z-index:3}
+iframe{position:absolute;left:0;top:var(--status);width:100%;height:calc(100% - var(--status));border:0;display:block;background:#F7F7F5}
+.home{position:absolute;left:50%;bottom:8px;width:136px;height:5px;margin-left:-68px;border-radius:3px;background:var(--hi,#000);opacity:.85;z-index:3;pointer-events:none;transition:background .35s}
+
+/* touch cursor */
+.cur{position:absolute;left:0;top:0;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;z-index:10;pointer-events:none;
+  background:rgba(40,40,40,.22);box-shadow:0 0 0 2px rgba(255,255,255,.95),0 2px 10px rgba(0,0,0,.28);
+  transform:scale(.48);transition:transform .2s cubic-bezier(.2,.9,.3,1.2),background .2s,box-shadow .2s,opacity .2s;opacity:0}
+.cur.on{opacity:1}
+.cur.hover{transform:scale(1);background:rgba(255,255,255,.32);box-shadow:0 0 0 2px rgba(40,40,40,.38),0 4px 16px rgba(0,0,0,.18);backdrop-filter:brightness(1.06)}
+.cur.down{transform:scale(.4);background:rgba(40,40,40,.42)}
+.cur.hover.down{transform:scale(.8);background:rgba(40,40,40,.3)}
+.cur.off{display:none}
+.ripple{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;pointer-events:none;z-index:9;
+  border:2px solid rgba(255,255,255,.95);background:rgba(40,40,40,.16);box-shadow:0 0 0 1px rgba(0,0,0,.12);
+  animation:rip .5s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes rip{from{transform:scale(.45);opacity:.95}to{transform:scale(1.9);opacity:0}}
+
+/* recording hint */
+.hint{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  background:var(--hint-bg);color:var(--hint-fg);border-radius:14px;padding:12px 14px;font:500 12px/1.6 var(--ui);
+  transition:opacity .4s,transform .4s;z-index:20;max-width:calc(100% - 32px)}
+.hint b{display:inline-block;min-width:18px;padding:0 5px;margin-right:6px;border-radius:5px;background:rgba(255,255,255,.16);text-align:center;font-weight:600}
+.hint.gone{opacity:0;transform:translateY(8px);pointer-events:none}
+.toast{position:fixed;top:calc(18px + env(safe-area-inset-top,0px));left:50%;transform:translate(-50%,-30px);opacity:0;
+  background:var(--hint-bg);color:var(--hint-fg);padding:9px 14px;border-radius:999px;font:500 13px var(--ui);transition:.3s;z-index:20;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){.cur,.ripple,.hint,.toast{transition:none;animation-duration:.01s}}
+</style>
+
+<div class="stage">
+  <div class="phone" id="phone">
+    <div class="screen" id="screen">
+      <div class="status" id="status">
+        <span id="clock">9:41</span>
+        <span class="icons" aria-hidden="true">
+          <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2.6c2.3 0 4.4.9 5.9 2.4l1.1-1.1A9.9 9.9 0 0 0 8 1 9.9 9.9 0 0 0 1 3.9L2.1 5A8.3 8.3 0 0 1 8 2.6Zm0 3.3c1.4 0 2.6.5 3.6 1.4l1.1-1.1A6.6 6.6 0 0 0 8 4.3a6.6 6.6 0 0 0-4.7 1.9l1.1 1.1c1-.9 2.2-1.4 3.6-1.4Zm0 3.3c.5 0 1 .2 1.3.5L8 11 6.7 9.7c.3-.3.8-.5 1.3-.5Z"/></svg>
+          <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.8" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.5"/><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2Z" opacity=".45"/></svg>
+        </span>
+      </div>
+      <div class="island"></div>
+      <iframe id="app" src="index.html" title="chala"></iframe>
+      <div class="home" id="home"></div>
+      <div class="cur" id="cur"></div>
+    </div>
+  </div>
+</div>
+
+<div class="hint" id="hint">
+  <div><b>H</b>hide this</div>
+  <div><b>C</b>touch cursor on / off</div>
+  <div><b>B</b>backdrop: warm, dark, white, green</div>
+  <div><b>R</b>reset demo data and restart</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(()=>{
+const phone=document.getElementById('phone'),screen=document.getElementById('screen'),frame=document.getElementById('app'),
+  cur=document.getElementById('cur'),status=document.getElementById('status'),home=document.getElementById('home'),
+  hint=document.getElementById('hint'),toast=document.getElementById('toast');
+const STATUS_H=54;
+let scale=1;
+
+/* Fit the phone to the window */
+function fit(){
+  const w=phone.offsetWidth,h=phone.offsetHeight,pad=24;
+  scale=Math.min((innerHeight-pad*2)/h,(innerWidth-pad*2)/w);
+  phone.style.transform=`scale(${scale})`;
+}
+addEventListener('resize',fit);fit();
+
+/* Status bar clock */
+/* kept at 9:41 so every take matches */
+
+/* ---------- touch cursor ---------- */
+const BASE='a[href],button,input,select,textarea,label,summary,[role=button],[role=tab],[role=link],[role=switch],[role=option],[role=menuitem],[onclick],[tabindex]:not([tabindex="-1"])';
+let tapSel=BASE,enabled=true,down=false,hovering=false,raf=0,pending=null;
+
+function collectPointerSelectors(doc){
+  const out=new Set();
+  const walk=rules=>{for(const r of rules){
+    if(r.cssRules&&!(r instanceof doc.defaultView.CSSStyleRule))walk(r.cssRules);
+    if(r.selectorText&&r.style&&r.style.cursor==='pointer'){
+      for(let s of r.selectorText.split(/,(?![^(]*\))/)){
+        s=s.replace(/::?(before|after|placeholder|marker)\b/g,'').replace(/:(hover|active|focus-visible|focus-within|focus)\b/g,'').trim();
+        if(!s)continue;
+        try{doc.querySelector(s);out.add(s)}catch{}
+      }
+    }
+    if(r.cssRules&&r instanceof doc.defaultView.CSSStyleRule)walk(r.cssRules);
+  }};
+  for(const sh of doc.styleSheets){try{walk(sh.cssRules)}catch{}}
+  return out.size?BASE+','+[...out].join(','):BASE;
+}
+
+function isTappable(el){
+  if(!el||el.nodeType!==1)return false;
+  try{const t=el.closest(tapSel);return !!t&&!t.disabled&&t.getAttribute('aria-disabled')!=='true'}catch{return false}
+}
+
+function place(x,y,target){
+  pending={x,y,target};
+  if(!raf)raf=requestAnimationFrame(()=>{raf=0;const p=pending;
+    cur.style.left=p.x+'px';cur.style.top=p.y+'px';
+    hovering=isTappable(p.target);cur.classList.toggle('hover',hovering);cur.classList.add('on');
+  });
+}
+function ripple(x,y){
+  const r=document.createElement('span');r.className='ripple';r.style.left=x+'px';r.style.top=y+'px';
+  screen.appendChild(r);r.addEventListener('animationend',()=>r.remove());
+}
+function press(x,y){down=true;cur.classList.add('down');if(enabled)ripple(x,y)}
+function release(){down=false;cur.classList.remove('down')}
+function hide(){cur.classList.remove('on','hover');release()}
+
+/* events over the status bar / frame chrome (parent document) */
+const local=e=>{const r=screen.getBoundingClientRect();return[(e.clientX-r.left)/scale,(e.clientY-r.top)/scale]};
+screen.addEventListener('pointermove',e=>{const[x,y]=local(e);place(x,y,null)});
+screen.addEventListener('pointerdown',e=>{const[x,y]=local(e);press(x,y)});
+addEventListener('pointerup',release);
+screen.addEventListener('pointerleave',hide);
+
+/* events inside the app (same-origin iframe) */
+function hookFrame(){
+  let doc;try{doc=frame.contentDocument}catch{return}
+  if(!doc)return;
+  const st=doc.createElement('style');st.id='demo-cursor-hide';
+  tapSel=collectPointerSelectors(doc);
+  st.textContent='html,html *,html *::before,html *::after{cursor:none!important}';
+  doc.head.appendChild(st);
+  const opts={capture:true,passive:true};
+  doc.addEventListener('pointermove',e=>place(e.clientX,e.clientY+STATUS_H,e.target),opts);
+  doc.addEventListener('pointerdown',e=>{place(e.clientX,e.clientY+STATUS_H,e.target);press(e.clientX,e.clientY+STATUS_H)},opts);
+  doc.addEventListener('pointerup',release,opts);
+  doc.addEventListener('pointercancel',release,opts);
+  doc.documentElement.addEventListener('mouseleave',hide);
+  // scroll changes what is under a still cursor
+  doc.addEventListener('scroll',()=>{if(pending&&pending.target&&cur.classList.contains('on')){const el=doc.elementFromPoint(pending.x,pending.y-STATUS_H);place(pending.x,pending.y,el)}},{capture:true,passive:true});
+}
+frame.addEventListener('load',hookFrame);
+if(frame.contentDocument&&frame.contentDocument.readyState==='complete')hookFrame();
+
+/* ---------- match status bar + home indicator to the app ---------- */
+const parseRGB=c=>{const m=c&&c.match(/rgba?\(([^)]+)\)/);if(!m)return null;const p=m[1].split(/[ ,/]+/).filter(Boolean).map(Number);return{r:p[0],g:p[1],b:p[2],a:p.length>3?p[3]:1}};
+function bgAt(doc,x,y){
+  let el=doc.elementFromPoint(x,y);
+  while(el&&el!==doc.documentElement){
+    const c=parseRGB(doc.defaultView.getComputedStyle(el).backgroundColor);
+    if(c&&c.a>.6)return c;
+    el=el.parentElement;
+  }
+  return parseRGB(doc.defaultView.getComputedStyle(doc.body).backgroundColor)||{r:247,g:247,b:245,a:1};
+}
+const lum=c=>(.299*c.r+.587*c.g+.114*c.b)/255;
+function syncChrome(){
+  let doc;try{doc=frame.contentDocument}catch{return}
+  if(!doc||!doc.body)return;
+  const top=bgAt(doc,196,2),bot=bgAt(doc,196,frame.clientHeight-4);
+  status.style.setProperty('--sb-bg',`rgb(${top.r},${top.g},${top.b})`);
+  status.style.setProperty('--sb-fg',lum(top)>.55?'#000':'#fff');
+  screen.style.background=`rgb(${top.r},${top.g},${top.b})`;
+  home.style.setProperty('--hi',lum(bot)>.55?'#000':'#fff');
+}
+setInterval(syncChrome,350);
+
+/* ---------- keys ---------- */
+const BGS=['warm','dark','white','green'];let bgi=0;
+try{const s=localStorage.getItem('demo-frame-bg');if(BGS.includes(s)){bgi=BGS.indexOf(s);document.body.dataset.bg=s}}catch{}
+function say(t){toast.textContent=t;toast.classList.add('show');clearTimeout(say.t);say.t=setTimeout(()=>toast.classList.remove('show'),1400)}
+function onKey(e){
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  const t=e.target;if(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)))return;
+  const k=e.key.toLowerCase();
+  if(k==='h'){hint.classList.toggle('gone')}
+  else if(k==='c'){enabled=!enabled;cur.classList.toggle('off',!enabled);say(enabled?'Touch cursor on':'Touch cursor off')}
+  else if(k==='b'){bgi=(bgi+1)%BGS.length;document.body.dataset.bg=BGS[bgi];try{localStorage.setItem('demo-frame-bg',BGS[bgi])}catch{}}
+  else if(k==='r'){
+    try{const keep=localStorage.getItem('demo-frame-bg');localStorage.clear();sessionStorage.clear();if(keep)localStorage.setItem('demo-frame-bg',keep)}catch{}
+    frame.contentWindow.location.reload();say('Demo reset')
+  }
+}
+addEventListener('keydown',onKey);
+frame.addEventListener('load',()=>{try{frame.contentWindow.addEventListener('keydown',onKey)}catch{}});
+setTimeout(()=>hint.classList.add('gone'),6000);
+})();
+</script>

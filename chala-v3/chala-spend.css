@@ -138,19 +138,23 @@
 .sp-info svg{width:20px;height:20px}
 .sp-info[aria-expanded=true]{background:#1d1b19;color:#fff}
 .sp-info:focus-visible{outline:2px solid #1d1b19;outline-offset:3px}
-.sp-pop{position:absolute;z-index:6;top:62px;right:12px;width:min(270px,calc(100% - 24px));padding:14px 16px;border-radius:18px;
+.sp-pop{position:absolute;z-index:6;top:62px;right:12px;width:min(256px,calc(100% - 24px));padding:14px 16px 12px;border-radius:18px;
   background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(250,247,244,.94));-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.9),0 18px 40px -16px rgba(40,30,20,.35);font:400 .875rem/1.4 var(--p-sans);color:#4a4640}
 .sp-pop[hidden]{display:none}
-.sp-pop p{margin:0}.sp-pop p+p{margin-top:8px}
-.sp-pop-h{font:600 .9375rem/1.2 var(--p-sans)!important;color:#1d1b19}
-.sp-pop-unit{display:flex;align-items:center;gap:6px;margin-top:10px!important;color:#1d1b19}
-.sp-pop-unit .cs-unit-sh{width:15px;height:14px}
-.sp-pop-unit .cs-gap{width:8px}
-.sp-pop-unit .cs-dash{display:inline-block;width:16px;border-top:1.5px dashed rgba(25,25,25,.4)}
-.sp-pop-key{margin-top:10px}
-.sp-pop-key .cs-keybox{display:flex!important;flex-wrap:wrap;gap:10px;padding:0!important;border:0!important;background:none!important;box-shadow:none!important}
+.sp-pop p{margin:0}
+.sp-pop-lead{font:500 1rem/1.4 var(--p-sans);letter-spacing:-.01em;color:#1d1b19;text-wrap:pretty}
+.sp-pop-sub{margin-top:6px!important;font:400 .8125rem/1.35 var(--p-sans);color:#8a847c}
+.sp-pop-unit{display:flex;align-items:center;gap:6px;margin-top:12px!important;padding-top:10px;border-top:1px solid rgba(25,25,25,.07);font:500 .6875rem/1.2 var(--p-sans);color:#8a847c}
+.sp-pop-unit .cs-unit-sh{width:13px;height:12px}
+.sp-pop-unit .cs-gap{width:6px}
+.sp-pop-unit .cs-dash{display:inline-block;width:14px;border-top:1.5px dashed rgba(25,25,25,.3)}
+.sp-pop-key{margin-top:12px;padding-top:10px;border-top:1px solid rgba(25,25,25,.07)}
+.sp-pop-key .cs-keybox{display:flex!important;justify-content:space-between;gap:0;padding:0!important;border:0!important;background:none!important;box-shadow:none!important}
 .sp-pop-key .cs-keyh{display:none}
+.sp-pop-key .cs-keyi{flex:1;gap:3px}
+.sp-pop-key .cs-keyi .cs-key{width:15px!important;height:14px!important}
+.sp-pop-key .cs-keyi em{font:500 .5625rem/1 var(--p-sans);letter-spacing:.02em;color:#a39d95}
 /* the guide no longer sits on the card itself */
 .mt.cs .cs-unit,.mt.cs .cs-legend,.mt.cs .cs-detail .cs-sum{display:none!important}
 .mt.cs .cs-detail:empty,.mt.cs .cs-detail:has(> .cs-sum:only-child){display:none!important}
