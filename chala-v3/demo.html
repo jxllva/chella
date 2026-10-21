@@ -29,11 +29,11 @@ body[data-bg="green"] .phone,body[data-bg="white"] .phone{box-shadow:inset 0 0 0
 .screen{position:relative;width:100%;height:100%;border-radius:56px;overflow:hidden;background:#F7F7F5;cursor:none;isolation:isolate}
 .status{position:absolute;inset:0 0 auto;height:var(--status);display:flex;align-items:center;justify-content:space-between;
   padding:6px 34px 0 46px;font:600 17px/1 -apple-system,BlinkMacSystemFont,'SF Pro Text',var(--ui);letter-spacing:-.01em;
-  color:var(--sb-fg,#000);background:var(--sb-bg,#F7F7F5);transition:background .35s,color .35s;z-index:2}
+  color:var(--sb-fg,#000);background:transparent;transition:color .35s;z-index:2;pointer-events:none}
 .status .icons{display:flex;gap:6px;align-items:center}
 .status svg{display:block;fill:currentColor}
-.island{position:absolute;top:11px;left:50%;width:124px;height:36px;margin-left:-62px;border-radius:20px;background:#000;z-index:3}
-iframe{position:absolute;left:0;top:var(--status);width:100%;height:calc(100% - var(--status));border:0;display:block;background:#F7F7F5}
+.island{pointer-events:none;position:absolute;top:11px;left:50%;width:124px;height:36px;margin-left:-62px;border-radius:20px;background:#000;z-index:3}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#F7F7F5}
 .home{position:absolute;left:50%;bottom:8px;width:136px;height:5px;margin-left:-68px;border-radius:3px;background:var(--hi,#000);opacity:.85;z-index:3;pointer-events:none;transition:background .35s}
 
 /* touch cursor */
@@ -94,7 +94,6 @@ iframe{position:absolute;left:0;top:var(--status);width:100%;height:calc(100% - 
 const phone=document.getElementById('phone'),screen=document.getElementById('screen'),frame=document.getElementById('app'),
   cur=document.getElementById('cur'),status=document.getElementById('status'),home=document.getElementById('home'),
   hint=document.getElementById('hint'),toast=document.getElementById('toast');
-const STATUS_H=54;
 let scale=1;
 
 /* Fit the phone to the window */
@@ -156,22 +155,37 @@ screen.addEventListener('pointerdown',e=>{const[x,y]=local(e);press(x,y)});
 addEventListener('pointerup',release);
 screen.addEventListener('pointerleave',hide);
 
+/* The app runs full screen like on a real phone: its safe-area insets become the iPhone's,
+   so headers clear the status bar and island, and bottom bars clear the home indicator. */
+const SAFE={top:'54px',bottom:'34px',left:'0px',right:'0px'};
+const ENV_RX=/env\(\s*safe-area-inset-(top|bottom|left|right)\s*(?:,[^()]*(?:\([^()]*\))?[^()]*)?\)/g;
+function simulateSafeArea(doc){
+  const fix=(owner,rules)=>{for(let i=0;i<rules.length;i++){const r=rules[i];
+    if(r.cssRules&&r.cssRules.length&&!r.selectorText){fix(r,r.cssRules);continue}
+    const t=r.cssText;if(!t.includes('safe-area-inset'))continue;
+    const n=t.replace(ENV_RX,(m,side)=>SAFE[side]);
+    try{owner.deleteRule(i);owner.insertRule(n,i)}catch{}
+  }};
+  for(const sh of doc.styleSheets){try{fix(sh,sh.cssRules)}catch{}}
+}
+
 /* events inside the app (same-origin iframe) */
 function hookFrame(){
   let doc;try{doc=frame.contentDocument}catch{return}
   if(!doc)return;
+  simulateSafeArea(doc);
   const st=doc.createElement('style');st.id='demo-cursor-hide';
   tapSel=collectPointerSelectors(doc);
   st.textContent='html,html *,html *::before,html *::after{cursor:none!important}';
   doc.head.appendChild(st);
   const opts={capture:true,passive:true};
-  doc.addEventListener('pointermove',e=>place(e.clientX,e.clientY+STATUS_H,e.target),opts);
-  doc.addEventListener('pointerdown',e=>{place(e.clientX,e.clientY+STATUS_H,e.target);press(e.clientX,e.clientY+STATUS_H)},opts);
+  doc.addEventListener('pointermove',e=>place(e.clientX,e.clientY,e.target),opts);
+  doc.addEventListener('pointerdown',e=>{place(e.clientX,e.clientY,e.target);press(e.clientX,e.clientY)},opts);
   doc.addEventListener('pointerup',release,opts);
   doc.addEventListener('pointercancel',release,opts);
   doc.documentElement.addEventListener('mouseleave',hide);
   // scroll changes what is under a still cursor
-  doc.addEventListener('scroll',()=>{if(pending&&pending.target&&cur.classList.contains('on')){const el=doc.elementFromPoint(pending.x,pending.y-STATUS_H);place(pending.x,pending.y,el)}},{capture:true,passive:true});
+  doc.addEventListener('scroll',()=>{if(pending&&pending.target&&cur.classList.contains('on')){const el=doc.elementFromPoint(pending.x,pending.y);place(pending.x,pending.y,el)}},{capture:true,passive:true});
 }
 frame.addEventListener('load',hookFrame);
 if(frame.contentDocument&&frame.contentDocument.readyState==='complete')hookFrame();
@@ -191,8 +205,7 @@ const lum=c=>(.299*c.r+.587*c.g+.114*c.b)/255;
 function syncChrome(){
   let doc;try{doc=frame.contentDocument}catch{return}
   if(!doc||!doc.body)return;
-  const top=bgAt(doc,196,2),bot=bgAt(doc,196,frame.clientHeight-4);
-  status.style.setProperty('--sb-bg',`rgb(${top.r},${top.g},${top.b})`);
+  const top=bgAt(doc,196,24),bot=bgAt(doc,196,frame.clientHeight-4);
   status.style.setProperty('--sb-fg',lum(top)>.55?'#000':'#fff');
   screen.style.background=`rgb(${top.r},${top.g},${top.b})`;
   home.style.setProperty('--hi',lum(bot)>.55?'#000':'#fff');

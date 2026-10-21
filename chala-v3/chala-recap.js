@@ -22,6 +22,20 @@
   const mName = k => new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 1).toLocaleDateString('en-US', { month: 'long' });
   const mLabel = k => new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const daysIn = k => new Date(+k.slice(0, 4), +k.slice(5, 7), 0).getDate();
+  // a period is a month ('2026-09') or a week ('W:2026-09-14', Monday to Sunday)
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const addDays = (x, n) => { const d = new Date(x + 'T12:00:00'); d.setDate(d.getDate() + +n); return iso(d); };
+  const monday = x => { const d = new Date(x + 'T12:00:00'); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return iso(d); };
+  function period(key) {
+    if (key.startsWith('W:')) {
+      const start = key.slice(2), end = addDays(start, 6), a = new Date(start + 'T12:00:00'), b = new Date(end + 'T12:00:00');
+      const label = a.getMonth() === b.getMonth() ? `${dLabel(start)} – ${b.getDate()}, ${b.getFullYear()}` : `${dLabel(start)} – ${dLabel(end)}, ${b.getFullYear()}`;
+      return { kind: 'W', key, start, end, days: 7, label, short: label.replace(/, \d{4}$/, ''), name: `the week of ${dLabel(start)}`, unit: 'week', perYear: 52, full: 7 };
+    }
+    const days = daysIn(key);
+    return { kind: 'M', key, start: `${key}-01`, end: `${key}-${String(days).padStart(2, '0')}`, days, label: mLabel(key),
+      short: new Date(+key.slice(0, 4), +key.slice(5, 7) - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), name: mName(key), unit: 'month', perYear: 12, full: 30.4 };
+  }
   const sum = l => l.reduce((s, t) => s + t.cents, 0);
   const plural = (n, one, many) => `${n} ${n === 1 ? one : (many || one + 's')}`;
   const RX = {
@@ -56,19 +70,21 @@
     return out;
   }
   function summarize(all, key) {
-    const tx = all.filter(t => t.date.startsWith(key)), spendT = tx.filter(t => t.flow === 'spend');
+    const pd = period(key), t0 = new Date(pd.start + 'T12:00:00');
+    const ix = d => Math.round((new Date(d + 'T12:00:00') - t0) / 864e5) + 1, at = k => addDays(pd.start, k - 1);
+    const tx = all.filter(t => t.date >= pd.start && t.date <= pd.end), spendT = tx.filter(t => t.flow === 'spend');
     const inc = tx.filter(t => t.flow === 'income'), refunds = tx.filter(t => t.flow === 'refund'), reimb = tx.filter(t => t.flow === 'reimb'), otherIn = tx.filter(t => t.flow === 'otherIn');
     const sOut = tx.filter(t => t.flow === 'saveOut'), sIn = tx.filter(t => t.flow === 'saveIn'), own = tx.filter(t => t.flow === 'own');
-    const days = daysIn(key), dates = tx.map(t => +t.date.slice(8, 10));
+    const days = pd.days, dates = tx.map(t => ix(t.date));
     const first = dates.length ? Math.min(...dates) : 1, last = dates.length ? Math.max(...dates) : days;
     const cats = Object.values(spendT.reduce((o, t) => { (o[t.category] ??= { name: t.category, cents: 0, n: 0, tx: [] }); o[t.category].cents += t.cents; o[t.category].n++; o[t.category].tx.push(t); return o; }, {})).sort((a, b) => b.cents - a.cents);
     const moneyIn = sum(inc) + sum(refunds) + sum(reimb) + sum(otherIn);
-    return { key, tx, spendT, habit: spendT.filter(t => !t.essential), inc, refunds, reimb, otherIn, sOut, sIn, own, days, first, last, cats, spent: sum(spendT), moneyIn, hasIncome: moneyIn > 0, complete: first <= 3 && last >= days - 3 };
+    return { key, pd, ix, at, tx, spendT, habit: spendT.filter(t => !t.essential), inc, refunds, reimb, otherIn, sOut, sIn, own, days, first, last, cats, spent: sum(spendT), moneyIn, hasIncome: moneyIn > 0, complete: pd.kind === 'W' ? first <= 2 && last >= days - 1 : first <= 3 && last >= days - 3 };
   }
   // how often a pay source arrives
   const freq = list => {
     if (list.length < 2) return 'Once this month';
-    const ds = list.map(t => +t.date.slice(8, 10)).sort((a, b) => a - b), gaps = ds.slice(1).map((d, k) => d - ds[k]), g = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+    const ds = list.map(t => Math.round(Date.parse(t.date) / 864e5)).sort((a, b) => a - b), gaps = ds.slice(1).map((d, k) => d - ds[k]), g = gaps.reduce((a, b) => a + b, 0) / gaps.length;
     return g >= 12 && g <= 16 ? `Every 2 weeks · ${list.length} deposits` : g >= 6 && g <= 8 ? `Weekly · ${list.length} deposits` : `${list.length} deposits`;
   };
 
@@ -89,17 +105,17 @@
     if (subs.length >= 2) out.push({ title: 'Subscriptions', cost: sum(subs), tx: subs, vis: { kind: 'slip', rows: subs.slice(0, 5), total: sum(subs) }, stat: `${M(sum(subs))} a month`,
       line: `${plural(subs.length, 'subscription')} renewed on their own. That’s ${M(sum(subs) * 12)} a year.`,
       why: 'Free trials turn into paid plans automatically, and the cancel button is often hard to find on purpose.',
-      tip: `Cancel one you didn’t use this month. ${subs[0].merchant} is the biggest.` });
-    const paydays = [...new Set(S.inc.map(t => +t.date.slice(8, 10)))].sort((a, b) => a - b);
+      tip: `Cancel one you didn’t use this ${S.pd.unit}. ${subs[0].merchant} is the biggest.` });
+    const paydays = [...new Set(S.inc.map(t => S.ix(t.date)))].sort((a, b) => a - b);
     if (paydays.length >= 2 && H.length >= 10) {
       const win = new Set(); paydays.forEach(p => { for (let d = p; d < p + 3 && d <= S.days; d++) win.add(d); });
-      const inWin = H.filter(t => win.has(+t.date.slice(8, 10))), share = sum(inWin) / (sum(H) || 1), expect = win.size / span;
+      const inWin = H.filter(t => win.has(S.ix(t.date))), share = sum(inWin) / (sum(H) || 1), expect = win.size / span;
       if (share >= expect * 1.3 && share >= .2) out.push({ title: 'Right after payday', cost: sum(inWin) - sum(H) * expect, tx: inWin, vis: { kind: 'timeline', win: [...win] }, stat: `${Math.round(share * 100)}%`,
-        line: `of your everyday spending happened in the 3 days after you got paid. Those days are only ${Math.round(expect * 100)}% of the month.`,
+        line: `of your everyday spending happened in the 3 days after you got paid. Those days are only ${Math.round(expect * 100)}% of the ${S.pd.unit}.`,
         why: 'A full account makes everything feel affordable, so money goes faster right after payday.',
         tip: 'Move money to savings on payday, before you have a chance to spend it.' });
     }
-    const allD = Array.from({ length: span }, (_, k) => dayOf(`${S.key}-${String(S.first + k).padStart(2, '0')}`));
+    const allD = Array.from({ length: span }, (_, k) => dayOf(`${S.at(S.first + k)}`));
     const nWe = allD.filter(d => d === 0 || d === 6).length, nWd = span - nWe, we = H.filter(t => [0, 6].includes(dayOf(t.date)));
     const weAvg = sum(we) / (nWe || 1), wdAvg = (sum(H) - sum(we)) / (nWd || 1);
     if (H.length >= 10 && nWe >= 2 && weAvg >= wdAvg * 1.3) out.push({ title: 'Weekends', cost: (weAvg - wdAvg) * nWe, tx: we, vis: { kind: 'bars', a: wdAvg, b: weAvg }, stat: `${(weAvg / (wdAvg || 1)).toFixed(1)}×`,
@@ -108,7 +124,7 @@
       tip: 'Plan one free thing for the weekend before Friday comes.' });
     const bnpl = S.spendT.filter(t => RX.bnpl.test(t.merchant));
     if (bnpl.length) out.push({ title: 'Pay later', cost: sum(bnpl), tx: bnpl, vis: { kind: 'split', total: sum(bnpl) }, stat: M(sum(bnpl)),
-      line: 'went to pay-later plans this month. That’s money for things you bought in an earlier month.',
+      line: `went to pay-later plans this ${S.pd.unit}. That’s money for things you bought earlier.`,
       why: 'Splitting a price into 4 payments makes it look 4 times smaller. You still pay the full price.',
       tip: 'Before you split a payment, ask: would I buy this if I paid it all today?' });
     const fees = S.spendT.filter(t => RX.fees.test(t.merchant));
@@ -137,14 +153,17 @@
     const rawM = api.money, M = c => rawM(Math.round(c / 100) * 100).replace(/\.00$/, '');
     const raw = api.rows && api.rows.length ? api.rows : (window.FaiitRecap?.sampleRows?.() || []), isSample = !(api.rows && api.rows.length);
     const all = classify(raw);
-    const months = [...new Set(all.filter(t => t.flow === 'spend').map(t => t.date.slice(0, 7)))].sort();
-    let key = months.includes(api.key) ? api.key : months.at(-1);
+    const spendDates = all.filter(t => t.flow === 'spend').map(t => t.date);
+    const LISTS = { M: [...new Set(spendDates.map(d => d.slice(0, 7)))].sort(), W: [...new Set(spendDates.map(d => 'W:' + monday(d)))].sort() };
+    let mode = String(api.key || '').startsWith('W:') ? 'W' : 'M';
+    let key = LISTS[mode].includes(api.key) ? api.key : LISTS[mode].at(-1);
     const still = reduce();
 
     el.innerHTML = `<section class="cr" aria-label="Recap">
   <header class="cr-top">
     <button class="cr-gb" data-r="back" aria-label="Back">${I('<path d="M15 5l-7 7 7 7"/>')}</button>
-    <div class="cr-month"><button class="cr-gb cr-sm" data-r="prev" aria-label="Previous month">${I('<path d="M14.5 6 8.5 12l6 6"/>')}</button><b aria-live="polite"></b><button class="cr-gb cr-sm" data-r="next" aria-label="Next month">${I('<path d="M9.5 6l6 6-6 6"/>')}</button></div>
+    <div class="cr-mode" role="tablist" aria-label="Period"><button role="tab" data-r="mode" data-m="W">Week</button><button role="tab" data-r="mode" data-m="M">Month</button></div>
+    <div class="cr-month"><button class="cr-pg" data-r="prev">${I('<path d="M14.5 6 8.5 12l6 6"/>')}</button><b aria-live="polite"></b><button class="cr-pg" data-r="next">${I('<path d="M9.5 6l6 6-6 6"/>')}</button></div>
     <span class="cr-prog" aria-hidden="true"><i></i></span>
   </header>
   <div class="cr-scroll" tabindex="-1"></div>
@@ -160,7 +179,7 @@
     function vis(v) {
       if (v.kind === 'boxes' || v.kind === 'coins' || v.kind === 'dots') { const n = Math.min(v.n, v.kind === 'coins' ? 60 : 40); return `<div class="pv pv-${v.kind}" aria-hidden="true">${Array.from({ length: n }, (_, k) => `<i style="--k:${k}"></i>`).join('')}${v.n > n ? `<span>+${v.n - n}</span>` : ''}</div>`; }
       if (v.kind === 'slip') return `<div class="pv pv-slip">${v.rows.map((t, k) => `<p style="--k:${k}"><span>↻ ${esc(t.merchant)}</span><b>${M(t.cents)}</b></p>`).join('')}<p class="pv-tot"><span>Every month</span><b>${M(v.total)}</b></p></div>`;
-      if (v.kind === 'timeline') { const set = new Set(v.win); return `<svg class="pv pv-time" viewBox="0 0 300 70" aria-hidden="true">${Array.from({ length: S.days }, (_, k) => { const d = k + 1, val = S.habit.filter(t => +t.date.slice(8, 10) === d).reduce((s, t) => s + t.cents, 0), h = Math.min(56, val / 900); return `<rect style="--k:${k}" x="${k * (300 / S.days)}" y="${62 - h}" width="${300 / S.days - 2}" height="${h + 2}" rx="1.5" class="${set.has(d) ? 'hot' : ''}"/>`; }).join('')}<line x1="0" x2="300" y1="64.5" y2="64.5"/></svg><p class="pv-key"><i class="hot"></i>3 days after payday</p>`; }
+      if (v.kind === 'timeline') { const set = new Set(v.win); return `<svg class="pv pv-time" viewBox="0 0 300 70" aria-hidden="true">${Array.from({ length: S.days }, (_, k) => { const d = k + 1, val = S.habit.filter(t => S.ix(t.date) === d).reduce((s, t) => s + t.cents, 0), h = Math.min(56, val / 900); return `<rect style="--k:${k}" x="${k * (300 / S.days)}" y="${62 - h}" width="${300 / S.days - 2}" height="${h + 2}" rx="1.5" class="${set.has(d) ? 'hot' : ''}"/>`; }).join('')}<line x1="0" x2="300" y1="64.5" y2="64.5"/></svg><p class="pv-key"><i class="hot"></i>3 days after payday</p>`; }
       if (v.kind === 'bars') { const mx = Math.max(v.a, v.b) || 1; return `<div class="pv pv-bars"><p><span>Weekday</span><i style="--w:${(v.a / mx * 100).toFixed(1)}%"></i><b>${M(v.a)}</b></p><p><span>Weekend</span><i class="hot" style="--w:${(v.b / mx * 100).toFixed(1)}%"></i><b>${M(v.b)}</b></p></div>`; }
       if (v.kind === 'split') return `<div class="pv pv-split" aria-hidden="true">${[0, 1, 2, 3].map(k => `<i style="--k:${k}">${M(v.total / 4)}</i>`).join('')}</div><p class="pv-key">Four small payments. Same full price: ${M(v.total)}.</p>`;
       if (v.kind === 'below') return `<svg class="pv pv-below" viewBox="0 0 300 80" aria-hidden="true"><line class="zero" x1="0" x2="300" y1="40" y2="40"/><path d="M0 18 L90 26 L150 34 L190 58 L230 50 L300 30"/><circle cx="190" cy="58" r="6"/><text x="196" y="76">${esc(M(v.total))} fee</text><text x="4" y="34" class="z">$0</text></svg>`;
@@ -191,7 +210,7 @@
 
     function screens() {
       const list = [], partial = !S.complete;
-      const kicker = `${mLabel(S.key)}${partial ? ` · ${dLabel(`${S.key}-${String(S.first).padStart(2, '0')}`)} to ${dLabel(`${S.key}-${String(S.last).padStart(2, '0')}`)}` : ''}`;
+      const kicker = `${S.pd.label}${partial ? ` · ${dLabel(`${S.at(S.first)}`)} to ${dLabel(`${S.at(S.last)}`)}` : ''}`;
       const left = S.moneyIn - S.spent, saved = sum(S.sOut) - sum(S.sIn);
 
       // 1 · money in and out
@@ -204,7 +223,7 @@
       list.push(slide('lav', 'Money in and out', `
         ${r(`<p class="cr-k">${esc(kicker)}</p>`, 0)}
         ${r(`<h1 class="cr-h">You spent <b class="cr-big" data-to="${S.spent}">${M(S.spent)}</b></h1>`, 1)}
-        ${r(`<p class="cr-p">${plural(S.spendT.length, 'purchase')}${partial ? ' so far this month' : ''}. Moving money to savings or between your own accounts isn’t counted.</p>`, 2)}
+        ${r(`<p class="cr-p">${plural(S.spendT.length, 'purchase')}${partial ? ` so far this ${S.pd.unit}` : ''}. Moving money to savings or between your own accounts isn’t counted.</p>`, 2)}
         ${S.hasIncome ? r(io, 3) : r(`<p class="cr-fine">This data shows purchases only, so money coming in isn’t shown.</p>`, 3)}
         ${saved > 0 ? r(`<p class="cr-fine">You also moved <b>${M(saved)}</b> into savings.</p>`, 4) : ''}
         <p class="cr-cue" aria-hidden="true">${I('<path d="M6 10l6 6 6-6"/>')}Scroll</p>`));
@@ -241,22 +260,22 @@
         ${r(`<p class="cr-p">Needs are hard to cut. The “everything else” part is where small changes add up.</p>`, 4)}`));
 
       // 5 · your days: the wall calendar
-      const firstDow = new Date(+S.key.slice(0, 4), +S.key.slice(5, 7) - 1, 1).getDay(), byDay = Array.from({ length: S.days }, () => 0);
-      S.habit.forEach(t => { byDay[+t.date.slice(8, 10) - 1] += t.cents; });
+      const wk = S.pd.kind === 'W', firstDow = wk ? 0 : dayOf(S.at(1)), heads = wk ? [...DAYS.slice(1), DAYS[0]] : DAYS, byDay = Array.from({ length: S.days }, () => 0);
+      S.habit.forEach(t => { byDay[S.ix(t.date) - 1] += t.cents; });
       const dmax = Math.max(...byDay) || 1, inRange = d => d >= S.first && d <= S.last;
-      const zero = byDay.filter((v, k) => !v && inRange(k + 1)).length, big = byDay.indexOf(Math.max(...byDay)) + 1, bigDate = `${S.key}-${String(big).padStart(2, '0')}`;
+      const zero = byDay.filter((v, k) => !v && inRange(k + 1)).length, big = byDay.indexOf(Math.max(...byDay)) + 1, bigDate = `${S.at(big)}`;
       let streak = 0, run = 0; byDay.forEach((v, k) => { run = !v && inRange(k + 1) ? run + 1 : 0; streak = Math.max(streak, run); });
       list.push(slide('sky', 'Your days', `
         ${r(`<p class="cr-k">Your days</p>`, 0)}
         ${r(`<h2 class="cr-h2"><b>${zero}</b> ${zero === 1 ? 'day' : 'days'} you spent <em>nothing</em></h2>`, 1)}
-        ${r(`<div class="cr-wall"><div class="cr-wall-h"><span>${S.key.slice(0, 4)}</span><b>${esc(mName(S.key))}</b><i>${+S.key.slice(5, 7)}</i></div>
-          <div class="cr-wall-d">${DAYS.map(d => `<b>${d[0]}</b>`).join('')}</div>
-          <div class="cr-wall-g">${'<span></span>'.repeat(firstDow)}${byDay.map((v, k) => `<button class="cr-day${!inRange(k + 1) ? ' is-out' : !v ? ' is-zero' : ''}${v / dmax > .5 ? ' is-dark' : ''}" data-r="day" data-d="${k + 1}" style="--a:${v ? (.18 + .82 * v / dmax).toFixed(2) : 0};--i:${k}" aria-label="${dLabel(`${S.key}-${String(k + 1).padStart(2, '0')}`)}: ${v ? M(v) : 'nothing spent'}" ${inRange(k + 1) ? '' : 'disabled'}>${k + 1}</button>`).join('')}</div></div>`, 2)}
+        ${r(`<div class="cr-wall"><div class="cr-wall-h"><span>${S.pd.start.slice(0, 4)}</span><b>${esc(S.pd.kind === 'W' ? 'Week of ' + dLabel(S.pd.start) : S.pd.name)}</b><i>${+S.pd.start.slice(5, 7)}</i></div>
+          <div class="cr-wall-d">${heads.map(d => `<b>${d[0]}</b>`).join('')}</div>
+          <div class="cr-wall-g">${'<span></span>'.repeat(firstDow)}${byDay.map((v, k) => `<button class="cr-day${!inRange(k + 1) ? ' is-out' : !v ? ' is-zero' : ''}${v / dmax > .5 ? ' is-dark' : ''}" data-r="day" data-d="${k + 1}" style="--a:${v ? (.18 + .82 * v / dmax).toFixed(2) : 0};--i:${k}" aria-label="${dLabel(`${S.at(k + 1)}`)}: ${v ? M(v) : 'nothing spent'}" ${inRange(k + 1) ? '' : 'disabled'}>${+S.at(k + 1).slice(8, 10)}</button>`).join('')}</div></div>`, 2)}
         ${r(`<p class="cr-p">Darker days cost more. Your biggest was <b>${DAYS_LONG[dayOf(bigDate)]}, ${dLabel(bigDate)}</b>: ${M(byDay[big - 1])}.${streak > 1 ? ` Your longest run with no spending: ${streak} days.` : ''}</p>`, 3)}
         ${r(`<p class="cr-fine">Rent, bills and other needs are left out. Tap a day.</p>`, 4)}`));
 
       // 6 · your week, side by side: an average day for each day of the week, weekends highlighted
-      const span = Math.max(1, S.last - S.first + 1), dows = Array.from({ length: span }, (_, k) => dayOf(`${S.key}-${String(S.first + k).padStart(2, '0')}`));
+      const span = Math.max(1, S.last - S.first + 1), dows = Array.from({ length: span }, (_, k) => dayOf(`${S.at(S.first + k)}`));
       const perDow = [1, 2, 3, 4, 5, 6, 0].map(d => { const n = dows.filter(x => x === d).length, tot = sum(S.habit.filter(t => dayOf(t.date) === d)); return { d, avg: n ? tot / n : 0, n }; });
       const nWe = dows.filter(d => d === 0 || d === 6).length, we = S.habit.filter(t => [0, 6].includes(dayOf(t.date)));
       const weAvg = sum(we) / (nWe || 1), wdAvg = (sum(S.habit) - sum(we)) / ((span - nWe) || 1), dmx = Math.max(...perDow.map(x => x.avg)) || 1;
@@ -293,17 +312,17 @@
           ${r(`<div class="cr-why"><span>Why it happens</span>${esc(f.why)}</div>`, 4)}
           ${r(`<div class="cr-why cr-try"><span>Try this</span>${esc(f.tip)}</div>`, 5)}
           ${r(`<button class="cr-link" data-r="pat" data-k="${k}">See the ${plural(f.tx.length, 'purchase')} ${I('<path d="M9.5 6l6 6-6 6"/>')}</button>`, 6)}`)));
-        const uniq = [...new Set(P.flatMap(f => f.tx))].filter(t => t.flow === 'spend'), got = sum(uniq), scale = partial ? 30.4 / Math.max(1, S.last - S.first + 1) : 1;
+        const uniq = [...new Set(P.flatMap(f => f.tx))].filter(t => t.flow === 'spend'), got = sum(uniq), scale = partial ? S.pd.full / Math.max(1, S.last - S.first + 1) : 1;
         list.push(slide('night', 'Adding it up', `
           ${r(`<p class="cr-k">Adding it up</p>`, 0)}
           ${r(`<p class="cr-stat">${M(got)}</p>`, 1)}
-          ${r(`<p class="cr-line">went to these patterns ${partial ? 'so far this month' : `in ${esc(mName(S.key))}`}, across ${plural(uniq.length, 'purchase')}. ${partial ? 'At this pace that’s' : 'Every month like this is'} about ${M(got * scale * 12)} a year.</p>`, 2)}
+          ${r(`<p class="cr-line">went to these patterns ${partial ? `so far this ${S.pd.unit}` : `in ${esc(S.pd.name)}`}, across ${plural(uniq.length, 'purchase')}. ${partial ? 'At this pace that’s' : `Every ${S.pd.unit} like this is`} about ${M(got * scale * S.pd.perYear)} a year.</p>`, 2)}
           ${r(`<p class="cr-p">You don’t have to stop all of them. Changing one is a real start.</p>`, 3)}
           ${r(`<p class="cr-fine">Not financial advice. Just the math from your own purchases.</p>`, 4)}`));
       }
 
       list.push(slide('lav', 'The end', `
-        ${r(`<h2 class="cr-h2">That was <em>${esc(partial ? `${mName(S.key)} so far` : mName(S.key))}.</em></h2>`, 0)}
+        ${r(`<h2 class="cr-h2">That was <em>${esc(partial ? `${S.pd.kind === 'W' ? 'this week' : S.pd.name} so far` : S.pd.name)}.</em></h2>`, 0)}
         ${r(`<p class="cr-p">${isSample ? 'Built from a sample statement. Add yours to see your own month.' : 'Built from your own purchases, on this device.'}</p>`, 1)}
         ${r(`<div class="cr-acts">${api.openWrap ? '<button class="cr-go" data-r="wrap">Watch your wrap</button>' : ''}<button class="cr-ghost" data-r="back">Back to home</button></div>`, 2)}`));
       return list;
@@ -312,9 +331,11 @@
     // ---------- paint + scroll ----------
     function paint() {
       S = summarize(all, key); P = patterns(S, M);
-      const i = months.indexOf(key);
-      page.querySelector('.cr-month b').textContent = matchMedia('(max-width: 360px)').matches ? new Date(+key.slice(0, 4), +key.slice(5, 7) - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : mLabel(key);
-      page.querySelector('[data-r="prev"]').disabled = i <= 0; page.querySelector('[data-r="next"]').disabled = i >= months.length - 1;
+      const list = LISTS[mode], i = list.indexOf(key), unit = mode === 'W' ? 'week' : 'month';
+      page.querySelector('.cr-month b').textContent = matchMedia('(max-width: 360px)').matches ? S.pd.short : S.pd.label;
+      page.querySelectorAll('[data-r="mode"]').forEach(b => { const on = b.dataset.m === mode; b.classList.toggle('is-on', on); b.setAttribute('aria-selected', String(on)); });
+      const pv = page.querySelector('[data-r="prev"]'), nx = page.querySelector('[data-r="next"]');
+      pv.disabled = i <= 0; nx.disabled = i >= list.length - 1; pv.setAttribute('aria-label', `Previous ${unit}`); nx.setAttribute('aria-label', `Next ${unit}`);
       sc.innerHTML = screens().join('');
       sc.scrollTop = 0; pickSlice(0);
       watch(); tick();
@@ -370,13 +391,20 @@
       const what = b.dataset.r, k = +b.dataset.k;
       if (what === 'back') { leave(); api.back(); return; }
       if (what === 'wrap') { leave(); api.openWrap(); return; }
-      if (what === 'prev' || what === 'next') { const j = months.indexOf(key) + (what === 'next' ? 1 : -1); if (months[j]) { key = months[j]; paint(); } return; }
+      if (what === 'prev' || what === 'next') { const l = LISTS[mode], j = l.indexOf(key) + (what === 'next' ? 1 : -1); if (l[j]) { key = l[j]; paint(); } return; }
+      if (what === 'mode') {
+        const m2 = b.dataset.m; if (m2 === mode) return;
+        const pd = period(key), l = LISTS[m2];
+        // Month to Week: the last week that falls in that month. Week to Month: the month the week starts in.
+        const want = m2 === 'W' ? [...l].reverse().find(w => w.slice(2) <= pd.end && addDays(w.slice(2), 6) >= pd.start) : pd.start.slice(0, 7);
+        mode = m2; key = l.includes(want) ? want : l.at(-1); paint(); return;
+      }
       if (what === 'slice') { if (pick === k && b.tagName !== 'circle') { catSheet(k); return; } pickSlice(k); return; }
       if (what === 'seeslice') { catSheet(pick); return; }
       if (what === 'src') { const s = sc._srcs[k]; txSheet(s.name, `${plural(s.tx.length, 'payment')} · ${M(sum(s.tx))}`, s.tx); return; }
       if (what === 'rep') { const [name, l] = sc._reps[k]; txSheet(name, `${plural(l.length, 'visit')} · ${M(sum(l))}`, l); return; }
       if (what === 'pat') { const f = P[k]; txSheet(f.title, `${plural(f.tx.length, 'purchase')} behind this`, f.tx); return; }
-      if (what === 'day') { const d = `${S.key}-${String(b.dataset.d).padStart(2, '0')}`, l = S.tx.filter(t => t.date === d && t.flow === 'spend'); txSheet(new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }), l.length ? `${plural(l.length, 'purchase')} · ${M(sum(l))}` : 'Nothing spent', l); }
+      if (what === 'day') { const d = `${S.at(b.dataset.d)}`, l = S.tx.filter(t => t.date === d && t.flow === 'spend'); txSheet(new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }), l.length ? `${plural(l.length, 'purchase')} · ${M(sum(l))}` : 'Nothing spent', l); }
     });
     page.addEventListener('keydown', e => { const g = e.target.closest('.cr-seg'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pickSlice(+g.dataset.k); } });
     // arrow keys and Page Up/Down move one screen at a time

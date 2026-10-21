@@ -220,7 +220,7 @@
 .cw .ew-chip{background:#fff;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;color:#1d1b19}
 .cw .ew-chip[aria-checked=true],.cw .cw-pills .ew-chip[aria-pressed=true]{background:#1d1b19;color:#fff}
 .cw.is-dark .ew-chip[aria-checked=true]{background:var(--cw-accent,#fff);color:#1d1b19}
-.cw .ew-chip.is-answer{box-shadow:0 0 0 3px #1fbf75}
+.cw .ew-chip.is-answer{box-shadow:none}
 .cw-brand{color:var(--brand)}
 
 /* screen colours */

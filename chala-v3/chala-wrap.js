@@ -481,7 +481,7 @@
 </div>`, mount: n => {
         const p = n.querySelector('.ew-parcel'), ring = n.querySelector('.ew-ring .on'); let t0 = 0, raf = 0;
         const DUR = reduce() ? 300 : 1000;
-        const open = anim => { s.open = true; cancelAnimationFrame(raf); p.classList.add('is-open'); p.disabled = true; n.querySelector('.ew-hint').style.visibility = 'hidden'; const rv = reveal(n, '.ew-reveal'); fit(rv.querySelector('.ew-big b'), 104); if (anim) { countTo(rv.querySelector('.ew-big b'), A.shop.length, String, 700); rise(rv.children, 140, 200); } ready(); };
+        const open = anim => { s.open = true; cancelAnimationFrame(raf); p.classList.remove('is-pressing'); p.style.setProperty('--shake', 0); p.classList.add('is-open'); p.disabled = true; n.querySelector('.ew-hint').style.visibility = 'hidden'; const rv = reveal(n, '.ew-reveal'); fit(rv.querySelector('.ew-big b'), 104); if (anim) { countTo(rv.querySelector('.ew-big b'), A.shop.length, String, 700); rise(rv.children, 140, 200); } ready(); };
         const tick = now => { const k = Math.min(1, (now - t0) / DUR); ring.style.strokeDasharray = `${k * 100} 100`; p.style.setProperty('--shake', k); if (k >= 1) open(true); else raf = requestAnimationFrame(tick); };
         const start = e => { if (s.open) return; e.preventDefault(); t0 = performance.now(); p.classList.add('is-pressing'); raf = requestAnimationFrame(tick); };
         const stop = () => { if (s.open) return; cancelAnimationFrame(raf); p.classList.remove('is-pressing'); ring.style.strokeDasharray = '0 100'; };

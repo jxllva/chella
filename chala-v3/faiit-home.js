@@ -765,8 +765,8 @@ ${(() => { const past = p.goals.filter(g => g.archived || isDone(p, g)); return 
       /* chala v3: saving shell — a radial meter of what you've saved toward your goals */
       el.querySelectorAll('[data-meter]').forEach(n => { const [sv, gl] = n.dataset.meter.split('|').map(Number); window.ChalaShells?.meter(n, sv, gl, { money: m }); });
       if (tab === 'profile') catchNewBadges();
-      /* chala v3: Recap opens the month the tree is showing (for a week, the month it starts in) */
-      const recapMonth = (md, off) => { if (md === 'M') return monthKey(new Date(today.getFullYear(), today.getMonth() + off, 1)); const s0 = new Date(today); s0.setDate(today.getDate() - (today.getDay() + 6) % 7 + off * 7); return monthKey(s0); };
+      /* chala v3: Recap opens the period the tree is showing: the month, or the week (Monday start) */
+      const recapMonth = (md, off) => { if (md === 'M') return monthKey(new Date(today.getFullYear(), today.getMonth() + off, 1)); const s0 = new Date(today); s0.setDate(today.getDate() - (today.getDay() + 6) % 7 + off * 7); return `W:${s0.getFullYear()}-${String(s0.getMonth() + 1).padStart(2, '0')}-${String(s0.getDate()).padStart(2, '0')}`; };
       /* chala v3: money tree on Home */
       if (tab === 'home' && window.ChalaSpend && !window.ChalaTree) ChalaSpend.mount(el.querySelector('.mt'), { mode: home.treeMode, onMode: md => { home.treeMode = md; }, getData: treeData,
         onWrap: () => api.openRecap(null, 'home'), onRecap: (md, off) => api.openBreakdown(recapMonth(md, off), 'home') });

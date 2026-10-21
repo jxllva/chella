@@ -7,6 +7,7 @@
   const EASE = 'cubic-bezier(.2,.8,.2,1)';
   const LOW = .25, MID = .5;
   const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let hintDone = false; // the hint shows once, until the first flip
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const money = n => '$' + Math.max(0, n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const whole = n => '$' + Math.max(0, n).toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -79,7 +80,8 @@
         el.setAttribute('aria-label', `${d.name} card ending ${d.last4}, ${money(avail)} of ${whole(d.limit)} available. ${isA ? (s.flip ? 'Tap to flip back.' : 'Tap to see the balance.') : 'Tap to bring it up.'}`);
       });
       host.querySelectorAll('[data-dot]').forEach(i => i.classList.toggle('on', i.dataset.dot === act));
-      $('.cf-hint').textContent = s.flip ? 'Tap to flip back · swipe for your next card' : 'Tap to see your balance · swipe for your next card';
+      if (s.flip) hintDone = true;
+      const hint = $('.cf-hint'); hint.textContent = 'Tap to see your balance'; hint.style.visibility = hintDone ? 'hidden' : '';
     }
 
     const bring = id => { if (id === s.order[0]) return; s.order = [id, ...s.order.filter(x => x !== id)]; s.flip = false; render(); };
