@@ -113,8 +113,8 @@
         <span class="sp-left"></span>
       </div>
       <div class="mt-stage cs-stage" role="group" aria-label="Your spending, day by day"></div>
-      <div class="cs-legend"></div>
       <p class="cs-detail" aria-live="polite"></p>
+      <div class="cs-legend"></div>
       <span class="mt-tip" aria-hidden="true" hidden></span><span class="mt-pop" aria-hidden="true" hidden></span>
       <p class="mt-mood" aria-live="polite"><b></b><span></span></p>
       <p class="sp-cats"></p>
