@@ -197,7 +197,7 @@
     }
 
     /* tap: a ring of what came in, split into spent, saved and what's left */
-    const C = { spent: '#D9693B', saved: '#12A089', left: '#E3A33C' };
+    const C = { spent: '#0627EE', saved: '#12A089', left: '#E3A33C' };
     function pop() {
       const box = $('.mt-pop'), d = opts.getStats?.(st.mode, st.offset);
       if (!d) return false;
