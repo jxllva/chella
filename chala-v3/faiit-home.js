@@ -1045,7 +1045,7 @@ ${arch.length ? `<p class="sa-gh">Archived</p><div class="sa-list">${arch.map(ro
       };
       // a gentle pile: rows of five, every other row nudged, each shell tipped a little
       const rnd = i => { const x = Math.sin(i * 12.9898 + 4.1) * 43758.5453; return x - Math.floor(x); };
-      const TONES = ['#5D68EA', '#8E99F2', '#3D44C8', '#B7C0F7'];
+      const TONES = ['#50A182', '#50A182', '#2B5344', '#F2F2BC'];
       const slot = i => { const row = Math.floor(i / PER), col = i % PER, off = row % 2 ? CW * .22 : -CW * .1;
         const cx = X0 + CW / 2 + col * CW + off + (rnd(i) - .5) * 5, cy = Y1 - RH / 2 - row * RH + (rnd(i + 99) - .5) * 4;
         return { cx, cy, rot: (rnd(i + 7) - .5) * 44, c: TONES[Math.floor(rnd(i + 3) * TONES.length)] }; };
