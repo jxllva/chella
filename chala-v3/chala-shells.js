@@ -8,7 +8,7 @@
   const I = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
   // an upright scallop: the logo's shell turned so the hinge sits at the bottom
   const SYMBOL = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="cs-shell" viewBox="0 0 70.4 65.4"><g transform="translate(70.4 0) rotate(90)"><path d="M 56.7 32.9 L 39.9 7.2 C 32.7 0.0 17.2 5.3 24.4 12.5 L 56.0 33.3Z"/><path d="M 55.8 33.4 L 22.7 13.4 C 14.8 10.0 4.0 18.9 12.0 22.3 L 55.3 34.1Z"/><path d="M 55.3 34.3 L 11.0 23.6 C 3.9 22.7 0.0 33.6 7.1 34.5 L 55.1 35.1Z"/><path d="M 55.1 35.3 L 7.1 35.9 C 0.0 36.8 3.9 47.7 11.0 46.8 L 55.3 36.1Z"/><path d="M 55.3 36.3 L 12.0 48.1 C 4.0 51.5 14.8 60.4 22.7 57.0 L 55.8 37.0Z"/><path d="M 56.0 37.1 L 24.4 57.9 C 17.2 65.1 32.7 70.4 39.9 63.2 L 56.7 37.5Z"/><path d="M 58.3 12.7 Q 64.1 12.7 63.8 18.2 Q 65.4 35.2 63.8 52.2 Q 64.1 57.7 58.3 57.7 Q 51.7 57.7 52.8 52.2 Q 53.6 35.2 52.8 18.2 Q 51.7 12.7 58.3 12.7Z"/></g></symbol></defs></svg>`;
-  const KINDS = [['food', 'Food', '#E8643F'], ['cafe', 'Cafés', '#E3A33C'], ['shop', 'Shopping', '#9C8BD6'], ['move', 'Getting around', '#4E9C8B'], ['other', 'Other', '#BDB5AA']];
+  const KINDS = [['food', 'Food', '#E8643F'], ['cafe', 'Cafés', '#E3A33C'], ['shop', 'Shopping', '#9C8BD6'], ['move', 'Transport', '#4E9C8B'], ['other', 'Other', '#BDB5AA']];
   // month shades, chill to heavy, against a usual day
   const LEVELS = [[0, '#EFEBE6', 'No spending'], [.6, '#FBD5C4', 'Chill'], [1.35, '#F4A383', 'Usual'], [2.1, '#E5603C', 'Heavy'], [Infinity, '#A93A1E', 'Overspent']];
   const level = (c, usual) => !c ? 0 : LEVELS.findIndex(([t], i) => i > 0 && c / usual <= t);
@@ -47,29 +47,43 @@
 
     function week() {
       const past = D.days.filter(x => !x.future), avg = past.length ? past.reduce((t, x) => t + x.total, 0) / past.length : 0;
-      const max = Math.max(...D.days.map(x => x.total), avg, 1);
-      const unit = UNITS.find(u => Math.ceil(max / u) <= MAXSTACK) || UNITS.at(-1);
-      const STEP = 15, y = v => v <= 0 ? 0 : 13 + STEP * v / unit; // top of a stack worth v
-      const nMax = Math.max(1, Math.ceil(max / unit)), every = nMax > 6 ? 2 : 1;
-      const ticks = []; for (let k = 0; k <= nMax; k += every) ticks.push(k * unit);
-      const cols = D.days.map((x, i) => {
+      // the same scale for every week (from Home), so a shell and a grid line always mean the same amount
+      const top = Math.max(D.scaleMax || 0, ...D.days.map(x => x.total), 1);
+      const unit = UNITS.find(u => Math.ceil(top / u) <= 8) || UNITS.at(-1);
+      const nMax = Math.max(2, Math.ceil(top / unit)), every = nMax > 5 ? 2 : 1, SLOT = 22, H = nMax * SLOT;
+      const y = v => v / unit * SLOT;
+      const ticks = []; for (let k = 0; k <= nMax; k += every) ticks.push(k);
+      const stackOf = x => {
         // shells per kind, by largest remainder, so the stack adds up to the day
-        const n = x.total ? Math.max(1, Math.round(x.total / unit)) : 0;
+        const n = x.total ? Math.min(nMax, Math.max(1, Math.round(x.total / unit))) : 0;
         const raw = KINDS.map(([k]) => (x.cats[k] || 0) / unit), fl = raw.map(Math.floor);
         let left = n - fl.reduce((a, b) => a + b, 0);
         raw.map((r, j) => [r - fl[j], j]).sort((a, b) => b[0] - a[0]).forEach(([, j]) => { if (left > 0 && raw[j] > 0) { fl[j]++; left--; } });
         while (fl.reduce((a, b) => a + b, 0) > n) { const j = fl.findIndex((v, k) => v > 0 && fl.slice(k + 1).every(w => !w)); fl[j]--; }
-        const stack = []; KINDS.forEach(([, , c], j) => { for (let t = 0; t < fl[j]; t++) stack.push(c); });
-        const lv = level(x.total, D.usual);
+        const st = []; KINDS.forEach(([, , c], j) => { for (let t = 0; t < fl[j]; t++) st.push(c); });
+        return st;
+      };
+      const cols = D.days.map((x, i) => {
+        const lv = level(x.total, D.usual), st = stackOf(x);
         return `<button class="cs-col${x.future ? ' is-future' : ''}${x.today ? ' is-today' : ''}${lv >= 3 ? ' is-heavy' : ''}${sel === x.iso ? ' is-sel' : ''}" data-day="${x.iso}" aria-label="${label(x)}">
-          <span class="cs-stack">${stack.map((c, k) => shell(c, '', `--k:${k};--i:${i}`)).join('') || (x.future ? '' : '<i class="cs-none"></i>')}</span>
-          <span class="cs-dow">${DOW[i]}</span></button>`;
+          <span class="cs-stack">${st.map((c, k) => shell(c, '', `--k:${k};--i:${i}`)).join('') || (x.future ? '' : '<i class="cs-none"></i>')}</span></button>`;
       }).join('');
-      const tick = v => `<span class="cs-tick" style="--y:${y(v).toFixed(1)}px">${hide && v ? '•••' : '$' + Math.round(v / 100)}</span>`;
-      return `<div class="cs-wk"><div class="cs-axis" aria-hidden="true">${ticks.map(tick).join('')}</div>
-        <div class="cs-week" style="--avg:${y(avg).toFixed(1)}px">${ticks.slice(1).map(v => `<i class="cs-grid-l" style="--y:${y(v).toFixed(1)}px"></i>`).join('')}
-          ${avg ? `<span class="cs-avg" aria-hidden="true"><em>avg ${money(avg)}/day</em></span>` : ''}${cols}</div></div>
-        <p class="cs-unit">${shell('#E8643F', 'cs-unit-sh')} = ${money(unit)}${avg ? `<span class="cs-gap"></span><span class="cs-dash"></span>average day, ${money(avg)}` : ''}</p>`;
+      const dows = D.days.map((x, i) => `<button class="cs-dow${x.future ? ' is-future' : ''}${x.today ? ' is-today' : ''}${level(x.total, D.usual) >= 3 ? ' is-heavy' : ''}" data-day="${x.iso}" tabindex="-1" aria-hidden="true">${DOW[i]}</button>`).join('');
+      const tick = k => `<span class="cs-tick" style="--y:${k * SLOT}px">${hide && k ? '•••' : '$' + Math.round(k * unit / 100)}</span>`;
+      const ay = Math.min(H, y(avg)), legendTop = ay < H * .55;
+      const legend = KINDS.slice(0, 4).map(([k, n, c]) => `<span class="${D.days.some(x => x.cats[k]) ? '' : 'is-off'}"><i style="background:${c}"></i>${n}</span>`).join('');
+      return `<div class="cs-wk" style="--h:${H}px">
+        <div class="cs-axis" aria-hidden="true">${ticks.map(tick).join('')}</div>
+        <div class="cs-plot">${ticks.slice(1).map(k => `<i class="cs-grid-l" style="--y:${k * SLOT}px"></i>`).join('')}
+          ${avg ? `<span class="cs-avg" style="--y:${ay.toFixed(1)}px" aria-hidden="true"></span>` : ''}
+          <div class="cs-cols">${cols}</div></div>
+        <div class="cs-side">
+          <div class="cs-key-list ${legendTop ? 'is-top' : 'is-bottom'}">${legend}</div>
+          ${avg ? `<span class="cs-avg-tag" style="--y:${ay.toFixed(1)}px"><b>${money(avg)}</b>avg/day</span>` : ''}
+        </div>
+        <span></span><div class="cs-dows-w">${dows}</div><span></span>
+      </div>
+      <p class="cs-unit">${shell('#E8643F', 'cs-unit-sh')} = ${money(unit)}<span class="cs-gap"></span><span class="cs-dash"></span>average day</p>`;
     }
     function month() {
       const lead = D.days[0].dow;
@@ -90,7 +104,7 @@
     $('.cs-detail').innerHTML = s ? dayLine(s) : '<span class="cs-sum">Tap a day to see spending details</span>';
     $('.cs-legend').innerHTML = mode === 'M'
       ? `<span class="cs-scale">Chill ${LEVELS.slice(1).map(([, c]) => shell(c, 'cs-key')).join('')} Heavy</span>`
-      : KINDS.filter(([k]) => D.days.some(x => x.cats[k])).map(([, n, c]) => `<span><i style="background:${c}"></i>${n}</span>`).join('');
+      : '';
   }
 
   /* Saving: the shell as a radial meter. It fills rib by rib, sweeping from left to right around the hinge,

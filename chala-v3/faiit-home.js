@@ -532,7 +532,9 @@
       const usual = n >= 7 && sum ? sum / n : lim ? lim / new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate() : 2500;
       const days = []; for (let d = s0; d <= e0; d = addDays(d, 1)) { const x = shByDay[d]; days.push({ iso: d, n: +d.slice(8), dow: (new Date(d + 'T12:00:00').getDay() + 6) % 7, total: x?.total || 0, cats: x?.cats || {}, future: d > todayIso, today: d === todayIso }); }
       const prevEnd = addDays(s0, -1);
-      return { label, days, usual, total: days.reduce((t, d) => t + d.total, 0), hasNext: off < 0, hasPrev: prevEnd >= shFirst, money: c => m(Math.round(c / 100) * 100) };
+      // one scale for every week: the biggest day in the last twelve weeks, so stacks and grid lines don't jump as you page
+      let scaleMax = 0; for (let k = 0; k < 84; k++) { const d = addDays(todayIso, -k); if (d < shFirst) break; scaleMax = Math.max(scaleMax, shByDay[d]?.total || 0); }
+      return { label, days, usual, scaleMax, total: days.reduce((t, d) => t + d.total, 0), hasNext: off < 0, hasPrev: prevEnd >= shFirst, money: c => m(Math.round(c / 100) * 100) };
     }
 
     // Recap page data: earned, spent, saved, by day and category, for a week or a month

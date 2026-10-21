@@ -1088,3 +1088,38 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .ng-own-in { width: 100%; box-sizing: border-box; height: 52px; padding: 0 18px; border-radius: 999px; border: 1.5px solid var(--p-ink); background: #fff; font: 500 1rem/1 var(--p-sans); color: var(--p-ink); outline: none; }
 .nl-name:focus-visible, .nl-amt:focus-visible, .ng-own-in:focus-visible { outline: none !important; }
 .ng-own-in:focus { box-shadow: 0 0 0 3px rgba(25,25,25,.08); }
+
+/* =====================================================================
+   Week shells v2: one scale for every week, shells side by side in clean slots, key beside the chart
+   ===================================================================== */
+.cs .cs-wk { display: grid; grid-template-columns: 30px minmax(0, 1fr) 76px; grid-template-rows: var(--h) auto; column-gap: 6px; row-gap: 8px; margin-top: 8px; padding-top: 10px; }
+.cs .cs-axis { position: relative; height: var(--h); }
+.cs .cs-tick { position: absolute; right: 0; bottom: var(--y); transform: translateY(50%); font: 500 .625rem/1 var(--p-sans); color: var(--p-ink-3); font-variant-numeric: tabular-nums; }
+.cs-plot { position: relative; height: var(--h); border-bottom: 1px solid rgba(25,25,25,.14); }
+.cs .cs-grid-l { position: absolute; left: 0; right: 0; bottom: var(--y); border-top: 1px solid rgba(25,25,25,.06); pointer-events: none; }
+.cs .cs-avg { position: absolute; left: 0; right: -6px; bottom: var(--y); border-top: 1.5px dashed rgba(169,58,30,.55); pointer-events: none; z-index: 2; }
+.cs-cols { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cs .cs-col { height: 100%; justify-content: flex-end; gap: 0; border-radius: 10px 10px 0 0; }
+.cs .cs-col.is-sel { background: linear-gradient(#F7F2EE, rgba(247,242,238,0)); }
+.cs .cs-stack { padding-bottom: 0; }
+.cs .cs-stack .cs-sh { width: 24px; height: 22px; margin: 0 !important; filter: none; }
+.cs .cs-none { margin-bottom: 0; }
+.cs-dows-w { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cs .cs-dow { appearance: none; border: 0; background: none; cursor: pointer; justify-self: center; width: 24px; height: 24px; padding: 0; border-radius: 50%; display: grid; place-items: center; font: 500 .75rem/1 var(--p-sans); color: var(--p-ink-3); }
+.cs .cs-dow.is-today { background: var(--p-ink); color: #fff; }
+.cs .cs-dow.is-heavy { color: #A93A1E; font-weight: 700; }
+.cs .cs-dow.is-today.is-heavy { background: #A93A1E; color: #fff; }
+.cs .cs-dow.is-future { opacity: .45; }
+.cs-side { position: relative; height: var(--h); }
+.cs-key-list { position: absolute; left: 4px; right: 0; display: flex; flex-direction: column; gap: 8px; font: 500 .6875rem/1 var(--p-sans); color: var(--p-ink-2); }
+.cs-key-list.is-top { top: 0; }
+.cs-key-list.is-bottom { bottom: 0; }
+.cs-key-list span { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.cs-key-list i { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.cs-key-list .is-off { opacity: .35; }
+.cs-avg-tag { position: absolute; left: 4px; bottom: var(--y); transform: translateY(50%); display: flex; flex-direction: column; gap: 1px; padding: 4px 7px; border-radius: 8px; background: #FBEAE2; font: 500 .5625rem/1.1 var(--p-sans); color: #A93A1E; letter-spacing: .02em; }
+.cs-avg-tag b { font: 700 .75rem/1.1 var(--p-sans); letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.cs .cs-unit { justify-content: flex-start; margin: 12px 0 0 36px; }
+.cs .cs-detail { margin-top: 10px; }
+.cs:not(.is-month) .cs-legend { display: none; }
+.cs .cs-stage { margin-top: 4px !important; }
