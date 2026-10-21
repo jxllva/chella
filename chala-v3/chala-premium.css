@@ -1148,3 +1148,7 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .cs .cs-cell.is-sel .cs-n { color: var(--p-ink); font-weight: 700; }
 .cs .cs-col.is-sel { background: linear-gradient(rgba(25,25,25,0), rgba(25,25,25,.05)); box-shadow: inset 0 -2px 0 var(--p-ink); }
 @media (prefers-reduced-motion: reduce) { .cs-day { animation: none; } }
+
+/* one colour of shell; the side column only holds the average tag */
+.cs .cs-wk { grid-template-columns: 30px minmax(0, 1fr) 62px; }
+.cs-day-p { padding: 5px 10px !important; }

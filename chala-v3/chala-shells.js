@@ -16,6 +16,7 @@
   const shell = (fill, cls = '', style = '') => `<svg class="cs-sh ${cls}" viewBox="0 0 70.4 65.4" style="${style}" aria-hidden="true"><use href="#cs-shell" fill="${fill}"></use></svg>`;
   const UNITS = [500, 1000, 2000, 2500, 5000, 10000, 20000, 50000];
   const MAXSTACK = 9;
+  const SHELL = '#EC7A58';
 
   // draws the chart into a card that already has .cs-stage, .cs-detail and .cs-legend
   function render(host, D, { mode = 'W', animate = true, hide = false } = {}) {
@@ -48,7 +49,7 @@
       const wd = new Date(d.iso + 'T12:00:00'), day = wd.toLocaleDateString('en-US', { weekday: 'long' }), date = wd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       const lv = d.future ? -1 : level(d.total, D.usual);
       const tag = d.future ? 'Still to come' : !d.total ? 'Nothing spent' : LEVELS[lv][2] + ' day';
-      const parts = KINDS.filter(([k]) => d.cats[k]).sort((a, b) => d.cats[b[0]] - d.cats[a[0]]).map(([k, n, c]) => `<span class="cs-day-p"><i style="background:${c}"></i>${n}<b>${money(d.cats[k])}</b></span>`).join('');
+      const parts = KINDS.filter(([k]) => d.cats[k]).sort((a, b) => d.cats[b[0]] - d.cats[a[0]]).map(([k, n, c]) => `<span class="cs-day-p">${n}<b>${money(d.cats[k])}</b></span>`).join('');
       return `<div class="cs-day lv-${lv}">
         <div class="cs-day-top"><span class="cs-day-when"><b>${date}</b><span>${day}</span></span>
           <span class="cs-day-r"><b class="cs-day-amt">${d.future ? '–' : money(d.total)}</b><span class="cs-day-lv">${tag}</span></span></div>
@@ -71,7 +72,8 @@
         let left = n - fl.reduce((a, b) => a + b, 0);
         raw.map((r, j) => [r - fl[j], j]).sort((a, b) => b[0] - a[0]).forEach(([, j]) => { if (left > 0 && raw[j] > 0) { fl[j]++; left--; } });
         while (fl.reduce((a, b) => a + b, 0) > n) { const j = fl.findIndex((v, k) => v > 0 && fl.slice(k + 1).every(w => !w)); fl[j]--; }
-        const st = []; KINDS.forEach(([, , c], j) => { for (let t = 0; t < fl[j]; t++) st.push(c); });
+        // one colour for every shell: the stack is the amount; what it went on lives in the day card
+        const st = []; KINDS.forEach((_, j) => { for (let t = 0; t < fl[j]; t++) st.push(SHELL); });
         return st;
       };
       const cols = D.days.map((x, i) => {
@@ -89,12 +91,11 @@
           ${avg ? `<span class="cs-avg" style="--y:${ay.toFixed(1)}px" aria-hidden="true"></span>` : ''}
           <div class="cs-cols">${cols}</div></div>
         <div class="cs-side">
-          <div class="cs-key-list ${legendTop ? 'is-top' : 'is-bottom'}">${legend}</div>
           ${avg ? `<span class="cs-avg-tag" style="--y:${ay.toFixed(1)}px"><b>${money(avg)}</b>avg/day</span>` : ''}
         </div>
         <span></span><div class="cs-dows-w">${dows}</div><span></span>
       </div>
-      <p class="cs-unit">${shell('#E8643F', 'cs-unit-sh')} = ${money(unit)}<span class="cs-gap"></span><span class="cs-dash"></span>average day</p>`;
+      <p class="cs-unit">${shell(SHELL, 'cs-unit-sh')} = ${money(unit)}<span class="cs-gap"></span><span class="cs-dash"></span>average day</p>`;
     }
     function month() {
       const lead = D.days[0].dow;
