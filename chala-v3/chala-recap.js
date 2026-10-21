@@ -210,7 +210,7 @@
 
     function screens() {
       const list = [], partial = !S.complete;
-      const kicker = `${S.pd.label}${partial ? ` · ${dLabel(`${S.at(S.first)}`)} to ${dLabel(`${S.at(S.last)}`)}` : ''}`;
+      const kicker = S.pd.label;
       const left = S.moneyIn - S.spent, saved = sum(S.sOut) - sum(S.sIn);
 
       // 1 · money in and out
