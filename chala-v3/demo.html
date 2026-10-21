@@ -4,7 +4,7 @@
 /* Layout: one phone, centred and scaled to fill the window height, on a flat backdrop for screen recording. Single deliberate look. */
 :root{
   color-scheme:light;
-  --stage:#E9E7E2;          /* backdrop, cycles with B */
+  --stage:#000000;          /* backdrop: black by default, B cycles it */
   --bezel:#121214;
   --bezel-edge:#2B2B2F;
   --ink:#191919;
@@ -16,14 +16,14 @@
 html,body{height:100%;margin:0;overflow:hidden}
 body{background:var(--stage);color:var(--ink);font-family:var(--ui);overflow:hidden;transition:background .3s;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-body[data-bg="dark"]{--stage:#0E0E10}
+body[data-bg="warm"]{--stage:#E9E7E2}
 body[data-bg="white"]{--stage:#FFFFFF}
 body[data-bg="green"]{--stage:#00B140}
 
 .stage{position:fixed;inset:0;overflow:hidden}
 .phone{position:relative;width:calc(var(--screen-w) + 2*var(--bez));height:calc(var(--screen-h) + 2*var(--bez));
   position:absolute;left:50%;top:50%;padding:var(--bez);border-radius:68px;background:var(--bezel);
-  box-shadow:inset 0 0 0 2px var(--bezel-edge),0 0 0 1px rgba(0,0,0,.25),0 30px 80px -20px rgba(0,0,0,.35);
+  box-shadow:inset 0 0 0 2px var(--bezel-edge),0 0 0 1px rgba(255,255,255,.08),0 30px 80px -20px rgba(0,0,0,.35);
   transform:translate(-50%,-50%);transform-origin:center center;flex:none}
 body[data-bg="green"] .phone,body[data-bg="white"] .phone{box-shadow:inset 0 0 0 2px var(--bezel-edge),0 0 0 1px rgba(0,0,0,.25)}
 .screen{position:relative;width:100%;height:100%;border-radius:56px;overflow:hidden;background:#F7F7F5;cursor:none;isolation:isolate}
@@ -74,7 +74,7 @@ iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;b
         </span>
       </div>
       <div class="island"></div>
-      <iframe id="app" src="index.html" title="chala"></iframe>
+      <iframe id="app" title="chala"></iframe>
       <div class="home" id="home"></div>
       <div class="cur" id="cur"></div>
     </div>
@@ -84,8 +84,8 @@ iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;b
 <div class="hint" id="hint">
   <div><b>H</b>hide this</div>
   <div><b>C</b>touch cursor on / off</div>
-  <div><b>B</b>backdrop: warm, dark, white, green</div>
-  <div><b>R</b>reset demo data and restart</div>
+  <div><b>B</b>backdrop: black, warm, white, green</div>
+  <div><b>R</b>restart from the beginning</div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -188,7 +188,6 @@ function hookFrame(){
   doc.addEventListener('scroll',()=>{if(pending&&pending.target&&cur.classList.contains('on')){const el=doc.elementFromPoint(pending.x,pending.y);place(pending.x,pending.y,el)}},{capture:true,passive:true});
 }
 frame.addEventListener('load',hookFrame);
-if(frame.contentDocument&&frame.contentDocument.readyState==='complete')hookFrame();
 
 /* ---------- match status bar + home indicator to the app ---------- */
 const parseRGB=c=>{const m=c&&c.match(/rgba?\(([^)]+)\)/);if(!m)return null;const p=m[1].split(/[ ,/]+/).filter(Boolean).map(Number);return{r:p[0],g:p[1],b:p[2],a:p.length>3?p[3]:1}};
@@ -212,9 +211,13 @@ function syncChrome(){
 }
 setInterval(syncChrome,350);
 
+/* ---------- every open starts fresh: clear the app's saved data, then load it ---------- */
+function resetDemo(){try{localStorage.clear()}catch{}try{sessionStorage.clear()}catch{}}
+resetDemo();
+frame.src=frame.dataset.src||'index.html';
+
 /* ---------- keys ---------- */
-const BGS=['warm','dark','white','green'];let bgi=0;
-try{const s=localStorage.getItem('demo-frame-bg');if(BGS.includes(s)){bgi=BGS.indexOf(s);document.body.dataset.bg=s}}catch{}
+const BGS=['black','warm','white','green'];let bgi=0;
 function say(t){toast.textContent=t;toast.classList.add('show');clearTimeout(say.t);say.t=setTimeout(()=>toast.classList.remove('show'),1400)}
 function onKey(e){
   if(e.metaKey||e.ctrlKey||e.altKey)return;
@@ -222,10 +225,9 @@ function onKey(e){
   const k=e.key.toLowerCase();
   if(k==='h'){hint.classList.toggle('gone')}
   else if(k==='c'){enabled=!enabled;cur.classList.toggle('off',!enabled);say(enabled?'Touch cursor on':'Touch cursor off')}
-  else if(k==='b'){bgi=(bgi+1)%BGS.length;document.body.dataset.bg=BGS[bgi];try{localStorage.setItem('demo-frame-bg',BGS[bgi])}catch{}}
+  else if(k==='b'){bgi=(bgi+1)%BGS.length;document.body.dataset.bg=BGS[bgi]}
   else if(k==='r'){
-    try{const keep=localStorage.getItem('demo-frame-bg');localStorage.clear();sessionStorage.clear();if(keep)localStorage.setItem('demo-frame-bg',keep)}catch{}
-    frame.contentWindow.location.reload();say('Demo reset')
+    resetDemo();frame.contentWindow.location.reload();say('Demo reset')
   }
 }
 addEventListener('keydown',onKey);

@@ -1,6 +1,6 @@
 # chala v3
 
-Third version, blending the other two. The originals are untouched for reference: `../index.html` (chala) and `../faiit/` (Faiit).
+Third version, blending the other two. The originals are untouched for reference: `../chala-original.html` (chala) and `../faiit/` (Faiit).
 
 **From Faiit:** the shell. Welcome, phone sign-up, money source picker, hello, bottom nav, home, Wraps gallery, Profile, breakdown.
 
