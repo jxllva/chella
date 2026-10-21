@@ -297,6 +297,14 @@
     const nowKey = monthKey(), nowName = monthName();
     const fromData = api.spendIn(nowKey);
     const spentNow = n => (fromData[n] || 0) + p.manual.filter(x => x.cat === n && x.month === nowKey).reduce((t, x) => t + x.cents, 0);
+    /* chala v3 demo: with no spending yet this month, the limit cards show three sample states:
+       plenty left, almost out (red) and over the limit (red, empty, negative) */
+    const DEMO_LIMITS = [['Food delivery', 'Food delivery', 70000, 35000], ['Shopping', 'Shopping', 52000, 42000], ['Transport', 'Transportation', 14000, 16500]];
+    const LABEL = { Transport: 'Transportation' };
+    const limitCards = () => {
+      const real = Object.keys(p.limits).map(n => ({ n, label: LABEL[n] || n, lim: p.limits[n], sp: spentNow(n) }));
+      return real.some(x => x.sp > 0) ? real : DEMO_LIMITS.map(([n, label, lim, sp]) => ({ n, label, lim, sp }));
+    };
     const lastMonthName = spend.periodLabel.split(' ')[0];
     const today = new Date(), dim = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate(), daysLeft = dim - today.getDate();
     const health = r => r > 1 ? 'over' : r >= .8 ? 'near' : 'ok';
@@ -697,29 +705,18 @@
 
 <div class="hm-kh" data-rise><h2 class="hm-k">My spending limits</h2>${addBtn('addlimit', 'Add a limit')}</div>
 <div class="hm-limits">
-  ${names.map(n => {
-    const lim = p.limits[n], sp = spentNow(n), r = lim ? sp / lim : 0, k = r > 1 ? 'over' : r >= .7 ? 'near' : 'ok';
-    return `<button class="lc is-${k}" data-h="limit" data-c="${esc(n)}" data-rise aria-label="${esc(n)}: ${m(sp)} spent of ${m(lim)}${k === 'over' ? ', over limit' : ''}">
+  ${limitCards().map(({ n, label, lim, sp }) => {
+    /* chala v3: each card shows what's left. The bar starts full and drains; 20% or less left is red, and past the limit it's empty and shows the negative. */
+    const left = lim - sp, f = lim ? Math.max(0, Math.min(1, left / lim)) : 0, k = left < 0 ? 'over' : f <= .2 ? 'low' : f <= .4 ? 'near' : 'ok';
+    const amt = `${left < 0 ? '−' : ''}${m(Math.round(Math.abs(left) / 100) * 100)}`;
+    return `<button class="lc is-${k}" data-h="limit" data-c="${esc(n)}" data-rise aria-label="${esc(label)}: ${left < 0 ? `${m(-left)} over the ${m(lim)} limit` : `${m(left)} left of ${m(lim)}`}">
       <span class="lc-top"><span class="lc-ic" aria-hidden="true">${I(catIcon(n))}</span><i class="lc-dot" aria-hidden="true"></i></span>
-      <span class="lc-n">${esc(n)}</span>
-      <b class="lc-num">${m(Math.round(sp / 100) * 100)}</b>
-      <span class="lc-of">of ${m(lim)}</span>
-      <span class="lc-bar"><i style="width:${Math.min(100, r * 100).toFixed(1)}%"></i></span>
+      <span class="lc-n">${esc(label)}</span>
+      <b class="lc-num">${amt}</b>
+      <span class="lc-of">${left < 0 ? `over your ${m(lim)} limit` : `left of ${m(lim)}`}</span>
+      <span class="lc-bar"><i style="width:${(f * 100).toFixed(1)}%"></i></span>
     </button>`; }).join('') || '<button class="lc lc-empty" data-h="addlimit"><span>Add your first limit</span></button>'}
 </div>
-
-${names.length ? `<div class="hm-kh" data-rise><h2 class="hm-k">Left to spend</h2></div>
-<div class="lt" data-rise>
-  ${names.map(n => {
-    const lim = p.limits[n], sp = spentNow(n), left = lim - sp, f = lim ? Math.max(0, Math.min(1, left / lim)) : 0, k = left <= 0 ? 'over' : f <= .3 ? 'near' : 'ok';
-    return `<button class="lt-row is-${k}" data-h="limit" data-c="${esc(n)}" aria-label="${esc(n)}: ${left > 0 ? `${m(left)} left of ${m(lim)}` : left === 0 ? `nothing left of ${m(lim)}` : `${m(-left)} over the ${m(lim)} limit`}">
-      <span class="lt-ic" aria-hidden="true">${I(catIcon(n))}</span>
-      <span class="lt-main">
-        <span class="lt-top"><span class="lt-n">${esc(n)}</span><b class="lt-num">${left > 0 ? `${m(Math.round(left / 100) * 100)} <small>left</small>` : left === 0 ? '$0 <small>left</small>' : `${m(Math.round(-left / 100) * 100)} <small>over</small>`}</b></span>
-        <span class="lt-bar"><i style="width:${(f * 100).toFixed(1)}%"></i></span>
-      </span>
-    </button>`; }).join('')}
-</div>` : ''}
 
 <div class="hm-kh" data-rise><h2 class="hm-k">My goals</h2>${addBtn('addgoal', 'Add a goal')}</div>
 <div class="hm-goals">
