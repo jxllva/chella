@@ -80,7 +80,7 @@
         el.setAttribute('aria-label', `${d.name} card ending ${d.last4}, ${money(avail)} of ${whole(d.limit)} available. ${isA ? (s.flip ? 'Tap to flip back.' : 'Tap to see the balance.') : 'Tap to bring it up.'}`);
       });
       if (s.flip) hintDone = true;
-      const hint = $('.cf-hint'); hint.textContent = s.stowed ? 'Swipe up a card to see it' : 'Tap to see your balance'; hint.style.visibility = hintDone && !s.stowed ? 'hidden' : '';
+      const hint = $('.cf-hint'); hint.textContent = s.stowed ? 'Swipe up a card to see it' : 'Tap to see your balance'; hint.classList.toggle('is-stowed', s.stowed); hint.style.visibility = hintDone && !s.stowed ? 'hidden' : '';
     }
 
     const bring = id => { if (!s.stowed && id === s.order[0]) return; s.order = [id, ...s.order.filter(x => x !== id)]; s.stowed = false; s.flip = false; render(); };
