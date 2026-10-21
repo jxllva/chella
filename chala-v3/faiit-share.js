@@ -15,71 +15,101 @@
     wrapWords(t, max).map((l, i) => `<text x="${x}" y="${y + i * lh}" font-family="${family}" font-weight="${weight}" ${style ? `font-style="${style}"` : ''} font-size="${size}" fill="${fill}" text-anchor="${anchor}">${esc(l)}</text>`).join('');
   const label = (t, fill, y = 250, x = 90, anchor = 'start') => `<text x="${x}" y="${y}" font-family="Courier Prime" font-weight="700" font-size="40" fill="${fill}" letter-spacing="3" text-anchor="${anchor}">${esc(t)}</text>`;
 
+  /* chala v3: every card looks like the Wrapped story slides. One colour washes in from the
+     top-left corner over a pale tint of itself, with film grain. Text is a deep shade of that
+     colour, the second punch line a mid shade. The illustration sits in the lower half. */
+  const HUES = {
+    red:    ['#F29A86', '#6B1406', '#C6301A'],
+    matcha: ['#A9C98B', '#2B4321', '#557D37'],
+    navy:   ['#B6C2F2', '#1C2468', '#3A4FC4'],
+    yellow: ['#EBDC8C', '#5C4310', '#C29129'],
+    sky:    ['#A8D3F1', '#1B4369', '#2F78BF']
+  };
+  const mix = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.substr(i, 2), 16) * t + parseInt(b.substr(i, 2), 16) * (1 - t)).toString(16).padStart(2, '0')).join('');
+  const SANS = 'Bricolage Grotesque'; // embedded as Inter when saved
+  function washOpen(id, hue, extra = '') {
+    const [wa] = HUES[hue], k = 'w' + id;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"><defs>
+  <linearGradient id="${k}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mix(wa, '#EEF0F2', .2)}"/><stop offset="1" stop-color="${mix(wa, '#F3F3F1', .08)}"/></linearGradient>
+  <radialGradient id="${k}c" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="1450" gradientTransform="matrix(1 0 0 .9 0 0)"><stop offset="0" stop-color="${wa}" stop-opacity=".96"/><stop offset=".34" stop-color="${wa}" stop-opacity=".52"/><stop offset=".72" stop-color="${wa}" stop-opacity="0"/></radialGradient>
+  <radialGradient id="${k}e" gradientUnits="userSpaceOnUse" cx="${W}" cy="1620" r="760"><stop offset="0" stop-color="${wa}" stop-opacity=".3"/><stop offset="1" stop-color="${wa}" stop-opacity="0"/></radialGradient>
+  <filter id="${k}g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .2  0 0 0 0 .2  0 0 0 0 .24  0 0 0 .55 0"/></filter>
+  ${extra}</defs>
+  <rect width="${W}" height="${H}" fill="url(#${k}b)"/><rect width="${W}" height="${H}" fill="url(#${k}c)"/><rect width="${W}" height="${H}" fill="url(#${k}e)"/>
+  <rect width="${W}" height="${H}" filter="url(#${k}g)" opacity=".3"/>`;
+  }
+  // kicker · big number · sub line · two-line punch, like the story slides
+  function head(hue, { kicker, big, unit = '', sub, l1, l2, bigSize = 300 }) {
+    const [, wd, wc] = HUES[hue];
+    const subLines = wrapWords(sub, 34).slice(0, 2), y0 = 540, ySub = y0 + 100, yP = ySub + (subLines.length - 1) * 62 + 120;
+    const punch = (t, fill, y) => wrapWords(t, 24).slice(0, 2).map((l, i) => `<text x="90" y="${y + i * 86}" font-family="${SANS}" font-weight="800" font-size="78" fill="${fill}" letter-spacing="-2">${esc(l)}</text>`).join('');
+    const l1n = wrapWords(l1, 24).slice(0, 2).length;
+    return `<text x="92" y="250" font-family="${SANS}" font-weight="600" font-size="38" fill="${wd}" fill-opacity=".82" letter-spacing="7">${esc(kicker.toUpperCase())}</text>
+  <text x="80" y="${y0}" font-family="${SANS}" font-weight="800" font-size="${bigSize}" fill="${wd}" letter-spacing="-14">${esc(big)}${unit ? `<tspan font-size="84" letter-spacing="-1" dx="22">${esc(unit)}</tspan>` : ''}</text>
+  ${subLines.map((l, i) => `<text x="90" y="${ySub + i * 64}" font-family="${SANS}" font-weight="500" font-size="52" fill="${wd}">${esc(l)}</text>`).join('')}
+  ${punch(l1, wd, yP)}${l2 ? punch(l2, wc, yP + l1n * 86) : ''}`;
+  }
+  const footer = (hue, k) => { const [, wd] = HUES[hue]; return `<text x="90" y="1810" font-family="${SANS}" font-weight="600" font-size="34" fill="${wd}" fill-opacity=".8" letter-spacing="5">CHALA · MAKE YOURS</text>`; };
+
   // ---------- 01 · Orders: a field of little takeout boxes, one per order ----------
   function orders(d, s) {
-    const n = d.orders.n, show = Math.min(n, 40), rnd = seeded(n * 7 + 3);
-    const cols = show > 24 ? 6 : 5, rows = Math.ceil(show / cols);
-    const gx = 900 / cols, gy = Math.min(150, 700 / rows), sc = Math.min(1.25, gx / 120);
+    const n = d.orders.n, show = Math.min(n, 30), rnd = seeded(n * 7 + 3), hue = 'red';
+    const cols = show > 20 ? 6 : 5, rows = Math.ceil(show / cols);
+    const gx = 900 / cols, gy = Math.min(140, 560 / rows), sc = Math.min(1.1, gx / 130, gy / 110);
     const boxes = Array.from({ length: show }, (_, k) => {
-      const c = k % cols, r = Math.floor(k / cols), x = 90 + gx * (c + .5) + (rnd() - .5) * 22, y = 860 + gy * (r + .5) + (rnd() - .5) * 18, rot = (rnd() - .5) * 30;
+      const c = k % cols, r = Math.floor(k / cols), x = 90 + gx * (c + .5) + (rnd() - .5) * 20, y = 1130 + gy * (r + .5) + (rnd() - .5) * 14, rot = (rnd() - .5) * 26;
       const wink = s.wink && k % 3 === 0;
       return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot.toFixed(1)}) scale(${sc.toFixed(2)})"><g class="bx" style="--k:${k}">
-        <path d="M-40 -26 L40 -26 L30 40 L-30 40 Z" fill="#D7F25A" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
-        <path d="M-40 -26 L-30 -40 L30 -40 L40 -26" fill="#C3E24A" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M-40 -26 L40 -26 L30 40 L-30 40 Z" fill="#E8B57A" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M-40 -26 L-30 -40 L30 -40 L40 -26" fill="#D49A5C" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
         <path d="M-12 -40 C-12 -58 12 -58 12 -40" fill="none" stroke="${INK}" stroke-width="3"/>
         ${wink ? `<path d="M-16 4 L-6 4" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>` : `<circle cx="-11" cy="4" r="4.5" fill="${INK}"/>`}<circle cx="11" cy="4" r="4.5" fill="${INK}"/>
         <path d="M-10 16 Q0 26 10 16" fill="none" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/></g></g>`;
     }).join('');
-    return `${svgOpen('#9AA6F7')}
-  ${label(`${d.when.toUpperCase()}`, INK)}
-  <text x="70" y="560" font-family="Bricolage Grotesque" font-weight="800" font-size="320" fill="${INK}" letter-spacing="-16">${n}</text>
-  <text x="${90 + String(n).length * 178}" y="555" font-family="Bricolage Grotesque" font-weight="700" font-size="84" fill="${INK}">${esc(d.orders.unit)}</text>
-  ${para(d.orders.line, { y: 680, size: 56, max: 30, fill: INK })}
+    const del = d.orders.unit === 'orders';
+    return `${washOpen('or', hue)}
+  ${head(hue, { kicker: `${d.when} · ${del ? 'delivery' : 'top spot'}`, big: String(n), unit: d.orders.unit, sub: d.orders.line, l1: del ? 'The kitchen stayed closed.' : 'A regular.', l2: del ? 'The app stayed open.' : 'They know the order.' })}
   ${boxes}
-  ${n > show ? `<text x="990" y="1580" font-family="Bricolage Grotesque" font-weight="700" font-size="40" fill="${INK}" text-anchor="end">+${n - show} more</text>` : ''}
-  ${foot(INK)}
+  ${n > show ? `<text x="990" y="1700" font-family="${SANS}" font-weight="700" font-size="40" fill="${HUES[hue][1]}" text-anchor="end">+${n - show} more</text>` : ''}
+  ${footer(hue, '01')}
 </svg>`;
   }
 
-  // ---------- 02 · Coffees: the brown folder and a cup carrier ----------
+  // ---------- 02 · Coffees: a cup carrier ----------
   function coffees(d, s) {
+    const hue = 'matcha', ink = '#3b2414';
     const cup = (x, lid) => `<g transform="translate(${x} 0)">
-        <path d="M-58 -150 L58 -150 L46 40 L-46 40 Z" fill="${CREAM}" stroke="#3b2414" stroke-width="4"/>
-        <rect x="-50" y="-92" width="100" height="56" fill="#C98B52"/>
-        <rect x="-66" y="-176" width="132" height="30" rx="8" fill="${lid}" stroke="#3b2414" stroke-width="4"/>
-        <rect x="-44" y="-190" width="88" height="16" rx="6" fill="${lid}" stroke="#3b2414" stroke-width="4"/></g>`;
-    const steam = s.steam ? [-170, -55, 60, 175].map(x => `<path class="st" d="M${x} -215 c-14 -24 14 -40 0 -64 c-14 -24 14 -40 0 -64" fill="none" stroke="${CREAM}" stroke-width="7" stroke-linecap="round" opacity=".8"/>`).join('') : '';
-    return `${svgOpen('#171210')}
-  <path d="M60 300 H560 L600 250 H1020 V1700 H60 Z" fill="#8B5224"/>
-  <path d="M600 250 H900 L925 290 H580 Z" fill="#A86A33"/>
-  <text x="755" y="282" font-family="Courier Prime" font-weight="700" font-size="30" fill="${CREAM}" text-anchor="middle" letter-spacing="4">CAFFEINE</text>
-  ${label(d.when.toUpperCase(), CREAM, 420, 540, 'middle')}
-  <text x="540" y="740" font-family="Bricolage Grotesque" font-weight="800" font-size="320" fill="${CREAM}" text-anchor="middle" letter-spacing="-12">${d.coffees.n}</text>
-  <text x="540" y="870" font-family="Bricolage Grotesque" font-weight="700" font-size="110" fill="${CREAM}" text-anchor="middle">café ${d.coffees.n === 1 ? 'visit' : 'visits'}</text>
-  <g transform="translate(540 1290)">
-    <path d="M-330 40 L330 40 L300 120 L-300 120 Z" fill="#B88A5A" stroke="#3b2414" stroke-width="4"/>
-    ${steam}${cup(-170, '#6B3E22')}${cup(-55, '#E9D7BF')}${cup(60, '#6B3E22')}${cup(175, '#E9D7BF')}
+        <path d="M-58 -150 L58 -150 L46 40 L-46 40 Z" fill="${CREAM}" stroke="${ink}" stroke-width="4"/>
+        <rect x="-50" y="-92" width="100" height="56" fill="#8DB26A"/>
+        <rect x="-66" y="-176" width="132" height="30" rx="8" fill="${lid}" stroke="${ink}" stroke-width="4"/>
+        <rect x="-44" y="-190" width="88" height="16" rx="6" fill="${lid}" stroke="${ink}" stroke-width="4"/></g>`;
+    const steam = s.steam ? [-170, -55, 60, 175].map(x => `<path class="st" d="M${x} -215 c-14 -24 14 -40 0 -64 c-14 -24 14 -40 0 -64" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".9"/>`).join('') : '';
+    return `${washOpen('co', hue)}
+  ${head(hue, { kicker: `${d.when} · cafés`, big: String(d.coffees.n), unit: d.coffees.n === 1 ? 'visit' : 'visits', sub: d.coffees.line, l1: 'Hydration,', l2: 'but make it caffeinated.' })}
+  <g transform="translate(540 1520)">
+    <path d="M-330 40 L330 40 L300 120 L-300 120 Z" fill="#B88A5A" stroke="${ink}" stroke-width="4"/>
+    ${steam}${cup(-170, '#5B7A3A')}${cup(-55, '#E9D7BF')}${cup(60, '#5B7A3A')}${cup(175, '#E9D7BF')}
   </g>
-  ${para(d.coffees.line, { x: 540, y: 1520, size: 56, max: 28, fill: CREAM, anchor: 'middle' })}
-  ${foot(CREAM, 1780)}
+  ${footer(hue, '02')}
 </svg>`;
   }
 
   // ---------- 03 · Cart: receipts piled into a shopping cart, one per order ----------
   function cart(d, s) {
-    const n = Math.min(d.cart.n, 16), rnd = seeded(d.cart.n * 13 + 5);
+    const hue = 'navy', n = Math.min(d.cart.n, 16), rnd = seeded(d.cart.n * 13 + 5), [, wd] = HUES[hue];
     const grid = `<pattern id="gp" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M18 0H0V18" fill="none" stroke="#8C6CC9" stroke-width="2" opacity=".55"/></pattern>`;
+    // the cart, scaled into the lower half
+    const T = 'translate(236 1010) scale(.78)';
     const papers = Array.from({ length: n }, (_, k) => {
       const x = 340 + rnd() * 440, y = 960 + rnd() * 200 - (k / n) * 120, r = (rnd() - .5) * 70;
       return `<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)}) rotate(${r.toFixed(0)})"><g class="rc" style="--k:${k}"><rect x="-90" y="-120" width="180" height="240" fill="#E6DAFA"/><rect x="-90" y="-120" width="180" height="240" fill="url(#gp)"/></g></g>`;
     }).join('');
-    const top = `<g transform="translate(590 760) rotate(-6)"><g class="rc" style="--k:${n}"><rect x="-260" y="-130" width="520" height="250" fill="#F1EAFE"/><rect x="-260" y="-130" width="520" height="250" fill="url(#gp)"/>
-      <text x="0" y="-6" font-family="Bricolage Grotesque" font-weight="800" font-size="96" fill="${INK}" text-anchor="middle">${d.cart.n} ${esc(d.cart.unit)}</text>
-      <text x="0" y="76" font-family="Bricolage Grotesque" font-weight="600" font-size="60" fill="${INK}" text-anchor="middle">in this cart</text></g></g>`;
-    return `${svgOpen('#CFE3F2', grid)}
-  ${label(d.when.toUpperCase(), INK)}
-  <text x="90" y="400" font-family="Bricolage Grotesque" font-weight="800" font-size="120" fill="${INK}" letter-spacing="-3">Just browsing.</text>
-  ${para(`${d.cart.n} online orders arrived ${d.inWhen}.`, { y: 490, size: 56, max: 30, fill: INK })}
+    const top = `<g transform="translate(590 800) rotate(-6)"><g class="rc" style="--k:${n}"><rect x="-260" y="-110" width="520" height="210" fill="#F1EAFE"/><rect x="-260" y="-110" width="520" height="210" fill="url(#gp)"/>
+      <text x="0" y="0" font-family="${SANS}" font-weight="800" font-size="88" fill="${INK}" text-anchor="middle">${d.cart.n} ${esc(d.cart.unit)}</text>
+      <text x="0" y="70" font-family="${SANS}" font-weight="600" font-size="54" fill="${INK}" text-anchor="middle">in this cart</text></g></g>`;
+    return `${washOpen('ca', hue, grid)}
+  ${head(hue, { kicker: `${d.when} · shopping`, big: String(d.cart.n), unit: d.cart.unit, sub: `${d.cart.n} online orders arrived ${d.inWhen}.`, l1: 'Just browsing.', l2: 'Allegedly.' })}
+  <g transform="${T}"><g transform="translate(-150 -700)">
   ${s.dropped ? papers : ''}
   <g fill="none" stroke="#E23B2E" stroke-width="16" stroke-linejoin="round" stroke-linecap="round">
     <path d="M150 740 L230 740 L300 1280 L860 1280 L930 860 L262 860"/>
@@ -88,49 +118,49 @@
   <g fill="none" stroke="#E23B2E" stroke-width="8" opacity=".85">${Array.from({ length: 7 }, (_, k) => `<line x1="${340 + k * 82}" y1="870" x2="${335 + k * 78}" y2="1272"/>`).join('')}<line x1="282" y1="1020" x2="905" y2="1020"/><line x1="296" y1="1160" x2="885" y2="1160"/></g>
   ${s.dropped ? top : ''}
   <circle cx="360" cy="1480" r="44" fill="${INK}"/><circle cx="800" cy="1480" r="44" fill="${INK}"/>
-  ${s.dropped ? '' : `<text x="580" y="1090" font-family="Bricolage Grotesque" font-weight="700" font-size="56" fill="${INK}" text-anchor="middle">tap to fill the cart</text>`}
-  ${foot(INK)}
+  ${s.dropped ? '' : `<text x="580" y="1090" font-family="${SANS}" font-weight="700" font-size="56" fill="${wd}" text-anchor="middle">tap to fill the cart</text>`}
+  </g></g>
+  ${footer(hue, '03')}
 </svg>`;
   }
 
   // ---------- 04 · Pie: what the money went on, by count, drawn like a cake ----------
   const SLICE = ['#E0483C', '#F3C74A', '#4FA35E', '#8A5BD6', '#2F6FE0', '#F6E7CC'];
+  const PIE = { cx: 540, cy: 1330, r: 290 };
   function pie(d, s) {
-    const cx = 540, cy = 1060, r = 340, depth = 70; let a0 = -Math.PI / 2;
+    const hue = 'yellow', { cx, cy, r } = PIE, depth = 60; let a0 = -Math.PI / 2;
     const parts = d.pie.map((p, k) => { const a1 = a0 + p.share * Math.PI * 2, o = { ...p, a0, a1, c: SLICE[k % SLICE.length] }; a0 = a1; return o; });
     const arc = (p, rr, oy = 0) => { const x0 = cx + rr * Math.cos(p.a0), y0 = cy + oy + rr * Math.sin(p.a0) * .62, x1 = cx + rr * Math.cos(p.a1), y1 = cy + oy + rr * Math.sin(p.a1) * .62; return `M${cx} ${cy + oy} L${x0.toFixed(1)} ${y0.toFixed(1)} A${rr} ${rr * .62} 0 ${p.a1 - p.a0 > Math.PI ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)} Z`; };
     const order = parts.map((p, k) => k).sort((a, b) => (a === s.slice) - (b === s.slice));
     const slices = order.map(k => {
-      const p = parts[k], mid = (p.a0 + p.a1) / 2, pop = s.slice === k ? 60 : 0, tx = Math.cos(mid) * pop, ty = Math.sin(mid) * pop * .62;
+      const p = parts[k], mid = (p.a0 + p.a1) / 2, pop = s.slice === k ? 50 : 0, tx = Math.cos(mid) * pop, ty = Math.sin(mid) * pop * .62;
       return `<g transform="translate(${tx.toFixed(1)} ${ty.toFixed(1)})"><path d="${arc(p, r, depth)}" fill="#6B3E2E" stroke="${INK}" stroke-width="3"/><path d="${arc(p, r)}" fill="${p.c}" stroke="${INK}" stroke-width="3"/></g>`;
     }).join('');
-    const pick = parts[s.slice], top = d.pie.find(p => p.label !== 'Everything else') || d.pie[0];
-    return `${svgOpen('#F4A7B9')}
-  ${label(d.when.toUpperCase(), INK)}
-  <text x="90" y="380" font-family="Bricolage Grotesque" font-weight="800" font-size="104" fill="${INK}" letter-spacing="-2">Where my</text>
-  <text x="90" y="490" font-family="Bricolage Grotesque" font-weight="800" font-size="104" fill="${INK}" letter-spacing="-2">taps went</text>
-  ${para(`${top.label}: ${Math.round(top.share * 100)}% of my purchases.`, { y: 590, size: 56, max: 30, fill: INK })}
-  <ellipse cx="${cx}" cy="${cy + depth + 16}" rx="${r + 30}" ry="${(r + 30) * .62}" fill="${INK}" opacity=".12"/>
+    const pick = parts[s.slice], top = d.pie.find(p => p.label !== 'Everything else') || d.pie[0], pct = Math.round(top.share * 100);
+    return `${washOpen('pi', hue)}
+  ${head(hue, { kicker: `${d.when} · where it went`, big: `${pct}%`, sub: `${top.label}: ${pct}% of my purchases.`, l1: 'Where my taps went.', l2: 'Mostly one place.' })}
+  <ellipse cx="${cx}" cy="${cy + depth + 14}" rx="${r + 26}" ry="${(r + 26) * .62}" fill="${INK}" opacity=".12"/>
   ${slices}
-  ${pick ? `<g transform="translate(540 1520)"><rect x="-380" y="-66" width="760" height="120" rx="60" fill="#fff" stroke="${INK}" stroke-width="3"/><circle cx="-310" cy="-6" r="26" fill="${pick.c}" stroke="${INK}" stroke-width="3"/><text x="30" y="14" font-family="Bricolage Grotesque" font-weight="800" font-size="58" fill="${INK}" text-anchor="middle">${esc(pick.label)} · ${Math.round(pick.share * 100)}%</text></g>` : ''}
-  ${foot(INK, 1700)}
+  ${pick ? `<g transform="translate(540 1690)"><rect x="-380" y="-56" width="760" height="100" rx="50" fill="#fff" stroke="${INK}" stroke-width="3"/><circle cx="-310" cy="-6" r="24" fill="${pick.c}" stroke="${INK}" stroke-width="3"/><text x="30" y="12" font-family="${SANS}" font-weight="800" font-size="50" fill="${INK}" text-anchor="middle">${esc(pick.label)} · ${Math.round(pick.share * 100)}%</text></g>` : ''}
+  ${footer(hue, '04')}
 </svg>`;
   }
 
-  // ---------- 05 · The sealed goals: a maroon note with a red envelope ----------
+  // ---------- 05 · Goals: a note in an envelope ----------
   function note(d, s) {
-    const up = s.open ? -230 : 0, gs = d.goals;
-    return `${svgOpen('#6E0F14')}
-  ${label(d.when.toUpperCase(), CREAM, 250, 540, 'middle')}
-  <g font-family="Bricolage Grotesque" font-weight="800" font-size="120" fill="${CREAM}" text-anchor="middle" letter-spacing="-3"><text x="540" y="470">${gs.length ? 'Next up,' : 'Not every'}</text><text x="540" y="600">${gs.length ? 'I’m saving' : 'month is a'}</text><text x="540" y="730">${gs.length ? 'for these.' : 'plot twist.'}</text></g>
-  <g transform="translate(0 ${up})"><rect x="200" y="980" width="680" height="480" fill="${CREAM}"/>
-    <text x="540" y="1060" font-family="Courier Prime" font-weight="700" font-size="36" fill="#6E0F14" text-anchor="middle" letter-spacing="3">${gs.length ? 'SEALED GOALS' : 'NOTE TO SELF'}</text>
-    ${gs.length ? gs.map((g, k) => `<circle cx="262" cy="${1132 + k * 82}" r="11" fill="#B71C25"/><text x="296" y="${1150 + k * 82}" font-family="Bricolage Grotesque" font-weight="700" font-size="52" fill="${INK}" text-anchor="start">${esc(g.length > 21 ? g.slice(0, 20) + '…' : g)}</text>`).join('') : `${para(d.note + '.', { x: 540, y: 1150, size: 58, max: 22, fill: INK, anchor: 'middle' })}`}</g>
-  <path d="M170 1200 H910 V1620 H170 Z" fill="#B71C25"/>
-  <path d="M170 1200 L540 1450 L910 1200" fill="#D1232E"/>
-  <path d="M170 1620 L470 1400 M910 1620 L610 1400" stroke="#8E1219" stroke-width="5"/>
-  ${s.open ? '' : `<circle cx="540" cy="1430" r="56" fill="${CREAM}"/><text x="540" y="1452" font-family="Bricolage Grotesque" font-weight="800" font-size="60" fill="#B71C25" text-anchor="middle">c</text>`}
-  ${foot(CREAM, 1740)}
+    const hue = 'sky', [, wd] = HUES[hue], up = s.open ? -200 : 0, gs = d.goals, more = (d.goalCount || gs.length) - gs.length;
+    return `${washOpen('no', hue)}
+  ${head(hue, gs.length
+      ? { kicker: `${d.when} · goals`, big: String(d.goalCount || gs.length), unit: (d.goalCount || gs.length) === 1 ? 'goal' : 'goals', sub: 'Things I’m saving up for next.', l1: 'Next up,', l2: 'treating future me.' }
+      : { kicker: `${d.when} · note to self`, big: 'Steady', sub: `${d.note}.`, l1: 'Not every month', l2: 'is a plot twist.' })}
+  <g transform="translate(0 ${up})"><rect x="200" y="1180" width="680" height="440" fill="${CREAM}"/>
+    <text x="540" y="1255" font-family="${SANS}" font-weight="700" font-size="34" fill="${wd}" text-anchor="middle" letter-spacing="5">${gs.length ? 'MY GOALS' : 'NOTE TO SELF'}</text>
+    ${gs.length ? gs.map((g, k) => `<circle cx="262" cy="${1320 + k * 76}" r="11" fill="#B71C25"/><text x="296" y="${1337 + k * 76}" font-family="${SANS}" font-weight="700" font-size="48" fill="${INK}">${esc(g.length > 21 ? g.slice(0, 20) + '…' : g)}</text>`).join('') + (more > 0 ? `<text x="296" y="${1337 + gs.length * 76}" font-family="${SANS}" font-weight="600" font-size="40" fill="${wd}">+${more} more</text>` : '') : `${para(d.note + '.', { x: 540, y: 1340, size: 52, max: 22, fill: INK, anchor: 'middle', family: SANS })}`}</g>
+  <path d="M170 1380 H910 V1740 H170 Z" fill="#B71C25"/>
+  <path d="M170 1380 L540 1600 L910 1380" fill="#D1232E"/>
+  <path d="M170 1740 L470 1560 M910 1740 L610 1560" stroke="#8E1219" stroke-width="5"/>
+  ${s.open ? '' : `<circle cx="540" cy="1585" r="52" fill="${CREAM}"/><text x="540" y="1606" font-family="${SANS}" font-weight="800" font-size="56" fill="#B71C25" text-anchor="middle">c</text>`}
+  ${footer(hue, '05')}
 </svg>`;
   }
 
@@ -139,7 +169,7 @@
     { id: 'coffees', label: 'Coffees', hint: 'Tap the cups for a fresh pour.', draw: coffees, has: d => d.coffees.n >= 3 },
     { id: 'cart', label: 'Cart', hint: 'Tap to fill the cart.', draw: cart, has: d => d.cart.n >= 2 },
     { id: 'pie', label: 'Where it went', hint: 'Tap a slice to pull it out.', draw: pie, has: d => d.pie.length >= 2 },
-    { id: 'note', label: 'My goals', hint: 'Tap the seal to open it.', draw: note, has: () => true }
+    { id: 'note', label: 'My goals', hint: 'Tap the envelope to open it.', draw: note, has: () => true }
   ];
 
   // ---------- month → card data ----------
@@ -158,7 +188,7 @@
       coffees: { n: ctx.caf, line: ctx.cafDay != null ? `Coffee, matcha and boba. Mostly on ${days[ctx.cafDay]}.` : 'Coffee, matcha and boba. The barista knows.' },
       cart: { n: ctx.shop, unit: ctx.shop === 1 ? 'package' : 'packages' },
       pie: pie.map(([label, n]) => ({ label, share: n / total })),
-      note: ctx.note || 'Same energy. It was a good month', goals: (ctx.goals || []).slice(0, 3),
+      note: ctx.note || 'Same energy. It was a good month', goals: (ctx.goals || []).slice(0, 3), goalCount: (ctx.goals || []).length,
       calm: ctx.noSpend ? `${ctx.noSpend} ${ctx.noSpend === 1 ? 'day' : 'days'} I spent nothing.` : 'An ordinary month. That counts too.'
     };
   }
@@ -254,7 +284,7 @@
     if (c.id === 'coffees') return { cls: 'is-pour' };
     if (c.id === 'cart') { if (s.dropped) return null; s.dropped = true; return { cls: 'is-drop', hint: 'Full cart. It saves this way.' }; }
     if (c.id === 'pie') {
-      const dx = x - 540, dy = (y - 1000) / .62; if (Math.hypot(dx, dy) >= 380) return null;
+      const dx = x - PIE.cx, dy = (y - PIE.cy) / .62; if (Math.hypot(dx, dy) >= PIE.r + 40) return null;
       let a = Math.atan2(dy, dx) + Math.PI / 2; if (a < 0) a += Math.PI * 2; let acc = 0; const j = d.pie.findIndex(p => (acc += p.share * Math.PI * 2) >= a); s.slice = j < 0 ? 0 : j;
       return { hint: `${d.pie[s.slice].label}: ${Math.round(d.pie[s.slice].share * 100)}% of my purchases.` };
     }

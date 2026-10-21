@@ -113,7 +113,7 @@
       objection: ['Object, or let it stand, to continue', '.ew-court-act'], binge: ['Tap an episode to continue', '[data-a="ep"]'],
       matcha: ['Lock in your guess to continue', '[data-a="lock"]'], box: ['Press and hold the box to continue', '.ew-parcel'],
       lineup: ['Make a guess to continue', '[data-a="guess"]'], tricks: ['Tap the ones that got you', '.cw-trick,.cw-none'],
-      goals: ['Pick a goal, then tap the seal', '.cw-gpills,.ew-seal']
+      goals: ['Pick a goal to continue', '.cw-gpills']
     };
 
     let i = 0, cleanup = [];
@@ -157,6 +157,32 @@
       gate.animate([{ transform: 'translateX(-50%)' }, { transform: 'translateX(calc(-50% - 8px))' }, { transform: 'translateX(calc(-50% + 8px))' }, { transform: 'translateX(calc(-50% - 4px))' }, { transform: 'translateX(-50%)' }], { duration: 360 });
       stage.querySelector('.ew-scene:last-child')?.querySelectorAll(g[1]).forEach(t => { if (t.offsetParent) t.animate([{ transform: 'none' }, { transform: 'scale(1.06)' }, { transform: 'none' }], { duration: 420, easing: EASE }); });
     }
+    /* chala v3: no Wrapped screen scrolls. If a screen's content is taller than the phone,
+       it is scaled down to fit, and re-fitted whenever it changes (a reveal, a flip, an answer). */
+    let fitObs = null;
+    function fitScene(node) {
+      const inner = node.firstElementChild; if (!inner) return;
+      const fit = () => {
+        if (!node.isConnected) return;
+        inner.style.zoom = '';
+        const need = node.scrollHeight, have = node.clientHeight;
+        if (need <= have + 1) return;
+        let k = have / need;
+        for (let t = 0; t < 4; t++) {
+          k = Math.max(.5, Math.floor(k * 1000) / 1000); inner.style.zoom = k;
+          const n2 = node.scrollHeight; if (n2 <= have + 1 || k === .5) break;
+          k *= have / n2;
+        }
+      };
+      fit();
+      fitObs?.disconnect();
+      let raf = 0;
+      fitObs = new MutationObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(fit); });
+      fitObs.observe(inner, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['hidden', 'class', 'open'] });
+      node._fit = fit;
+    }
+    const onResize = () => { const sc = [...stage.querySelectorAll('.ew-scene')].pop(); sc?._fit?.(); };
+    window.addEventListener('resize', onResize);
     let current = null;
     function show(n, dir = 1) {
       if (n < 0) return;
@@ -176,6 +202,7 @@
       node.querySelectorAll('[data-fit]').forEach(x => fit(x, +x.dataset.fit));
       node.querySelectorAll('.ew-range').forEach(r => { const set = () => r.style.setProperty('--p', ((r.value - r.min) / (r.max - r.min) * 100) + '%'); set(); r.addEventListener('input', set); });
       beat.mount?.(node, restored);
+      fitScene(node);
       navState();
       const h = node.querySelector('h1,h2'); h?.setAttribute('tabindex', '-1'); h?.focus({ preventScroll: true });
     }
@@ -183,7 +210,7 @@
     const next = () => { if (GATE[beats[i].id] && current && !current.ready) { nudge(); return; } show(i + 1, 1); }, back = () => show(i - 1, -1);
 
     function exit() {
-      cleanup.forEach(f => f());
+      cleanup.forEach(f => f()); fitObs?.disconnect(); window.removeEventListener('resize', onResize);
       commit();
       write(EP, { ...read(EP), [month.key]: memo });
       document.documentElement.classList.remove('fh-locked');
@@ -234,7 +261,7 @@
       const spend = sum(A.ex.filter(r => r.category !== 'Rent & bills'));
       const fmtD = (d, y) => new Date(d + 'T12:00').toLocaleDateString('en-US', y ? { month: 'short', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric' });
       const spanLabel = month.range ? `${fmtD(month.start, month.start.slice(0, 4) !== month.end.slice(0, 4))} – ${fmtD(month.end, true)}` : '';
-      const callback = prev?.note ? `Last episode you sealed “${prev.note}.” Let’s see how it went.` : '';
+      const callback = prev?.note ? `Last time you were saving for “${prev.note}.” Let’s see how it went.` : '';
       return { genre: 'cold', scene: `
 <div class="ew-cold">
   <p class="ew-kicker">Previously, on your bank statement${month.range ? ` · ${esc(spanLabel)}` : ''}</p>
@@ -609,76 +636,77 @@
       return s.items;
     }
     function limits(s) {
+      /* chala v3: one slider per category. Drag to set the limit; the tick marks what you usually spend. */
       const items = limitItems();
       const max = c => Math.max(2000, Math.ceil(c.cents * 1.6 / 1000) * 1000);
       const frees = () => limitCands.reduce((t, c) => t + (items[c.name].on ? Math.max(0, c.cents - items[c.name].cents) : 0), 0);
-      const jar = c => { const it = items[c.name], mx = max(c);
-        return `<div class="cw-jarcard${it.on ? '' : ' is-off'}" data-c="${esc(c.name)}" style="--liq:${LIQ[c.name] || 'var(--peri)'}">
-    <div class="cw-jar-h"><b>${esc(SHORT[c.name] || c.name)}</b><button class="cw-track" data-a="track" aria-pressed="${it.on}" aria-label="Track ${esc(c.name)}">${it.on ? 'On' : 'Off'}</button></div>
-    <div class="cw-jar" role="slider" tabindex="${it.on ? 0 : -1}" aria-label="${esc(c.name)} limit" aria-valuemin="0" aria-valuemax="${mx / 100}" aria-valuenow="${it.cents / 100}" aria-valuetext="${usd(it.cents)} a month">
-      <span class="cw-liq" style="--h:${(it.cents / mx * 100).toFixed(1)}%"><svg viewBox="0 0 120 10" preserveAspectRatio="none" aria-hidden="true"><path d="M0 5 Q15 0 30 5 T60 5 T90 5 T120 5 V10 H0z"/></svg></span>
-      <i class="cw-usual" style="--u:${(c.cents / mx * 100).toFixed(1)}%"><span>${single ? 'Spent' : 'Avg'} ${usd(c.cents)}</span></i>
-      <output>${usd(it.cents)}</output>
+      const row = c => { const it = items[c.name], mx = max(c), id = 'cw-lim-' + c.name.replace(/[^a-z]/gi, '');
+        return `<div class="cw-lim${it.on ? '' : ' is-off'}" data-c="${esc(c.name)}" style="--liq:${LIQ[c.name] || 'var(--peri)'}">
+    <div class="cw-lim-h">
+      <label class="cw-lim-n" for="${id}">${esc(SHORT[c.name] || c.name)}</label>
+      <output class="cw-lim-v" for="${id}">${usd(it.cents)}</output>
+      <button class="cw-track" data-a="track" aria-pressed="${it.on}" aria-label="Track ${esc(c.name)}">${it.on ? 'On' : 'Off'}</button>
     </div>
-    <div class="cw-step"><button data-a="dn" aria-label="Lower ${esc(c.name)} limit by $5">−</button><span class="cw-free"></span><button data-a="up" aria-label="Raise ${esc(c.name)} limit by $5">+</button></div>
+    <div class="cw-lim-s">
+      <input class="ew-range cw-lim-r" id="${id}" type="range" min="0" max="${mx / 100}" step="5" value="${it.cents / 100}" aria-valuetext="${usd(it.cents)} a month">
+      <i class="cw-lim-u" style="--u:${Math.min(1, c.cents / mx).toFixed(3)}" aria-hidden="true"></i>
+    </div>
+    <div class="cw-lim-f"><span>${single ? 'Spent' : 'Usually'} ${usd(c.cents)}</span><span class="cw-free"></span></div>
   </div>`; };
       return { genre: 'limits', scene: `
 <div class="cw-limits">
   <h1 class="ew-h ew-h-sm">Set your <em>monthly limits</em></h1>
-  <p class="ew-sub">${spottedCats().length ? 'Switched on for the tricks you spotted. ' : ''}Drag a jar, or tap − and +.</p>
-  <div class="cw-jars">${limitCands.map(jar).join('')}</div>
+  <p class="ew-sub">${spottedCats().length ? 'Switched on for the tricks you spotted. ' : ''}Slide to set each one. The tick is what you usually spend.</p>
+  <div class="cw-lims">${limitCands.map(row).join('')}</div>
   <p class="cw-tally cw-freed" aria-live="polite"></p>
 </div>`, mount: n => {
         const paintOne = (card, bounce) => {
           const c = limitCands.find(x => x.name === card.dataset.c), it = items[c.name], mx = max(c);
           card.classList.toggle('is-off', !it.on);
           const tr = card.querySelector('.cw-track'); tr.setAttribute('aria-pressed', String(it.on)); tr.textContent = it.on ? 'On' : 'Off';
-          const j = card.querySelector('.cw-jar'); j.tabIndex = it.on ? 0 : -1;
-          j.setAttribute('aria-valuenow', it.cents / 100); j.setAttribute('aria-valuetext', `${usd(it.cents)} a month`);
-          card.querySelector('.cw-liq').style.setProperty('--h', (it.cents / mx * 100).toFixed(1) + '%');
-          card.querySelector('output').textContent = usd(it.cents);
+          const r = card.querySelector('.cw-lim-r');
+          if (+r.value !== it.cents / 100) r.value = it.cents / 100;
+          r.style.setProperty('--p', (it.cents / mx * 100).toFixed(1) + '%');
+          r.setAttribute('aria-valuetext', `${usd(it.cents)} a month`);
+          card.querySelector('.cw-lim-v').textContent = usd(it.cents);
           const d = c.cents - it.cents, f = card.querySelector('.cw-free');
           f.textContent = !it.on ? 'Not tracking' : d > 0 ? `saves ${usd(d)}` : d < 0 ? 'above usual' : 'same as usual';
           f.classList.toggle('is-up', it.on && d > 0);
           if (bounce && !reduce()) f.animate([{ transform: 'scale(1.12)' }, { transform: 'none' }], { duration: 260, easing: EASE });
         };
-        const total = () => { const f = frees(), on = limitCands.filter(c => items[c.name].on).length; n.querySelector('.cw-freed').innerHTML = on ? (f > 0 ? `Saves <b>${usd(f)}</b> a month` : 'Lower a jar to save') : 'Turn on a jar to set a limit.'; };
-        n.querySelectorAll('.cw-jarcard').forEach(c => paintOne(c)); total();
-        const set = (card, cents, bounce) => { const c = limitCands.find(x => x.name === card.dataset.c), it = items[c.name]; it.cents = Math.max(0, Math.min(max(c), Math.round(cents / 500) * 500)); it.touched = true; paintOne(card, bounce); total(); };
+        const total = () => { const f = frees(), on = limitCands.filter(c => items[c.name].on).length; n.querySelector('.cw-freed').innerHTML = on ? (f > 0 ? `Saves <b>${usd(f)}</b> a month` : 'Slide one below the tick to save') : 'Switch one on to set a limit.'; };
+        n.querySelectorAll('.cw-lim').forEach(c => paintOne(c)); total();
         n.addEventListener('click', e => {
-          const b = e.target.closest('[data-a]'); if (!b) return; const card = b.closest('.cw-jarcard'); if (!card) return; const it = items[card.dataset.c];
-          if (b.dataset.a === 'track') { it.on = !it.on; it.manual = true; paintOne(card); total(); }
-          if (b.dataset.a === 'up' || b.dataset.a === 'dn') { if (!it.on) { it.on = true; it.manual = true; } set(card, it.cents + (b.dataset.a === 'up' ? 500 : -500), true); }
+          const b = e.target.closest('[data-a="track"]'); if (!b) return; const card = b.closest('.cw-lim'), it = items[card.dataset.c];
+          it.on = !it.on; it.manual = true; paintOne(card); total();
         });
-        n.querySelectorAll('.cw-jar').forEach(j => {
-          const card = j.closest('.cw-jarcard'); let drag = false;
-          const at = y => { const r = j.getBoundingClientRect(), c = limitCands.find(x => x.name === card.dataset.c); return (1 - Math.max(0, Math.min(1, (y - r.top) / r.height))) * max(c); };
-          j.addEventListener('pointerdown', e => { const it = items[card.dataset.c]; if (!it.on) { it.on = true; it.manual = true; } drag = true; j.setPointerCapture(e.pointerId); j.classList.add('is-drag'); set(card, at(e.clientY)); });
-          j.addEventListener('pointermove', e => { if (drag) set(card, at(e.clientY)); });
-          const up = () => { if (!drag) return; drag = false; j.classList.remove('is-drag'); paintOne(card, true); };
-          j.addEventListener('pointerup', up); j.addEventListener('pointercancel', up);
-          j.addEventListener('keydown', e => {
-            const it = items[card.dataset.c], step = { ArrowUp: 500, ArrowRight: 500, ArrowDown: -500, ArrowLeft: -500, PageUp: 2500, PageDown: -2500 }[e.key];
-            if (step) { e.preventDefault(); set(card, it.cents + step, true); }
-          });
+        n.querySelectorAll('.cw-lim-r').forEach(r => {
+          const card = r.closest('.cw-lim');
+          r.addEventListener('input', () => { const it = items[card.dataset.c]; if (!it.on) { it.on = true; it.manual = true; } it.cents = Math.round(+r.value) * 100; it.touched = true; paintOne(card); total(); });
+          r.addEventListener('change', () => paintOne(card, true));
         });
       } };
     }
 
-    // ----- Goals: up to three, written on the letter, then sealed (Faiit's note-to-self envelope) -----
+    // ----- Goals: fun things to save for, as many as you like -----
     const freedNow = () => { const it = S.limits?.items || {}; return limitCands.reduce((t, c) => t + (it[c.name]?.on ? Math.max(0, c.cents - it[c.name].cents) : 0), 0); };
+    /* chala v3: fun things to save for. Any you already have come first. */
+    const FUN = [
+      ['getaway', 'A weekend getaway', 60000, '<path d="M3 15l18-7-4 11-5-4-3 4v-5"/>'],
+      ['concert', 'Concert tickets', 25000, '<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'],
+      ['sneakers', 'New sneakers', 18000, '<path d="M3 16h18v3H3zM3 16l1-8 5 1 2 3 6 1c2 0 4 1 4 3"/>'],
+      ['phone', 'A new phone', 90000, '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>'],
+      ['dinner', 'A fancy dinner out', 15000, '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-2 6 0 8v10"/>'],
+      ['gifts', 'Gifts for my people', 20000, '<rect x="4" y="9" width="16" height="11" rx="1"/><path d="M12 9v11M4 13h16M12 9c-2-4-6-4-6-1s6 1 6 1 6 2 6-1-4-3-6 1"/>'],
+      ['festival', 'Festival season', 45000, '<path d="M4 20 12 4l8 16zM12 4v16"/>'],
+      ['rainy', 'A rainy-day fund', 50000, '<path d="M3 12a9 9 0 0 1 18 0zM12 12v6a2 2 0 0 0 4 0"/>']
+    ];
+    const FUN_IC = Object.fromEntries(FUN.map(f => [f[0], f[3]]));
     function suggestions() {
       const out = [], add = g => { if (!out.some(x => x.id === g.id)) out.push(g); };
-      const freed = freedNow();
       plan0.goals.filter(g => !g.archived).forEach(g => add({ id: 'have-' + g.id, gid: g.id, title: g.title, target: g.target || 10000, have: true }));
-      if (A.fees.length) add({ id: 'cushion', title: 'Overdraft cushion', target: 30000 });
-      if (freed > 0) add({ id: 'freed', title: 'Money my limits save', target: round5(freed * 3) });
-      const cut = subsCut(); if (cut.length) add({ id: 'subs', title: 'Saved from cut subs', target: round5(sum(cut) * 12) });
-      if (A.bnpl.length) { const name = A.bnpl[0].merchant.split(/\s+/)[0]; add({ id: 'bnpl', title: `Clear ${name.charAt(0) + name.slice(1).toLowerCase()}`, target: round5(sum(A.bnpl)) }); }
-      if (!A.fees.length) add({ id: 'cushion', title: 'Emergency cushion', target: 50000 });
-      add({ id: 'trip', title: 'A trip', target: 120000 });
-      add({ id: 'friends', title: 'Plans with friends', target: 60000 });
-      return out.slice(0, 4);
+      FUN.forEach(([id, title, target]) => add({ id, title, target }));
+      return out;
     }
     const pickedGoals = () => {
       const g = S.goals; if (!g) return [];
@@ -687,36 +715,27 @@
     };
     const pickedLimits = () => { const it = S.limits?.items || {}; return limitCands.filter(c => it[c.name]?.on).map(c => ({ name: c.name, cents: it[c.name].cents })); };
     function goals(s) {
+      /* chala v3: pick as many as you like. Each pick saves straight away. */
       const sug = suggestions();
-      s.sel ??= sug.filter(g => g.have).map(g => g.id).slice(0, 3);
+      s.sel ??= sug.filter(g => g.have).map(g => g.id);
       s.custom ??= [];
       const all = () => [...sug, ...s.custom];
-      const pill = g => `<button class="ew-chip cw-gpill" data-a="goal" data-id="${esc(g.id)}" aria-pressed="false"><span>${esc(g.title)}</span><small>${usd(g.target)}</small></button>`;
+      const pill = g => `<button class="ew-chip cw-gpill" data-a="goal" data-id="${esc(g.id)}" aria-pressed="false">${FUN_IC[g.id] ? `<span class="cw-gic" aria-hidden="true">${I(FUN_IC[g.id])}</span>` : ''}<span>${esc(g.title)}</span><small>${usd(g.target)}</small></button>`;
       return { genre: 'letter', scene: `
 <div class="ew-letter cw-goals">
   <p class="ew-kicker">Your goals</p>
   <h1 class="ew-h ew-h-sm">What are you <em>saving for?</em></h1>
-  <p class="ew-sub">Short term or long term. Pick up to three.</p>
-  <div class="cw-pills cw-gpills" role="group" aria-label="Pick up to three goals">${sug.map(pill).join('')}<span class="cw-customs">${s.custom.map(pill).join('')}</span><button class="ew-chip cw-add" data-a="add" aria-haspopup="dialog">${I('<path d="M12 5v14M5 12h14"/>')}<span>Add yours</span></button></div>
-  <div class="ew-env2 cw-env2">
-    <span class="back" aria-hidden="true"></span>
-    <article class="paper"><small>Dear future me, I’m saving for</small><ul class="cw-goallist"></ul></article>
-    <span class="front" aria-hidden="true"></span>
-    <button class="ew-seal" data-a="seal" aria-label="Seal your goals" disabled>c</button>
-  </div>
-  <p class="ew-hint" aria-live="polite">Pick up to 3, then tap the seal</p>
+  <p class="ew-sub">Pick as many as you like. They show up on your Home screen.</p>
+  <div class="cw-pills cw-gpills" role="group" aria-label="Goals">${sug.map(pill).join('')}<span class="cw-customs">${s.custom.map(pill).join('')}</span><button class="ew-chip cw-add" data-a="add" aria-haspopup="dialog">${I('<path d="M12 5v14M5 12h14"/>')}<span>Add yours</span></button></div>
+  <p class="cw-tally cw-gtotal" aria-live="polite"></p>
 </div>`, mount: n => {
-        const env = n.querySelector('.ew-env2'), sealBtn = n.querySelector('[data-a="seal"]'), hint = n.querySelector('.ew-hint');
-        const paint = () => {
-          n.querySelectorAll('[data-a="goal"]').forEach(b => { b.setAttribute('aria-pressed', String(s.sel.includes(b.dataset.id))); b.disabled = !!s.sealed; });
-          n.querySelector('[data-a="add"]').disabled = !!s.sealed;
+        const paint = save => {
+          n.querySelectorAll('[data-a="goal"]').forEach(b => b.setAttribute('aria-pressed', String(s.sel.includes(b.dataset.id))));
           const picked = s.sel.map(id => all().find(x => x.id === id)).filter(Boolean);
-          n.querySelector('.cw-goallist').innerHTML = picked.length ? picked.map(g => `<li><span>${esc(g.title)}</span><b>${usd(g.target)}</b></li>`).join('') : '<li class="is-empty">…</li>';
-          env.classList.toggle('is-writing', picked.length > 0);
-          env.classList.toggle('is-sealed', !!s.sealed);
-          sealBtn.disabled = !picked.length || !!s.sealed;
-          if (s.sealed) ready();
-          hint.textContent = s.sealed ? 'Sealed. Your goals are on your Home screen.' : picked.length ? `${picked.length} of 3. Tap the seal when you’re ready.` : 'Pick up to 3, then tap the seal';
+          const tot = picked.reduce((t, g) => t + g.target, 0);
+          n.querySelector('.cw-gtotal').innerHTML = picked.length ? `<b>${picked.length} ${picked.length === 1 ? 'goal' : 'goals'}</b> · ${usd(tot)} to save` : 'Tap a few that sound like you.';
+          if (picked.length) ready();
+          if (save) commit();
         };
         paint();
         const addGoal = () => {
@@ -737,18 +756,16 @@
               const g = { id: 'mine-' + uid(), title: t, target: a * 100, mine: true };
               s.custom.push(g); s.sel.push(g.id);
               n.querySelector('.cw-customs').insertAdjacentHTML('beforeend', pill(g));
-              close(); paint(); api.toast?.(`Added ${t}`);
+              close(); paint(true); api.toast?.(`Added ${t}`);
             }
           });
           setTimeout(() => document.getElementById('cw-gt')?.focus(), 80);
           const relock = setInterval(() => { if (!document.querySelector('.fh-sheet-wrap')) { clearInterval(relock); if (root.isConnected) document.documentElement.classList.add('fh-locked'); } }, 200);
         };
-        const full = () => { hint.textContent = 'Three is the limit. Tap one to swap it out.'; if (!reduce()) hint.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 240 }); };
         n.addEventListener('click', e => {
-          const b = e.target.closest('[data-a]'); if (!b || s.sealed) return;
-          if (b.dataset.a === 'goal') { const id = b.dataset.id; if (s.sel.includes(id)) s.sel = s.sel.filter(x => x !== id); else if (s.sel.length >= 3) { full(); return; } else s.sel.push(id); paint(); }
-          if (b.dataset.a === 'add') { if (s.sel.length >= 3) { full(); return; } addGoal(); }
-          if (b.dataset.a === 'seal' && s.sel.length) { s.sealed = true; commit(); paint(); api.toast?.(`Sealed. ${s.sel.length} ${s.sel.length === 1 ? 'goal' : 'goals'} and your limits are saved.`); if (!reduce()) sealBtn.animate([{ transform: 'scale(1.8)', opacity: .3 }, { transform: 'none', opacity: 1 }], { duration: 450, easing: 'cubic-bezier(.3,1.6,.5,1)' }); }
+          const b = e.target.closest('[data-a]'); if (!b) return;
+          if (b.dataset.a === 'goal') { const id = b.dataset.id; s.sel = s.sel.includes(id) ? s.sel.filter(x => x !== id) : [...s.sel, id]; paint(true); }
+          if (b.dataset.a === 'add') addGoal();
         });
       } };
     }
@@ -756,7 +773,7 @@
     // ----- Finale: the share cards -----
     function shareCtx() {
       const merch = A.count(A.ex, r => r.merchant)[0] || ['Your card', A.ex.length];
-      const gs = S.goals?.sealed ? pickedGoals().map(g => g.title) : [];
+      const gs = pickedGoals().map(g => g.title);
       const note = gs[0] ? (gs[0].length > 28 ? gs[0].slice(0, 27) + '…' : gs[0]) : '';
       return { month: month.card || short, year: month.years || month.key.slice(0, 4), del: A.del.length, caf: A.cafes.length, shop: A.shop.length, gro: A.gro.length, noSpend: A.noSpend, purchases: A.ex.length, villain: { name: merch[0], n: merch[1] }, note, goals: gs, cafDay: A.cafes.length ? +A.count(A.cafes, r => dayOf(r.date))[0][0] : null };
     }
@@ -781,7 +798,11 @@
           if (ex) { ex.title = g.title; ex.target = g.target; ex.archived = false; }
           else p.goals.push({ id, title: g.title, target: g.target, value: '' });
         });
-        // goals you had and chose not to seal this time move to Past goals
+        // picks from this Wrapped that were tapped off again are removed
+        const keep = new Set(picked.map(g => g.gid || (g.mine ? g.id : `${g.id}-${month.key}`)));
+        const had = new Set(plan0.goals.map(x => x.id));
+        p.goals = p.goals.filter(x => keep.has(x.id) || had.has(x.id) || !(x.id.startsWith('mine-') || x.id.endsWith(`-${month.key}`)));
+        // goals you had and chose not to keep this time move to Past goals
         sug.filter(g => g.have && !picked.some(x => x.id === g.id)).forEach(g => { const ex = p.goals.find(x => x.id === g.gid); if (ex) ex.archived = true; });
       }
       p.done = true; p.joinedAt ||= new Date().toISOString();

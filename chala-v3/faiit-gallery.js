@@ -57,24 +57,10 @@
 
     // ---------- monthly: the garden ----------
     function garden() {
-      const rnd = seeded(months.length * 31 + 7), list = [...months].reverse();
-      const cols = Math.max(3, Math.ceil(Math.sqrt(list.length * 1.4))), rows = Math.ceil(list.length / cols);
-      const cw = 190, ch = 240, W = cols * cw + 80, H = rows * ch + 80;
-      panel.innerHTML = `<p class="wg-hint">Drag around. Tap a month to watch it.</p><div class="wg-garden" tabindex="0" aria-label="Months, scattered. Scroll or drag to explore."><div class="wg-canvas" style="width:${W}px;height:${H}px">${list.map((m, i) => {
-        const c = i % cols, r = Math.floor(i / cols), x = 40 + c * cw + (rnd() - .5) * 60 + (r % 2 ? cw * .35 : 0), y = 40 + r * ch + (rnd() - .5) * 50, rot = (rnd() - .5) * 22;
-        return `<div class="wg-spot" style="left:${x.toFixed(0)}px;top:${y.toFixed(0)}px;--r:${rot.toFixed(1)}deg;--f:${(5 + rnd() * 4).toFixed(1)}s;--d:${(-rnd() * 5).toFixed(1)}s;--i:${i}">${card(m)}</div>`;
-      }).join('')}</div></div>`;
-      const g = panel.querySelector('.wg-garden');
-      // Start with the newest month in view, slightly in from the edge.
-      g.scrollLeft = 0; g.scrollTop = 0;
-      if (!reduce()) panel.querySelectorAll('.wg-spot').forEach(s => s.animate([{ opacity: 0, transform: `translateY(30px) rotate(var(--r)) scale(.85)` }, { opacity: 1, transform: 'rotate(var(--r))' }], { duration: 700, delay: 60 * +s.style.getPropertyValue('--i'), easing: 'cubic-bezier(.3,1.3,.5,1)', fill: 'backwards' }));
-      // Drag to pan with a mouse; touch scrolls natively.
-      let sx = null, sy = 0, sl = 0, st = 0, moved = false;
-      g.addEventListener('pointerdown', e => { if (e.pointerType === 'touch') return; sx = e.clientX; sy = e.clientY; sl = g.scrollLeft; st = g.scrollTop; moved = false; });
-      g.addEventListener('pointermove', e => { if (sx === null) return; const dx = e.clientX - sx, dy = e.clientY - sy; if (Math.abs(dx) + Math.abs(dy) > 6) { moved = true; g.classList.add('is-drag'); } g.scrollLeft = sl - dx; g.scrollTop = st - dy; });
-      const end = () => { sx = null; g.classList.remove('is-drag'); };
-      g.addEventListener('pointerup', end); g.addEventListener('pointerleave', end);
-      g.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+      /* chala v3: months sit straight, in a tidy grid, newest first (no tilt, no scatter) */
+      const list = [...months].reverse();
+      panel.innerHTML = `<p class="wg-hint">Tap a month to watch it.</p><div class="wg-rows" aria-label="Months">${list.map((m, i) => `<div class="wg-row-i" style="--i:${i}">${card(m)}</div>`).join('')}</div>`;
+      if (!reduce()) panel.querySelectorAll('.wg-row-i').forEach((s, i) => s.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], { duration: 500, delay: 50 * i, easing: EASE, fill: 'backwards' }));
     }
 
     // ---------- yearly: decks ----------

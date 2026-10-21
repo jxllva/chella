@@ -5,7 +5,8 @@
    tint of the same colour, a faint echo of it lower down, and a fine film grain.
    The text on each screen is a deep shade of that same colour, the second line a mid shade.
 
-   Palette: yellow, green, sky blue, dark blue, lime green, ochre.
+   Palette: yellow, green, sky blue, dark blue, lime green, ochre (plus red for the DoorDash
+   case file and a muted matcha green for coffee math).
      --wa  wash colour      --wd  deep text      --wc  mid accent (second line, highlights)
    The dark interludes (the story's "Jokes aside" pause and the Wrapped's "Spot the trick")
    stay dark on purpose. */
@@ -72,8 +73,8 @@
 .cw[data-genre=receipt],
 .cw[data-genre=lineup],
 .cw[data-genre=turn]     { --wa: #B6C2F2; --wd: #1C2468; --wc: #3A4FC4; }
-.cw[data-genre=matcha]   { --wa: #CBE89A; --wd: #2C4710; --wc: #5E9A26; }
-.cw[data-genre=crime],
+.cw[data-genre=matcha]   { --wa: #A9C98B; --wd: #2B4321; --wc: #557D37; }  /* matcha: muted tea green */
+.cw[data-genre=crime]    { --wa: #F29A86; --wd: #6B1406; --wc: #C6301A; }  /* DoorDash case file: red */
 .cw[data-genre=sitcom],
 .cw[data-genre=limits]   { --wa: #E8C88C; --wd: #5A3A0E; --wc: #A8701F; }
 

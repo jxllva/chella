@@ -503,3 +503,28 @@
 .cw[data-genre=lineup]{--cw-g1:#2A2642;--cw-g2:#1B2C30}
 .cw[data-genre=tricks]{--cw-g1:#2C2436;--cw-g2:#33251F}
 .cw[data-genre=turn]{--cw-g1:#3A4592;--cw-g2:#1B2356}
+
+/* =====================================================================
+   chala v3: monthly limits as sliders (replaces the jars)
+   ===================================================================== */
+.cw-lims{display:grid;gap:10px}
+.cw-lim{display:grid;gap:2px;padding:12px 14px 10px;border-radius:20px;background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 1px rgba(255,255,255,.85);transition:opacity .3s}
+.cw-lim.is-off{opacity:.55}
+.cw-lim-h{display:flex;align-items:center;gap:10px;min-width:0}
+.cw-lim-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 1rem/1.2 var(--f-sans);color:var(--cw-fg,#1d1b19)}
+.cw-lim-v{font:800 1.375rem/1 var(--f-sans);letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--cw-fg,#1d1b19)}
+.cw-lim-s{position:relative}
+.cw-lim-u{position:absolute;top:50%;left:calc(15px + (100% - 30px) * var(--u));width:2px;height:22px;margin:-11px 0 0 -1px;border-radius:2px;background:var(--cw-fg,#1d1b19);opacity:.45;pointer-events:none}
+.cw-lim-f{display:flex;justify-content:space-between;gap:10px;font:500 .8125rem/1.2 var(--f-sans);color:color-mix(in srgb,var(--cw-fg,#1d1b19) 78%,transparent)}
+.cw-lim-f .cw-free{text-align:right;font-weight:600;color:inherit}
+.cw-lim-f .cw-free.is-up{color:#1a7a4c}
+
+/* chala v3: saving-for pills with a small icon; picked pills take the screen's deep shade */
+.cw-gic{display:grid;place-items:center;width:18px;height:18px;margin-left:-4px}
+.cw-gic svg{width:18px;height:18px}
+.cw-goals .cw-pills .ew-chip[aria-pressed=true]{background:var(--cw-fg,#1d1b19);color:#fff}
+.cw-goals .cw-gpill[aria-pressed=true] small{color:rgba(255,255,255,.78)}
+.cw-gtotal{margin:2px 0 0;font:500 1rem/1.4 var(--f-sans)}
+
+/* chala v3: Wrapped screens never scroll; tall screens are scaled to fit (fitScene in chala-wrap.js) */
+.cw .ew-stage,.cw .ew-scene{overflow:hidden}

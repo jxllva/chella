@@ -61,3 +61,7 @@
 @media (prefers-reduced-motion:reduce){.wg-spot{animation:none}.wg-tab-ind,.wg-front,.wg-spot .wg-card{transition:none}}
 @media (max-width:360px){.wg-card{width:132px;height:180px}.wg-m{font-size:2.75rem}.wg-grid{grid-template-columns:repeat(2,1fr)}}
 .wg-host+.fz-addstmt{margin-bottom:110px}
+
+/* chala v3: the monthly view is a straight grid of months */
+.wg-rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:4px 0 12px}
+.wg-rows .wg-card{width:100%;height:auto;aspect-ratio:3/4;max-width:100%;transform:none}
