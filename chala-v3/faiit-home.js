@@ -708,6 +708,19 @@
     </button>`; }).join('') || '<button class="lc lc-empty" data-h="addlimit"><span>Add your first limit</span></button>'}
 </div>
 
+${names.length ? `<div class="hm-kh" data-rise><h2 class="hm-k">Left to spend</h2></div>
+<div class="lt" data-rise>
+  ${names.map(n => {
+    const lim = p.limits[n], sp = spentNow(n), left = lim - sp, f = lim ? Math.max(0, Math.min(1, left / lim)) : 0, k = left <= 0 ? 'over' : f <= .3 ? 'near' : 'ok';
+    return `<button class="lt-row is-${k}" data-h="limit" data-c="${esc(n)}" aria-label="${esc(n)}: ${left > 0 ? `${m(left)} left of ${m(lim)}` : left === 0 ? `nothing left of ${m(lim)}` : `${m(-left)} over the ${m(lim)} limit`}">
+      <span class="lt-ic" aria-hidden="true">${I(catIcon(n))}</span>
+      <span class="lt-main">
+        <span class="lt-top"><span class="lt-n">${esc(n)}</span><b class="lt-num">${left > 0 ? `${m(Math.round(left / 100) * 100)} <small>left</small>` : left === 0 ? '$0 <small>left</small>' : `${m(Math.round(-left / 100) * 100)} <small>over</small>`}</b></span>
+        <span class="lt-bar"><i style="width:${(f * 100).toFixed(1)}%"></i></span>
+      </span>
+    </button>`; }).join('')}
+</div>` : ''}
+
 <div class="hm-kh" data-rise><h2 class="hm-k">My goals</h2>${addBtn('addgoal', 'Add a goal')}</div>
 <div class="hm-goals">
   ${goals.filter(g => !isDone(p, g)).map(g => { const s = savedFor(p, g.id), r = g.target ? Math.min(1, s / g.target) : 0; return `

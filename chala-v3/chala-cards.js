@@ -1,7 +1,7 @@
 /* chala v3 — Cards tab, after the "editorial flip" reference (no pay step, no Face ID).
    - The chosen card sits up top; the rest peek out of a wallet at the bottom.
    - Tap the card to flip it: the back shows what's available, against the limit.
-   - Swipe it sideways to flip through your cards, or tap / swipe up a card in the wallet to bring it up.
+   - Swipe up (or tap) a card in the wallet to bring it up; it follows your finger. Sideways swipes still flip through them.
    - Minimal faces: no balance tags; the bar on the back turns red when a card runs low. */
 (() => {
   const EASE = 'cubic-bezier(.2,.8,.2,1)';
@@ -41,7 +41,7 @@
           <div class="cf-bar is-${lk}"><span><i style="--w:${(r * 100).toFixed(1)}%"></i></span><em>${Math.round(r * 100)}%</em></div>
         </div>
       </div>`; }).join('')}
-      <div class="cf-under"><div class="cf-dots" aria-hidden="true">${CARDS.map(d => `<i data-dot="${d.id}"></i>`).join('')}</div><p class="cf-hint" aria-live="polite"></p></div>`;
+      <div class="cf-under"><p class="cf-hint" aria-live="polite"></p></div>`;
     const card = id => host.querySelector(`[data-card="${id}"]`), $ = q => host.querySelector(q);
 
     // fit the stage between the header and the nav
@@ -71,7 +71,7 @@
           y = G.H - 70 + k * 56 - (n - 1) * 56; sc = .94 - (n - 1 - k) * .03; z = 10 + k;
         }
         el.style.zIndex = z;
-        el.style.transition = s.drag && isA ? 'transform 0ms' : `transform ${ms('560ms')} ${EASE}`;
+        el.style.transition = s.drag && isA ? 'transform 0ms' : `transform ${ms('560ms')} ${EASE}, translate ${ms('560ms')} ${EASE}`;
         el.style.transform = `translate(${x}px, ${y}px) rotate(${rz.toFixed(2)}deg) scale(${sc})`;
         el.querySelector('.cf-front').style.transform = `rotateY(${ry}deg)`;
         el.querySelector('.cf-back').style.transform = `rotateY(${ry - 180}deg)`;
@@ -79,7 +79,6 @@
         const d = CARDS.find(c => c.id === id), avail = d.limit * d.pct / 100;
         el.setAttribute('aria-label', `${d.name} card ending ${d.last4}, ${money(avail)} of ${whole(d.limit)} available. ${isA ? (s.flip ? 'Tap to flip back.' : 'Tap to see the balance.') : 'Tap to bring it up.'}`);
       });
-      host.querySelectorAll('[data-dot]').forEach(i => i.classList.toggle('on', i.dataset.dot === act));
       if (s.flip) hintDone = true;
       const hint = $('.cf-hint'); hint.textContent = 'Tap to see your balance'; hint.style.visibility = hintDone ? 'hidden' : '';
     }
@@ -99,17 +98,19 @@
       const dx = e.clientX - sx, dy = e.clientY - sy;
       if (!axis) { if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return; axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'; }
       if (axis === 'x' && down === s.order[0]) { s.drag = true; s.dx = dx; render(); }
+      if (axis === 'y' && down !== s.order[0]) { const el = card(down); el.style.transition = 'none'; el.style.translate = `0 ${Math.max(-160, Math.min(0, dy)) }px`; }
     });
     const up = e => {
       if (!down) return;
       const id = down, dx = e.clientX - sx, dy = e.clientY - sy; down = null;
       const wasDrag = s.drag; s.drag = false; s.dx = 0;
+      const lifted = card(id); if (lifted?.style.translate) lifted.style.translate = '';
       if (id === s.order[0]) {
         if (axis === 'x' && Math.abs(dx) > 60) { step(dx < 0 ? 1 : -1); return; }
         if (!axis) { s.flip = !s.flip; }
         render(); return;
       }
-      if (!axis || (axis === 'y' && dy < -24)) bring(id); else if (wasDrag) render();
+      if (!axis || (axis === 'y' && dy < -24)) bring(id); else if (axis === 'y') render(); else if (wasDrag) render();
     };
     host.addEventListener('pointerup', up);
     host.addEventListener('pointercancel', () => { down = null; s.drag = false; s.dx = 0; render(); });

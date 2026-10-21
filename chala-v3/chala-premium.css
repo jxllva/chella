@@ -1027,7 +1027,7 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .cs .mt-sum { align-items: flex-start !important; text-align: left !important; margin: 14px 2px 0; gap: 2px !important; }
 .cs .sp-k { font: 500 .75rem/1 var(--p-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--p-ink-3); }
 .cs .sp-amt { font: 600 2.25rem/1.05 var(--p-sans) !important; letter-spacing: -.045em; }
-.cs.is-month .mt-sum { display: none !important; }
+.cs.is-month .mt-sum { margin-bottom: 4px; }
 .cs .cs-stage { max-width: 100% !important; margin-top: 18px !important; }
 /* week: dollar axis on the left, light grid, the period's average as a dashed line */
 .cs-wk { display: grid; grid-template-columns: 34px 1fr; gap: 4px; }
@@ -1266,3 +1266,21 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .jr-lab { font: 500 10px/1 var(--p-sans); fill: var(--p-ink-3); font-variant-numeric: tabular-nums; transition: fill .3s; }
 .jr-lab.on { fill: var(--p-ink); font-weight: 700; }
 .jr-sh use { filter: drop-shadow(0 1px 0 rgba(120,50,20,.2)); }
+
+/* Left to spend: what's left under each limit. The bar starts full and drains toward the limit; at $0 or past it, it's empty and red. */
+.lt { display: flex; flex-direction: column; padding: 6px 16px; border-radius: var(--p-r); background: #fff; box-shadow: inset 0 0 0 1px rgba(25,25,25,.06), 0 10px 26px -22px rgba(40,30,20,.35); }
+.lt-row { --st: #7FA36B; appearance: none; border: 0; background: none; cursor: pointer; display: grid; grid-template-columns: 40px minmax(0,1fr); align-items: center; gap: 12px; width: 100%; padding: 14px 0; text-align: left; color: var(--p-ink); font: inherit; }
+.lt-row + .lt-row { border-top: 1px solid rgba(25,25,25,.07); }
+.lt-row.is-near { --st: #E0AD4B; }
+.lt-row.is-over { --st: #D9604A; }
+.lt-ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: #F4F2EF; }
+.lt-ic svg { width: 20px; height: 20px; }
+.lt-main { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+.lt-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-width: 0; }
+.lt-n { font: 500 .9375rem/1.2 var(--p-sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lt-num { flex: none; display: inline-block !important; white-space: nowrap; font: 600 1.0625rem/1 var(--p-sans); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.lt-num small { display: inline !important; margin-left: 2px; font: 400 .8125rem/1 var(--p-sans); letter-spacing: 0; color: var(--p-ink-3); }
+.lt-row.is-over .lt-num, .lt-row.is-over .lt-num small { color: #C24F3A; }
+.lt-bar { display: block; height: 8px; border-radius: 8px; background: #F0EFEC; overflow: hidden; }
+.lt-bar i { display: block; height: 100%; border-radius: 8px; background: var(--st); transition: width .6s var(--p-ease); }
+.lt-row.is-over .lt-bar { background: rgba(217,96,74,.16); box-shadow: inset 0 0 0 1px rgba(217,96,74,.35); }
