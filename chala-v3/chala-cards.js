@@ -2,7 +2,8 @@
    - The chosen card sits up top; the rest peek out of a wallet at the bottom.
    - Tap the card to flip it: the back shows what's available, against the limit.
    - Swipe up (or tap) a card in the wallet to bring it up; swipe the top card down to put it back. Both follow your finger. Sideways swipes still flip through them.
-   - Minimal faces: no balance tags; the bar on the back turns red when a card runs low. */
+   - Minimal faces: no balance tags; the bar on the back turns red when a card runs low.
+   - The + by the title adds a card (name, last 4, limit, available, color); added cards are kept on this device. */
 (() => {
   const EASE = 'cubic-bezier(.2,.8,.2,1)';
   const LOW = .25, MID = .5;
@@ -12,18 +13,26 @@
   const money = n => '$' + Math.max(0, n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const whole = n => '$' + Math.max(0, n).toLocaleString('en-US', { maximumFractionDigits: 0 });
 
-  const CARDS = [
+  const BASE = [
     { id: 'a', name: 'Everyday', last4: '4021', limit: 3000, pct: 62, bg: '#F5C6B1', ink: '#2A1A14' },
     { id: 'b', name: 'Travel', last4: '7716', limit: 5000, pct: 48, bg: '#1D1C20', ink: '#F7F3EF', dark: true },
     { id: 'c', name: 'Groceries', last4: '0388', limit: 800, pct: 9, bg: '#D5CBEF', ink: '#211A33' }
   ];
+  // cards the person added, kept on this device
+  const STORE = 'chala-cards-v1';
+  const loadAdded = () => { try { const l = JSON.parse(localStorage.getItem(STORE)); return Array.isArray(l) ? l : []; } catch { return []; } };
+  const saveAdded = l => { try { localStorage.setItem(STORE, JSON.stringify(l)); } catch {} };
+  let CARDS = [...BASE, ...loadAdded()];
+  const SWATCHES = [['#F5C6B1', '#2A1A14'], ['#D5CBEF', '#211A33'], ['#CFE3D4', '#16271C'], ['#F3DDA6', '#2B220F'], ['#1D1C20', '#F7F3EF', true]];
   const CHIP = '<svg class="cf-chip" viewBox="0 0 40 30" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><rect x=".6" y=".6" width="38.8" height="28.8" rx="6"/><path d="M14 .6v8.4M26 .6v8.4M14 21v8.4M26 21v8.4M.6 10.5H11M29 10.5h10.4M.6 19.5H11M29 19.5h10.4"/><rect x="11" y="9" width="18" height="12" rx="4"/></svg>';
   const level = r => r >= MID ? ['high', 'High balance'] : r >= LOW ? ['mid', 'Medium balance'] : ['low', 'Low balance'];
 
-  function mount(host, { holder = '' } = {}) {
+  function mount(host, opts = {}) {
     if (!host) return;
+    const { holder = '', first: firstId } = opts;
+    CARDS = [...BASE, ...loadAdded()];
     const first = (holder || 'Card holder').trim().split(/\s+/), hFirst = first[0], hRest = first.slice(1).join(' ');
-    const s = { order: CARDS.map(d => d.id), flip: false, dx: 0, drag: false, stowed: false }; // stowed: every card is back in the wallet
+    const s = { order: firstId ? [firstId, ...CARDS.map(d => d.id).filter(x => x !== firstId)] : CARDS.map(d => d.id), flip: false, dx: 0, drag: false, stowed: false }; // stowed: every card is back in the wallet
     let G = null;
 
     host.innerHTML = `${CARDS.map(d => {
@@ -127,8 +136,69 @@
     host.addEventListener('scroll', () => { host.scrollTop = 0; host.scrollLeft = 0; });
     const onResize = () => { if (!host.isConnected) { removeEventListener('resize', onResize); return; } measure(); render(); };
     addEventListener('resize', onResize);
+    const add = document.querySelector('[data-cf-add]');
+    if (add) add.onclick = () => addSheet(card => {
+      saveAdded([...loadAdded(), card]);
+      const fresh = host.cloneNode(false); host.replaceWith(fresh); // drop this mount's listeners
+      mount(fresh, { ...opts, first: card.id });
+    });
     measure(); render();
     requestAnimationFrame(() => { if (host.isConnected) { measure(); render(); } });
+  }
+
+  // ---------- add a card: a bottom sheet ----------
+  function addSheet(done) {
+    let tone = 0;
+    const w = document.createElement('div');
+    w.className = 'cfa'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true'); w.setAttribute('aria-labelledby', 'cfa-h');
+    w.innerHTML = `<div class="cfa-scrim" data-x></div>
+      <form class="cfa-panel" novalidate>
+        <div class="cfa-grab" aria-hidden="true"></div>
+        <div class="cfa-top"><h2 id="cfa-h">Add a card</h2><button type="button" class="cfa-x" data-x aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+        <div class="cfa-prev" aria-hidden="true"><span class="cfa-pn">New card</span><span class="cfa-pl">•••• 0000</span></div>
+        <label class="cfa-f"><span>Card name</span><input id="cfa-name" name="name" maxlength="18" placeholder="Dining" autocomplete="off"></label>
+        <label class="cfa-f"><span>Last 4 digits</span><input id="cfa-last4" name="last4" inputmode="numeric" maxlength="4" placeholder="1234" autocomplete="off"></label>
+        <div class="cfa-row">
+          <label class="cfa-f"><span>Limit</span><span class="cfa-money"><i>$</i><input id="cfa-limit" name="limit" inputmode="decimal" placeholder="1,000"></span></label>
+          <label class="cfa-f"><span>Available now</span><span class="cfa-money"><i>$</i><input id="cfa-avail" name="avail" inputmode="decimal" placeholder="Same as limit"></span></label>
+        </div>
+        <div class="cfa-f"><span>Color</span><div class="cfa-sw" role="radiogroup" aria-label="Card color">${SWATCHES.map((c, i) => `<button type="button" role="radio" aria-checked="${i === 0}" aria-label="Color ${i + 1}" data-t="${i}" style="background:${c[0]}"></button>`).join('')}</div></div>
+        <p class="cfa-err" aria-live="polite"></p>
+        <button class="cfa-go" type="submit">Add card</button>
+      </form>`;
+    document.body.appendChild(w);
+    const f = w.querySelector('form'), prev = w.querySelector('.cfa-prev'), err = w.querySelector('.cfa-err');
+    const num = v => parseFloat(String(v).replace(/[^0-9.]/g, ''));
+    const paint = () => {
+      const [bg, ink] = SWATCHES[tone]; prev.style.background = bg; prev.style.color = ink;
+      prev.querySelector('.cfa-pn').textContent = f.name.value.trim() || 'New card';
+      prev.querySelector('.cfa-pl').textContent = '•••• ' + (f.last4.value.replace(/\D/g, '').padEnd(4, '0').slice(0, 4));
+    };
+    const close = () => { if (!w.isConnected) return; document.removeEventListener('keydown', onKey, true);
+      if (reduce()) { w.remove(); return; }
+      w.querySelector('.cfa-panel').animate([{ transform: 'none' }, { transform: 'translateY(100%)' }], { duration: 260, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' });
+      w.querySelector('.cfa-scrim').animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' }).finished.then(() => w.remove(), () => w.remove()); };
+    const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+    document.addEventListener('keydown', onKey, true);
+    w.addEventListener('click', e => {
+      if (e.target.closest('[data-x]')) { close(); return; }
+      const t = e.target.closest('[data-t]'); if (t) { tone = +t.dataset.t; w.querySelectorAll('[data-t]').forEach(b => b.setAttribute('aria-checked', String(b === t))); paint(); }
+    });
+    f.addEventListener('input', e => { if (e.target === f.last4) f.last4.value = f.last4.value.replace(/\D/g, ''); err.textContent = ''; paint(); });
+    f.addEventListener('submit', e => {
+      e.preventDefault();
+      const name = f.name.value.trim(), last4 = f.last4.value, limit = num(f.limit.value), availRaw = f.avail.value.trim(), avail = availRaw ? num(availRaw) : limit;
+      if (!name) { err.textContent = 'Give the card a name.'; f.name.focus(); return; }
+      if (!/^\d{4}$/.test(last4)) { err.textContent = 'Enter the last 4 digits of the card number.'; f.last4.focus(); return; }
+      if (!(limit > 0)) { err.textContent = 'Enter the card’s limit.'; f.limit.focus(); return; }
+      if (!(avail >= 0)) { err.textContent = 'Enter what’s available, or leave it blank.'; f.avail.focus(); return; }
+      const [bg, ink, dark] = SWATCHES[tone];
+      close();
+      done({ id: 'u' + Date.now().toString(36), name, last4, limit, pct: Math.min(100, avail / limit * 100), bg, ink, ...(dark ? { dark: true } : {}) });
+    });
+    paint();
+    if (!reduce()) { w.querySelector('.cfa-panel').animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.22,1,.36,1)' }); w.querySelector('.cfa-scrim').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300 }); }
+    setTimeout(() => f.name.focus({ preventScroll: true }), 50);
   }
 
   window.ChalaCards = { mount };

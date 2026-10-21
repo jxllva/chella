@@ -739,7 +739,7 @@ ${(() => { const past = p.goals.filter(g => g.archived || isDone(p, g)); return 
     }
     function cardsTab() {
       return `
-<header class="pf-head" data-rise>${logoBtn()}<p class="pf-k">Cards</p><h1 class="pf-title">Your cards.</h1></header>
+<header class="pf-head cf-head" data-rise>${logoBtn()}<p class="pf-k">Cards</p><h1 class="pf-title">Your cards.</h1><button class="hm-add cf-add" data-cf-add aria-label="Add a card">${I('<path d="M12 5v14M5 12h14"/>')}</button></header>
 <div class="cf" aria-label="Your cards. Tap a card to see its balance, swipe to flip through them."></div>`;
     }
     /* chala v3: profile is just your details, like Faiit's */
