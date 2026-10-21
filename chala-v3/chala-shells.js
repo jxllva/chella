@@ -46,9 +46,12 @@
     const label = x => esc(dayLine(x).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '));
 
     function week() {
-      const max = Math.max(...D.days.map(x => x.total), D.usual);
+      const past = D.days.filter(x => !x.future), avg = past.length ? past.reduce((t, x) => t + x.total, 0) / past.length : 0;
+      const max = Math.max(...D.days.map(x => x.total), avg, 1);
       const unit = UNITS.find(u => Math.ceil(max / u) <= MAXSTACK) || UNITS.at(-1);
-      const STEP = 15, usualY = Math.min(MAXSTACK, D.usual / unit) * STEP;
+      const STEP = 15, y = v => v <= 0 ? 0 : 13 + STEP * v / unit; // top of a stack worth v
+      const nMax = Math.max(1, Math.ceil(max / unit)), every = nMax > 6 ? 2 : 1;
+      const ticks = []; for (let k = 0; k <= nMax; k += every) ticks.push(k * unit);
       const cols = D.days.map((x, i) => {
         // shells per kind, by largest remainder, so the stack adds up to the day
         const n = x.total ? Math.max(1, Math.round(x.total / unit)) : 0;
@@ -62,8 +65,11 @@
           <span class="cs-stack">${stack.map((c, k) => shell(c, '', `--k:${k};--i:${i}`)).join('') || (x.future ? '' : '<i class="cs-none"></i>')}</span>
           <span class="cs-dow">${DOW[i]}</span></button>`;
       }).join('');
-      return `<div class="cs-week" style="--usual:${usualY.toFixed(1)}px"><span class="cs-usual" aria-hidden="true"></span>${cols}</div>
-        <p class="cs-unit"><span class="cs-dash"></span>usual day<span class="cs-gap"></span>${shell('#E8643F', 'cs-unit-sh')} = ${money(unit)}</p>`;
+      const tick = v => `<span class="cs-tick" style="--y:${y(v).toFixed(1)}px">${hide && v ? '•••' : '$' + Math.round(v / 100)}</span>`;
+      return `<div class="cs-wk"><div class="cs-axis" aria-hidden="true">${ticks.map(tick).join('')}</div>
+        <div class="cs-week" style="--avg:${y(avg).toFixed(1)}px">${ticks.slice(1).map(v => `<i class="cs-grid-l" style="--y:${y(v).toFixed(1)}px"></i>`).join('')}
+          ${avg ? `<span class="cs-avg" aria-hidden="true"><em>avg ${money(avg)}/day</em></span>` : ''}${cols}</div></div>
+        <p class="cs-unit">${shell('#E8643F', 'cs-unit-sh')} = ${money(unit)}${avg ? `<span class="cs-gap"></span><span class="cs-dash"></span>average day, ${money(avg)}` : ''}</p>`;
     }
     function month() {
       const lead = D.days[0].dow;
@@ -80,13 +86,36 @@
     host.classList.toggle('is-month', mode === 'M');
     host.classList.toggle('no-anim', !animate || reduce());
     $('.cs-stage').innerHTML = mode === 'M' ? month() : week();
-    const past = D.days.filter(x => !x.future), heavy = past.filter(x => level(x.total, D.usual) >= 3).length, chill = past.filter(x => level(x.total, D.usual) <= 1).length;
     const s = sel && D.days.find(x => x.iso === sel);
-    $('.cs-detail').innerHTML = s ? dayLine(s) : `<span class="cs-sum">${chill} chill · ${heavy} heavy ${heavy === 1 ? 'day' : 'days'} · tap a day</span>`;
+    $('.cs-detail').innerHTML = s ? dayLine(s) : '<span class="cs-sum">Tap a day to see spending details</span>';
     $('.cs-legend').innerHTML = mode === 'M'
       ? `<span class="cs-scale">Chill ${LEVELS.slice(1).map(([, c]) => shell(c, 'cs-key')).join('')} Heavy</span>`
       : KINDS.filter(([k]) => D.days.some(x => x.cats[k])).map(([, n, c]) => `<span><i style="background:${c}"></i>${n}</span>`).join('');
   }
 
-  window.ChalaShells = { render };
+  /* Saving: the shell as a radial meter. It fills rib by rib, sweeping from left to right around the hinge,
+     as far as what you've saved has come toward your goals. */
+  function meter(el, saved, goal, { hide = false, money = c => '$' + Math.round(c / 100) } = {}) {
+    if (!el) return;
+    const pct = goal > 0 ? Math.max(0, Math.min(1, saved / goal)) : 0, cx = 35.2, cy = 57, R = 80;
+    const wedge = t => {
+      if (t <= 0) return 'M0 0Z';
+      const a = Math.PI * (1 - t), x = cx + R * Math.cos(a), y = cy - R * Math.sin(a);
+      return `M${cx} ${cy}L${cx - R} ${cy}A${R} ${R} 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)}Z M${cx - R} ${cy}H${cx + R}V${cy + 20}H${cx - R}Z`;
+    };
+    const id = 'csm' + Math.random().toString(36).slice(2, 7);
+    el.innerHTML = `${SYMBOL.replace('id="cs-shell"', `id="${id}s"`)}<svg class="csm-sh" viewBox="0 0 70.4 65.4" aria-hidden="true">
+      <defs><linearGradient id="${id}g" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#E0552F"></stop><stop offset="1" stop-color="#F4A383"></stop></linearGradient>
+      <clipPath id="${id}c"><path d="${wedge(reduce() ? pct : 0)}"></path></clipPath></defs>
+      <use href="#${id}s" fill="#F5E4DB"></use><use href="#${id}s" fill="url(#${id}g)" clip-path="url(#${id}c)"></use></svg>
+      <span class="csm-pct">${goal > 0 ? Math.round(pct * 100) + '%' : ''}</span>`;
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', goal > 0 ? `Shell ${Math.round(pct * 100)}% full: ${hide ? '' : money(saved) + ' saved of ' + money(goal)}` : 'Shell empty: no goal set yet');
+    if (reduce() || !pct) return;
+    const path = el.querySelector('clipPath path'), t0 = performance.now(), dur = 1100 + pct * 500;
+    const tickF = now => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); path.setAttribute('d', wedge(pct * e)); if (k < 1 && el.isConnected) requestAnimationFrame(tickF); };
+    requestAnimationFrame(tickF);
+  }
+
+  window.ChalaShells = { render, meter };
 })();

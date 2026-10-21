@@ -153,7 +153,12 @@
       $('.mt-mood b').textContent = mood;
 
       /* chala v3: the shell chart sits where the tree was: stacks by kind for a week, a calendar of shells for a month */
-      if (window.ChalaShells && opts.getShells) ChalaShells.render(host, opts.getShells(st.mode, st.offset), { mode: st.mode, animate, hide });
+      if (window.ChalaShells && opts.getShells) {
+        const S = opts.getShells(st.mode, st.offset);
+        // the amount is everything the shells show; the month view leaves the number to the calendar
+        if (S) $('.sp-amt').textContent = hide ? '$•••' : usd(S.total);
+        ChalaShells.render(host, S, { mode: st.mode, animate, hide });
+      }
     }
 
     function shake() {

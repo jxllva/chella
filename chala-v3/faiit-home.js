@@ -657,6 +657,7 @@
     const logoBtn = () => `<button class="hm-logo" data-logo aria-label="chala">${window.chalaWord ? chalaWord() : 'chala'}</button>`;
     function homeTab() {
       const goals = p.goals.filter(g => !g.archived), saved = savedTotal(p);
+      const goalSum = goals.reduce((t, g) => t + (g.target || 0), 0); // the saving shell fills toward every open goal
       const since = new Date(p.joinedAt || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       const names = Object.keys(p.limits);
       // same rule as the spending jar, so the greeting and the jar always agree
@@ -670,13 +671,16 @@
   <h1 class="hm-hello"><span class="hm-wb">Welcome back,</span> <span class="hm-who">${esc(first || 'friend')}</span><span class="hm-dot">.</span></h1>
   <p class="hm-nudge">${esc(NUDGE[moodNow])}</p>
 </header>
-<section class="mt" aria-label="Your money tree and spending"></section>
+<section class="mt" aria-label="Your spending, day by day"></section>
 
 <h2 class="hm-k" data-rise>Saving</h2>
-<div class="hm-save hm-save-static" data-rise>
-  <span class="hm-save-k">So far, you’ve saved</span>
-  <b class="hm-save-n" data-count="${saved}">${m(saved)}</b>
-  <span class="hm-save-s">since ${esc(since)}</span>
+<div class="hm-save hm-save-static hm-save-shell" data-rise>
+  <span class="hm-save-txt">
+    <span class="hm-save-k">So far, you’ve saved</span>
+    <b class="hm-save-n" data-count="${saved}">${m(saved)}</b>
+    <span class="hm-save-s">${goalSum ? `of ${m(goalSum)} toward your ${goals.length === 1 ? 'goal' : 'goals'}` : `since ${esc(since)} · add a goal to fill your shell`}</span>
+  </span>
+  <span class="hm-save-meter" data-meter="${saved}|${goalSum}"></span>
 </div>
 
 <div class="hm-kh" data-rise><h2 class="hm-k">My spending limits</h2>${addBtn('addlimit', 'Add a limit')}</div>
@@ -746,6 +750,8 @@ ${(() => { const past = p.goals.filter(g => g.archived || isDone(p, g)); return 
         a.classList.remove('ch-open'); void a.offsetWidth; a.classList.add('ch-open');
         clearTimeout(a._t); a._t = setTimeout(() => a.classList.remove('ch-open'), 2800);
       });
+      /* chala v3: saving shell — a radial meter of what you've saved toward your goals */
+      el.querySelectorAll('[data-meter]').forEach(n => { const [sv, gl] = n.dataset.meter.split('|').map(Number); window.ChalaShells?.meter(n, sv, gl, { money: m }); });
       if (tab === 'profile') catchNewBadges();
       /* chala v3: Recap opens the month the tree is showing (for a week, the month it starts in) */
       const recapMonth = (md, off) => { if (md === 'M') return monthKey(new Date(today.getFullYear(), today.getMonth() + off, 1)); const s0 = new Date(today); s0.setDate(today.getDate() - (today.getDay() + 6) % 7 + off * 7); return monthKey(s0); };
@@ -836,13 +842,45 @@ ${txList(name)}`, {
       });
       ov.el.querySelectorAll('.fj').forEach(jelly);
     }
+    /* chala v3: new limit — pick from what you already spend on (with icons), or write your own */
     function addLimit() {
       const unused = spend.categories.filter(c => !(c.name in p.limits));
-      if (!unused.length) { api.toast('Every category already has a limit'); return; }
-      sheet(`<h2 id="fh-sheet-title" class="fh-sh-title">New limit</h2>
-<div class="fz-picklist">${unused.map(c => `<button class="fz-li" data-s="pick" data-c="${esc(c.name)}"><span>${esc(c.name)}</span><b>${m(c.cents)}</b></button>`).join('')}</div>`, {
-        pick: (t, close) => { close(); setTimeout(() => editLimit(t.dataset.c), 260); }
+      const when = spend.periodLabel ? `in ${esc(spend.periodLabel.split(' ')[0])}` : 'last month';
+      const chev = I('<path d="M9.5 6l6 6-6 6"/>');
+      const ov = sheet(`<p class="ls-k">Spending limit</p>
+<h2 id="fh-sheet-title" class="fh-sh-title nl-title">New limit</h2>
+<p class="nl-sub">Set a monthly cap for something you spend on. chala lets you know as you get close.</p>
+${unused.length ? `<p class="nl-h">From your spending</p>
+<div class="nl-list">${unused.map(c => `<button class="nl-row fj" type="button" data-s="pick" data-c="${esc(c.name)}">
+  <span class="nl-ic" aria-hidden="true">${I(catIcon(c.name))}</span>
+  <span class="nl-t"><b>${esc(c.name)}</b><small>${m(c.cents)} spent ${when}</small></span>
+  <span class="nl-go" aria-hidden="true">${chev}</span></button>`).join('')}</div>` : ''}
+<p class="nl-h">${unused.length ? 'Or make your own' : 'Make your own'}</p>
+<form class="nl-own" novalidate>
+  <div class="nl-own-row">
+    <span class="nl-ic nl-ic-own" aria-hidden="true">${I('<path d="M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10z"/><path d="M14 7l3 3"/>')}</span>
+    <label class="fw-sr" for="nl-name">Limit name</label>
+    <input class="nl-name" id="nl-name" name="name" maxlength="28" placeholder="Name it, like Concerts" autocomplete="off">
+  </div>
+  <div class="nl-own-row nl-own-amt"><span class="nl-cur">$</span>
+    <label class="fw-sr" for="nl-amt">Monthly limit in dollars</label>
+    <input class="nl-amt" id="nl-amt" name="amt" inputmode="numeric" placeholder="0" autocomplete="off"><span class="nl-per">a month</span>
+  </div>
+  <button class="fh-unwrap nl-add fj" type="submit" disabled>Add limit</button>
+</form>`, {
+        pick: (t, close) => { close(); setTimeout(() => editLimit(t.dataset.c), 260); },
+        input: (t, w) => {
+          if (t.name === 'amt') t.value = t.value.replace(/[^0-9]/g, '').slice(0, 6);
+          const f = w.querySelector('.nl-own'); w.querySelector('.nl-add').disabled = !(f.name.value.trim() && +f.amt.value > 0);
+        },
+        submit: (f, close) => {
+          const name = f.name.value.trim().replace(/\s+/g, ' '), v = (+f.amt.value || 0) * 100;
+          if (!name) { f.name.focus(); return; } if (!(v > 0)) { f.amt.focus(); return; }
+          const key = Object.keys(p.limits).find(k => k.toLowerCase() === name.toLowerCase()) || spend.categories.find(c => c.name.toLowerCase() === name.toLowerCase())?.name || name;
+          p.limits[key] = v; store(p); close(); paint(); api.toast(`${key} limit saved: ${m(v)} a month`);
+        }
       });
+      ov.el.querySelectorAll('.fj').forEach(jelly);
     }
     function editGoal(id) {
       const g = p.goals.find(x => x.id === id) || { id: uid(), title: '', target: 50000, value: '' }, isNew = !p.goals.some(x => x.id === id);
@@ -854,10 +892,16 @@ ${txList(name)}`, {
   <label class="fz-money-big"><span class="fw-sr">Target</span><i>$</i><input name="target" inputmode="decimal" value="${g.target / 100}" aria-label="Target amount"></label>
   <p class="sa-gh fz-chips-h">What’s it for?</p>
   ${chipsOf(VALUES, val, 'val')}
+  <div class="ng-own"><button type="button" class="fp-chip ng-own-chip" data-s="own" aria-expanded="false">${I('<path d="M12 5v14M5 12h14"/>')}<span>Something else</span></button>
+    <label class="fw-sr" for="ng-own">Your own category</label><input class="ng-own-in" id="ng-own" name="own" maxlength="28" placeholder="Type your own, like New laptop" autocomplete="off" hidden></div>
   <button class="fh-unwrap fj" type="submit">Add goal</button>
 </form>`, {
-          'pick-val': (t, close, w) => { val = val === t.dataset.v ? '' : t.dataset.v; w.querySelectorAll('[data-s="pick-val"]').forEach(b => { const on = b.dataset.v === val; b.setAttribute('aria-pressed', on); b.setAttribute('aria-checked', on); }); },
-          submit: (f, close) => { const title = f.title.value.trim(); if (!title) { f.title.focus(); return; } const target = cents(f.target.value) || g.target; p.goals = [...p.goals, { ...g, title, target, value: val }]; store(p); close(); paint(); api.toast(`${title} added: ${m(target)} goal`); }
+          'pick-val': (t, close, w) => { val = val === t.dataset.v ? '' : t.dataset.v; w.querySelectorAll('[data-s="pick-val"]').forEach(b => { const on = b.dataset.v === val; b.setAttribute('aria-pressed', on); b.setAttribute('aria-checked', on); });
+            const own = w.querySelector('.ng-own-in'); if (val) { own.hidden = true; own.value = ''; w.querySelector('.ng-own-chip').setAttribute('aria-expanded', 'false'); w.querySelector('.ng-own-chip').hidden = false; } },
+          // "Something else": the chip becomes a field to type your own category
+          own: (t, close, w) => { t.hidden = true; t.setAttribute('aria-expanded', 'true'); const inp = w.querySelector('.ng-own-in'); inp.hidden = false; inp.focus();
+            val = ''; w.querySelectorAll('[data-s="pick-val"]').forEach(b => { b.setAttribute('aria-pressed', false); b.setAttribute('aria-checked', false); }); },
+          submit: (f, close) => { const title = f.title.value.trim(); if (!title) { f.title.focus(); return; } const target = cents(f.target.value) || g.target; const own = f.own.value.trim(); p.goals = [...p.goals, { ...g, title, target, value: own ? '' : val, ...(own ? { custom: own } : {}) }]; store(p); close(); paint(); api.toast(`${title} added: ${m(target)} goal`); }
         }).el.querySelectorAll('.fj').forEach(jelly);
         return;
       }
