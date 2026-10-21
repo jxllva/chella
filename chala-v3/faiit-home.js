@@ -1029,40 +1029,53 @@ ${arch.length ? `<p class="sa-gh">Archived</p><div class="sa-list">${arch.map(ro
         restore: (t, close) => { const g = p.goals.find(x => x.id === t.dataset.id); if (g) { g.archived = false; store(p); close(); paint(); api.toast(`${g.title} is back in your goals`); } }
       });
     }
+    /* chala v3: a goal is a glass jar of shells. Dashed lines mark 25 / 50 / 75%; each shell is a slice of the goal;
+       adding money drops new shells in from the top. (Kept the name garden() so every caller still works.) */
     function garden(id) {
       const g = p.goals.find(x => x.id === id); if (!g) return;
-      const SLOTS = 10, target = g.target || 1;
+      const N = 30, PER = 5, target = g.target || 1;
+      const X0 = 62, X1 = 198, Y0 = 62, Y1 = 222, CW = (X1 - X0) / PER, RH = (Y1 - Y0) / (N / PER);
       const eta = n => { const d = new Date(); d.setMonth(d.getMonth() + Math.ceil(n)); return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); };
       const calc = () => {
-        const sv = savedFor(p, g.id), r = Math.min(1, sv / target), grown = Math.floor(r * SLOTS), partial = r * SLOTS - grown;
+        const sv = savedFor(p, g.id), r = Math.min(1, sv / target), count = sv > 0 ? Math.max(1, Math.round(r * N)) : 0;
         const days = Math.max(1, (Date.now() - new Date(p.joinedAt || Date.now())) / 864e5);
         const perMonth = Math.round((g.weekly ? g.weekly * 4.33 : sv ? sv / Math.max(1, days / 30.4) : 0) / 100) * 100;
         const left = Math.max(0, target - sv);
-        const pace = left === 0 ? 'Fully grown.' : perMonth > 0 ? `On pace for ${eta(left / perMonth)}.` : 'Plant your first seed below.';
-        const plants = Array.from({ length: SLOTS }, (_, i) => i < grown ? 3 : i === grown && partial > 0 ? Math.max(1, Math.round(partial * 3)) : 0);
-        return { sv, grown, left, pace, plants };
+        const pace = left === 0 ? 'Your jar is full.' : perMonth > 0 ? `On pace for ${eta(left / perMonth)}.` : 'Drop your first shell in below.';
+        return { sv, r, count, left, pace };
       };
-      const plantSVG = (stage, i) => {
-        const h = [0, 34, 66, 100][stage], sway = (i % 3) - 1;
-        if (!stage) return `<ellipse cx="0" cy="0" rx="5.5" ry="3.4" fill="rgba(120,150,120,.32)"/>`;
-        const flower = stage === 3 ? `<g transform="translate(0 ${-h})">${[0, 72, 144, 216, 288].map(a => `<ellipse rx="6" ry="10" transform="rotate(${a}) translate(0 -9)" fill="${['#f3cfdc', '#f2e3a8', '#cfdcf5', '#f2d5c4'][i % 4]}"/>`).join('')}<circle r="5" fill="#e9c35c"/></g>` : '';
-        const bud = stage === 2 ? `<ellipse cy="${-h}" rx="5" ry="7" fill="#bfe3b4"/>` : '';
-        return `<g class="fg-plant" style="--d:${i * 60}ms"><path d="M0 0 C ${sway * 4} ${-h * .4} ${-sway * 4} ${-h * .7} 0 ${-h}" stroke="#86b98f" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M0 ${-h * .45} q 13 -8 19 -2 q -9 9 -19 2z" fill="#a9d6a0"/>${stage > 1 ? `<path d="M0 ${-h * .68} q -13 -8 -19 -2 q 9 9 19 2z" fill="#93c98d"/>` : ''}${bud}${flower}</g>`;
-      };
-      let st = calc();
-      const plantForm = () => `<form class="fz-log fz-log-plant"><span class="fp-money"><i>$</i><input name="amt" inputmode="decimal" placeholder="0" aria-label="Amount to plant"></span><button class="fz-logbtn fj" type="submit">Plant</button></form>`;
+      // a gentle pile: rows of five, every other row nudged, each shell tipped a little
+      const rnd = i => { const x = Math.sin(i * 12.9898 + 4.1) * 43758.5453; return x - Math.floor(x); };
+      const TONES = ['#EC7A58', '#F2967A', '#E8673F', '#F4AE93'];
+      const slot = i => { const row = Math.floor(i / PER), col = i % PER, off = row % 2 ? CW * .22 : -CW * .1;
+        const cx = X0 + CW / 2 + col * CW + off + (rnd(i) - .5) * 5, cy = Y1 - RH / 2 - row * RH + (rnd(i + 99) - .5) * 4;
+        return { cx, cy, rot: (rnd(i + 7) - .5) * 44, c: TONES[Math.floor(rnd(i + 3) * TONES.length)] }; };
+      const shellAt = i => { const q = slot(i); return `<g class="jr-sh" data-i="${i}" style="transform: translate(${q.cx.toFixed(1)}px, ${q.cy.toFixed(1)}px) rotate(${q.rot.toFixed(1)}deg)"><use href="#jar-shell" x="-16" y="-15" width="32" height="30" fill="${q.c}"></use></g>`; };
+      const marks = [.25, .5, .75].map(k => { const y = Y1 - k * (Y1 - Y0); return `<line class="jr-line" x1="${X0 - 4}" x2="${X1 + 4}" y1="${y}" y2="${y}"></line><text class="jr-lab" data-k="${k}" x="${X1 + 20}" y="${y + 4}">${m(Math.round(target * k / 100) * 100)}</text>`; }).join('');
+      let st = calc(), w0 = null;
+      const passed = () => w0?.querySelectorAll('.jr-lab').forEach(t => t.classList.toggle('on', st.r >= +t.dataset.k));
+      const addForm = () => `<form class="fz-log fz-log-plant"><span class="fp-money"><i>$</i><input name="amt" inputmode="decimal" placeholder="0" aria-label="Amount to add"></span><button class="fz-logbtn fj" type="submit">Add</button></form>`;
       const ov = sheet(`
-<div class="fg">
+${window.ChalaShells ? ChalaShells.symbol('jar-shell') : ''}
+<div class="fg jr">
   <h2 id="fh-sheet-title" class="fh-sh-title">${esc(g.title)}</h2>
   <p class="fz-sh-meta"><b class="fg-sv">${m(st.sv)}</b> of ${m(target)}</p>
-  <div class="fg-bed" role="img" aria-label="${st.grown} of ${SLOTS} plants grown, each one 10% of the goal">
-    <svg viewBox="0 0 330 166" class="fg-svg"><path d="M0 151 Q 165 140 330 151 V166 H0z" fill="rgba(150,180,140,.18)"/>${st.plants.map((s, i) => `<g class="fg-slot" data-slot="${i}" transform="translate(${18 + i * 32} 150)">${plantSVG(s, i)}</g>`).join('')}</svg>
+  <div class="jr-stage" role="img" aria-label="${Math.round(st.r * 100)}% of the jar filled with shells">
+    <svg viewBox="0 0 270 246" class="jr-svg">
+      <defs><clipPath id="jr-in"><path d="M${X0} 58 Q${X0} 50 ${X0 + 8} 50 H${X1 - 8} Q${X1} 50 ${X1} 58 V${Y1 - 2} Q${X1} ${Y1 + 6} ${X1 - 10} ${Y1 + 6} H${X0 + 10} Q${X0} ${Y1 + 6} ${X0} ${Y1 - 2}Z"></path></clipPath></defs>
+      <ellipse cx="130" cy="238" rx="84" ry="6" fill="rgba(80,50,30,.08)"></ellipse>
+      <path class="jr-glass" d="M86 24 H174 V36 Q174 40 180 42 Q${X1 + 8} 48 ${X1 + 8} 64 V${Y1} Q${X1 + 8} ${Y1 + 12} ${X1 - 6} ${Y1 + 12} H${X0 + 6} Q${X0 - 8} ${Y1 + 12} ${X0 - 8} ${Y1} V64 Q${X0 - 8} 48 80 42 Q86 40 86 36Z"></path>
+      <g class="jr-pile" clip-path="url(#jr-in)">${Array.from({ length: st.count }, (_, i) => shellAt(i)).join('')}</g>
+      ${marks}
+      <path class="jr-shine" d="M${X0 + 2} 74 V${Y1 - 30}"></path><path class="jr-shine jr-shine2" d="M${X0 + 12} 80 V100"></path>
+      <rect class="jr-lid" x="80" y="12" width="100" height="16" rx="5"></rect><rect class="jr-lid2" x="80" y="22" width="100" height="3" rx="1.5"></rect>
+    </svg>
   </div>
   <p class="fz-hint fz-center-t fg-pace" aria-live="polite">${st.pace}</p>
-  ${st.left ? plantForm() : ''}
+  ${st.left ? addForm() : ''}
   <div class="fg-foot"><button class="fg-btn fg-edit" type="button" data-s="edit">${I('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>')}Edit goal</button><button class="fg-btn fg-arch" type="button" data-s="archive">${I('<rect x="3.5" y="4.5" width="17" height="4" rx="1"/><path d="M5 8.5V18a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 18V8.5M10 12.5h4"/>')}Archive</button></div>
 </div>`, {
-        // plant: stay in the sheet and let the garden grow in place
+        // add: new shells drop in through the mouth of the jar and settle on the pile
         submit: (f, close, w) => {
           const c = cents(f.amt.value); if (!c) { f.amt.focus(); return; }
           const before = st;
@@ -1071,22 +1084,29 @@ ${arch.length ? `<p class="sa-gh">Archived</p><div class="sa-list">${arch.map(ro
           const svEl = w.querySelector('.fg-sv');
           if (reduce()) svEl.textContent = m(st.sv);
           else { const t0 = performance.now(), from = before.sv, to = st.sv; const step = now => { const k = Math.min(1, (now - t0) / 700), e = 1 - Math.pow(1 - k, 3); svEl.textContent = m(Math.round(from + (to - from) * e)); if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
-          w.querySelector('.fg-bed').setAttribute('aria-label', `${st.grown} of ${SLOTS} plants grown, each one 10% of the goal`);
-          let n = 0;
-          st.plants.forEach((s, i) => {
-            if (s === before.plants[i]) return;
-            const slot = w.querySelector(`.fg-slot[data-slot="${i}"]`); slot.innerHTML = plantSVG(s, i);
-            const pl = slot.firstElementChild; pl.classList.add('fg-up');
-            if (!reduce()) pl.animate([{ transform: 'scale(.2, 0)', opacity: 0 }, { transform: 'scale(1.06, 1.12)', opacity: 1, offset: .6 }, { transform: 'scale(.98, .96)', offset: .8 }, { transform: 'none', opacity: 1 }], { duration: 900, delay: 120 + n++ * 140, easing: 'cubic-bezier(.3,1.2,.5,1)', fill: 'backwards' });
-          });
+          w.querySelector('.jr-stage').setAttribute('aria-label', `${Math.round(st.r * 100)}% of the jar filled with shells`);
+          const pile = w.querySelector('.jr-pile');
+          for (let i = before.count, n = 0; i < st.count; i++, n++) {
+            pile.insertAdjacentHTML('beforeend', shellAt(i));
+            const el = pile.lastElementChild, q = slot(i), sx = 130 + (rnd(i + 21) - .5) * 40;
+            if (!reduce()) el.animate([
+              { transform: `translate(${sx.toFixed(1)}px, -20px) rotate(${(q.rot - 140).toFixed(1)}deg)`, opacity: 0 },
+              { opacity: 1, offset: .12 },
+              { transform: `translate(${q.cx.toFixed(1)}px, ${(q.cy + 4).toFixed(1)}px) rotate(${(q.rot + 10).toFixed(1)}deg)`, offset: .78 },
+              { transform: `translate(${q.cx.toFixed(1)}px, ${(q.cy - 2).toFixed(1)}px) rotate(${(q.rot - 3).toFixed(1)}deg)`, offset: .9 },
+              { transform: `translate(${q.cx.toFixed(1)}px, ${q.cy.toFixed(1)}px) rotate(${q.rot.toFixed(1)}deg)`, opacity: 1 }
+            ], { duration: 820, delay: n * 110, easing: 'cubic-bezier(.5,0,.6,1)', fill: 'backwards' });
+          }
+          passed();
           w.querySelector('.fg-pace').textContent = st.pace;
           f.amt.value = '';
-          if (!st.left) { f.remove(); g.doneAt = new Date().toISOString(); store(p); paint(); api.toast(`${g.title} is fully grown. It’s in past goals now.`); }
-          else { api.toast(`Planted ${m(c)}`); f.amt.blur(); }
+          if (!st.left) { f.remove(); g.doneAt = new Date().toISOString(); store(p); paint(); api.toast(`${g.title}: your jar is full. It’s in past goals now.`); }
+          else { api.toast(`Added ${m(c)}`); f.amt.blur(); }
         },
         edit: (t, close) => { close(); setTimeout(() => editGoal(g.id), 260); },
         archive: (t, close) => { g.archived = true; store(p); close(); paint(); api.toast('Archived. It’s in past goals.'); }
       }, 'is-garden');
+      w0 = ov.el; passed();
       ov.el.querySelectorAll('.fj').forEach(jelly);
     }
 

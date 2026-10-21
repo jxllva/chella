@@ -1251,3 +1251,18 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .hm-hello .hm-dot { color: #E8743F !important; }
 .cs .cs-dow.is-heavy { color: var(--p-ink) !important; font-weight: 700; }
 .cs .cs-dow.is-today.is-heavy { background: var(--p-ink) !important; color: #fff !important; }
+
+/* =====================================================================
+   Goal: a glass jar of shells with 25 / 50 / 75% lines
+   ===================================================================== */
+.jr-stage { margin: 14px 0 4px; border-radius: 24px; background: radial-gradient(80% 70% at 50% 100%, #FBEDE6 0%, rgba(251,237,230,0) 70%), linear-gradient(180deg, #F6F3F1, #FBF9F7); padding: 14px 8px 8px; }
+.jr-svg { display: block; width: 100%; max-width: 320px; margin: 0 auto; overflow: visible; }
+.jr-glass { fill: rgba(255,255,255,.62); stroke: rgba(25,25,25,.16); stroke-width: 1.6; }
+.jr-lid { fill: #2A2522; }
+.jr-lid2 { fill: rgba(255,255,255,.18); }
+.jr-shine { stroke: rgba(255,255,255,.95); stroke-width: 4; stroke-linecap: round; fill: none; }
+.jr-shine2 { stroke-width: 3; opacity: .8; }
+.jr-line { stroke: rgba(25,25,25,.24); stroke-width: 1; stroke-dasharray: 3 4; }
+.jr-lab { font: 500 10px/1 var(--p-sans); fill: var(--p-ink-3); font-variant-numeric: tabular-nums; transition: fill .3s; }
+.jr-lab.on { fill: var(--p-ink); font-weight: 700; }
+.jr-sh use { filter: drop-shadow(0 1px 0 rgba(120,50,20,.2)); }

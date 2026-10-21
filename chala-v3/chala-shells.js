@@ -145,5 +145,5 @@
     requestAnimationFrame(tickF);
   }
 
-  window.ChalaShells = { render, meter };
+  window.ChalaShells = { render, meter, symbol: id => SYMBOL.replace('id="cs-shell"', `id="${id}"`) };
 })();
