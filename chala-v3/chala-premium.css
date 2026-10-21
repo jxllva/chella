@@ -1231,3 +1231,11 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 /* four levels in the key; a heavy day's tag is the solid one */
 .cs-keybox { grid-template-columns: auto repeat(4, minmax(0, 1fr)) !important; }
 .cs-day.lv-3 .cs-day-lv { background: #B8452A !important; color: #fff !important; }
+
+/* saving: a taller card; the shell fills the right half, the words sit beside it */
+.hm-save-shell { min-height: 196px; padding: 24px 18px 24px 24px !important; gap: 8px !important; align-items: center !important; }
+.hm-save-txt { flex: 1 1 auto; gap: 8px; }
+.hm-save-shell .hm-save-k { font-size: .875rem; white-space: nowrap; }
+.hm-save-shell .hm-save-s { font-size: .8125rem; line-height: 1.35; }
+.hm-save-meter { width: 52% !important; max-width: 176px; height: auto !important; aspect-ratio: 70.4 / 72; }
+.csm-sh { height: auto !important; aspect-ratio: 70.4 / 65.4; }

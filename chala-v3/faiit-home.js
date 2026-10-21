@@ -680,7 +680,7 @@
   <span class="hm-save-txt">
     <span class="hm-save-k">So far, you’ve saved</span>
     <b class="hm-save-n" data-count="${saved}">${m(saved)}</b>
-    <span class="hm-save-s">${goalSum ? `of ${m(goalSum)} toward your ${goals.length === 1 ? 'goal' : 'goals'}` : `since ${esc(since)} · add a goal to fill your shell`}</span>
+    <span class="hm-save-s">${goalSum ? `of ${m(goalSum)} toward your ${goals.length === 1 ? 'goal' : 'goals'}` : `since ${esc(since)}`}</span>
   </span>
   <span class="hm-save-meter" data-meter="${saved}|${goalSum}"></span>
 </div>
