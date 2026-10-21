@@ -720,7 +720,7 @@ ${(() => { const past = p.goals.filter(g => g.archived || isDone(p, g)); return 
     function cardsTab() {
       return `
 <header class="pf-head" data-rise>${logoBtn()}<p class="pf-k">Cards</p><h1 class="pf-title">Your cards.</h1></header>
-<div class="cc" aria-label="Swipe up to pay"></div>`;
+<div class="cf" aria-label="Your cards. Tap a card to see its balance, swipe to flip through them."></div>`;
     }
     /* chala v3: profile is just your details, like Faiit's */
     function profileTab() {
@@ -765,7 +765,7 @@ ${(() => { const past = p.goals.filter(g => g.archived || isDone(p, g)); return 
         getStats: (md, off) => insightData(md, off),
         coinText: () => `${m(savedTotal(p))} set aside so far` });
       /* chala v3: swipe-up-to-pay cards */
-      if (tab === 'cards' && window.ChalaCards) ChalaCards.mount(el.querySelector('.cc'), { holder: user.name || '' });
+      if (tab === 'cards' && window.ChalaCards) ChalaCards.mount(el.querySelector('.cf'), { holder: user.name || '' });
       if (tab === 'wraps') {
         const inp = el.querySelector('[data-pdf]'), lab = inp?.closest('.fz-pdf'), stEl = el.querySelector('.fz-pdf-st');
         inp?.addEventListener('change', async () => {

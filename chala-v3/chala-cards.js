@@ -1,183 +1,121 @@
-/* chala v3 — Cards tab: your cards with a balance bar, and the balance on the back.
-   Rebuilt from the "Swipe-up pay with balance bar" design mockup (v2), in plain JS and the app's
-   look. The mockup's pay and Face ID steps are left out on purpose: this tab is for checking cards.
-
-   - At rest the cards sit as a fanned stack. Tap a card, or drag the front one up, to bring it up.
-   - The light strip on the front is the balance bar; the card warms to peach when it runs low.
-   - Tap the raised card, or swipe it sideways, to flip it: the back shows what's available.
-   - A card under 25% of its limit shows a "Low balance" tag.
-   - Tap a card in the stack below to switch. Drag the raised card down to put it back. */
+/* chala v3 — Cards tab, after the "editorial flip" reference (no pay step, no Face ID).
+   - The chosen card sits up top; the rest peek out of a wallet at the bottom.
+   - Tap the card to flip it: the back shows what's available, against the limit.
+   - Swipe it sideways to flip through your cards, or tap / swipe up a card in the wallet to bring it up.
+   - Minimal faces: no balance tags; the bar on the back turns red when a card runs low. */
 (() => {
   const EASE = 'cubic-bezier(.2,.8,.2,1)';
-  const REST_TILT = 10;
-  const LOW = .25; // under 25% of the limit left → "Low balance" // a little depth at rest, without hiding the card face
+  const LOW = .25, MID = .5;
   const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const money = (n, fixed) => { const v = Math.max(0, n), d = fixed || v % 1 ? 2 : 0; return '$' + v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); };
+  const money = n => '$' + Math.max(0, n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const whole = n => '$' + Math.max(0, n).toLocaleString('en-US', { maximumFractionDigits: 0 });
 
   const CARDS = [
-    { id: 'a', name: 'Everyday', last4: '4021', limit: 3000, pct: 62,
-      dark: true, base: 'radial-gradient(120% 140% at 100% 0%, rgba(201,188,229,.42) 0%, transparent 55%), linear-gradient(135deg, #1C1C1E 0%, #2A292F 60%, #3A3842 100%)',
-      light: 'rgba(120,230,235,.75)' },
-    { id: 'b', name: 'Travel', last4: '7716', limit: 5000, pct: 48,
-      base: 'radial-gradient(120% 140% at 100% 0%, #F8E1D7 0%, transparent 55%), linear-gradient(135deg, #D69A82 0%, #E3B19D 55%, #EDC5B5 100%)',
-      light: 'rgba(140,235,160,.8)' },
-    { id: 'c', name: 'Groceries', last4: '0388', limit: 800, pct: 9,
-      base: 'radial-gradient(120% 140% at 100% 0%, #E2DBF4 0%, transparent 55%), linear-gradient(135deg, #A897D6 0%, #BBAEE0 55%, #CEC5EA 100%)',
-      light: 'rgba(170,200,255,.75)' }
+    { id: 'a', name: 'Everyday', last4: '4021', limit: 3000, pct: 62, bg: '#F5C6B1', ink: '#2A1A14' },
+    { id: 'b', name: 'Travel', last4: '7716', limit: 5000, pct: 48, bg: '#1D1C20', ink: '#F7F3EF', dark: true },
+    { id: 'c', name: 'Groceries', last4: '0388', limit: 800, pct: 9, bg: '#D5CBEF', ink: '#211A33' }
   ];
-  const WARM = 'linear-gradient(118deg, rgba(233,187,169,.55) 0%, rgba(240,210,196,.45) 50%, rgba(233,187,169,.5) 100%)';
-
-  const CHIP = '<svg class="cc-chip" width="46" height="36" viewBox="0 0 46 36" fill="none" stroke="rgba(150,110,90,.6)" stroke-width="1.1" stroke-linecap="round" aria-hidden="true"><rect x=".75" y=".75" width="44.5" height="34.5" rx="7" fill="#E6C6B0"/><rect x="15" y="7" width="16" height="22" rx="4" fill="#EDD3C1"/><path d="M23 .75V7"/><path d="M23 29v6.25"/><path d="M15 18h16"/><path d="M.75 12H11c2.2 0 4 1.8 4 4"/><path d="M.75 24H11c2.2 0 4-1.8 4-4"/><path d="M45.25 12H35c-2.2 0-4 1.8-4 4"/><path d="M45.25 24H35c-2.2 0-4-1.8-4-4"/><path d="M.75 18H8"/><path d="M38 18h7.25"/></svg>';
+  const CHIP = '<svg class="cf-chip" viewBox="0 0 40 30" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><rect x=".6" y=".6" width="38.8" height="28.8" rx="6"/><path d="M14 .6v8.4M26 .6v8.4M14 21v8.4M26 21v8.4M.6 10.5H11M29 10.5h10.4M.6 19.5H11M29 19.5h10.4"/><rect x="11" y="9" width="18" height="12" rx="4"/></svg>';
+  const level = r => r >= MID ? ['high', 'High balance'] : r >= LOW ? ['mid', 'Medium balance'] : ['low', 'Low balance'];
 
   function mount(host, { holder = '' } = {}) {
     if (!host) return;
-    const s = { open: false, dragging: false, dy: 0, xdrag: false, dx: 0, flip: 0, active: 'a', spent: { a: 0, b: 0, c: 0 } };
-    let startX = 0, startY = 0, axis = null, pDown = false, G = null;
-    const set = patch => { Object.assign(s, patch); if (host.isConnected) render(); };
-    const def = id => CARDS.find(d => d.id === id);
-    const availOf = (d, spent) => Math.max(0, d.limit * d.pct / 100 - spent);
-    const flipped = () => Math.round(s.flip / 180) % 2 !== 0;
+    const first = (holder || 'Card holder').trim().split(/\s+/), hFirst = first[0], hRest = first.slice(1).join(' ');
+    const s = { order: CARDS.map(d => d.id), flip: false, dx: 0, drag: false };
+    let G = null;
 
-    host.innerHTML = `
-      ${CARDS.map(d => `
-      <div class="cc-card${d.dark ? ' cc-dark' : ''}" data-card="${d.id}" role="button" tabindex="0">
-        <div class="cc-face cc-front">
-          <div class="cc-layer" style="background:${d.base}"></div>
-          <div class="cc-layer cc-warm" style="background:${WARM}"></div>
-          <div class="cc-sheen"></div>
-          <div class="cc-strip"><i></i></div>
-          <span class="cc-name">${esc(d.name)}</span>
-          <span class="cc-low cc-lvl"><span class="cc-bars" aria-hidden="true"><i></i><i></i><i></i></span><b></b></span>
+    host.innerHTML = `${CARDS.map(d => {
+      const avail = d.limit * d.pct / 100, r = avail / d.limit, [lk, lt] = level(r);
+      return `
+      <div class="cf-card${d.dark ? ' is-dark' : ''}" data-card="${d.id}" role="button" tabindex="0" style="--bg:${d.bg};--ink:${d.ink}">
+        <div class="cf-face cf-front">
+          <div class="cf-row"><span class="cf-name">${esc(d.name)}</span></div>
           ${CHIP}
-          <span class="cc-holder">${esc(holder || 'Card holder')}</span>
-          <span class="cc-last4">•••• ${d.last4}</span>
+          <div class="cf-row cf-foot"><span class="cf-holder"><b>${esc(hFirst)}</b>${hRest ? ' ' + esc(hRest) : ''}</span><span class="cf-last">•••• ${d.last4}</span></div>
         </div>
-        <div class="cc-face cc-back">
-          <div class="cc-layer" style="background:${d.base}"></div>
-          <div class="cc-layer cc-warm" style="background:${WARM}"></div>
-          <div class="cc-sheen cc-sheen-b"></div>
-          <div class="cc-back-in">
-            <div class="cc-back-top"><span>Available</span><span>•••• ${d.last4}</span></div>
-            <div><b class="cc-back-num"></b><span class="cc-back-of">of ${money(d.limit)} limit</span></div>
-            <div class="cc-back-bar"><span><i></i></span><em></em></div>
-          </div>
+        <div class="cf-face cf-back">
+          <div class="cf-row"><span class="cf-k">Available</span><span class="cf-last cf-last-s">•••• ${d.last4}</span></div>
+          <div class="cf-amt"><b>${money(avail)}</b><span>of ${whole(d.limit)} limit</span></div>
+          <div class="cf-bar is-${lk}"><span><i style="--w:${(r * 100).toFixed(1)}%"></i></span><em>${Math.round(r * 100)}%</em></div>
         </div>
-      </div>`).join('')}
-      <div class="cc-info"><p class="cc-note"></p></div>`;
-    const $ = sel => host.querySelector(sel);
-    const cardEl = id => host.querySelector(`[data-card="${id}"]`);
+      </div>`; }).join('')}
+      <div class="cf-under"><div class="cf-dots" aria-hidden="true">${CARDS.map(d => `<i data-dot="${d.id}"></i>`).join('')}</div><p class="cf-hint" aria-live="polite"></p></div>`;
+    const card = id => host.querySelector(`[data-card="${id}"]`), $ = q => host.querySelector(q);
 
-    /* Fit the layout into whatever room sits between the header and the nav. */
+    // fit the stage between the header and the nav
     function measure() {
       const nav = document.querySelector('.fh-nav');
       const top = host.getBoundingClientRect().top + window.scrollY;
       const navTop = nav ? nav.getBoundingClientRect().top + window.scrollY : window.innerHeight;
-      const H = Math.max(500, navTop - top - 10), W = host.clientWidth;
-      const cw = Math.min(330, W - 32), ch = Math.round(cw * 202 / 320), T = 104;
+      const H = Math.max(470, navTop - top - 6), W = host.clientWidth;
+      const cw = Math.min(340, W - 8), ch = Math.round(cw / 1.586);
       host.style.height = H + 'px';
-      // At rest the front card sits fully in view near the bottom, the others stacked behind it.
-      G = { H, W, cw, ch, T, HIDE: Math.max(150, H - T - ch - 22), peek: H - T - 104 };
-      host.style.setProperty('--cc-w', cw + 'px'); host.style.setProperty('--cc-h', ch + 'px'); host.style.setProperty('--cc-t', T + 'px');
-      host.style.setProperty('--cc-info', (T + ch + 24) + 'px');
+      host.style.setProperty('--cf-w', cw + 'px'); host.style.setProperty('--cf-h', ch + 'px');
+      host.style.setProperty('--cf-under', (12 + ch + 18) + 'px');
+      G = { H, W, cw, ch };
     }
-
-    const openUp = () => set({ open: true, dragging: false, dy: 0 });
-    const closeDown = () => set({ open: false, dragging: false, dy: 0, xdrag: false, dx: 0, flip: 0 });
-    const turn = dir => set({ flip: s.flip + (dir < 0 ? -180 : 180) });
-    function select(id) { set({ active: id, flip: 0 }); if (!s.open) openUp(); }
 
     function render() {
       if (!G) measure();
-      const others = CARDS.filter(d => d.id !== s.active);
-      const base = s.open ? 0 : G.HIDE;
-      const pos = s.dragging ? Math.min(G.HIDE, Math.max(0, base + s.dy)) : base;
-      const p = 1 - pos / G.HIDE, settled = s.open && !s.dragging && !s.xdrag;
-      const ms = v => reduce() ? '0ms' : v;
-
-      CARDS.forEach(d => {
-        const el = cardEl(d.id), spent = s.spent[d.id] || 0, avail = availOf(d, spent);
-        const ratio = d.limit > 0 ? Math.min(1, avail / d.limit) : 0;
-        const warmth = Math.min(1, Math.max(0, (.4 - ratio) / .3));
-        const light = ratio > .4 ? d.light : ratio > .2 ? 'rgba(255,214,170,.75)' : 'rgba(255,186,150,.75)';
-        const isA = d.id === s.active;
-        const glowLine = `0 0 6px rgba(255,255,255,.95), 0 0 14px ${light}, 0 0 26px ${light}`;
-        let y, tilt, rot = 0, scale, z, tr, fill = '0%';
+      const [act, ...rest] = s.order, ms = v => (reduce() ? '0ms' : v);
+      s.order.forEach(id => {
+        const el = card(id), isA = id === act;
+        let y, x = 0, rz = 0, sc = 1, z, ry = 0;
         if (isA) {
-          y = pos; tilt = (1 - p) * REST_TILT; scale = 1; z = 20;
-          rot = s.flip + (s.xdrag ? Math.max(-180, Math.min(180, s.dx * .6)) : 0);
-          fill = settled ? (ratio * 100).toFixed(1) + '%' : '0%';
-          tr = s.dragging || s.xdrag ? 'transform 0ms' : `transform ${ms('480ms')} ${EASE}`;
+          y = 12; x = s.dx; rz = s.dx / 40; z = 30; ry = s.flip ? 180 : 0;
         } else {
-          const k = others.indexOf(d);
-          if (s.open) { y = G.peek + k * 44; tilt = 0; scale = .94; z = 10 + k; }
-          else { y = G.HIDE - (others.length - k) * 54; tilt = REST_TILT; scale = 1 - (others.length - k) * .04; z = 5 + k; } // fanned so every card's name shows
-          tr = `transform ${ms('420ms')} ${EASE}`;
+          // the wallet: cards peek out of the bottom edge, the next one up front and lowest
+          const k = rest.indexOf(id), n = rest.length;
+          y = G.H - 70 + k * 56 - (n - 1) * 56; sc = .94 - (n - 1 - k) * .03; z = 10 + k;
         }
         el.style.zIndex = z;
-        el.style.transition = tr;
-        el.style.transform = `translateY(${y}px) rotateX(${tilt.toFixed(1)}deg) rotateY(${rot}deg) scale(${scale})`;
-        el.querySelectorAll('.cc-warm').forEach(w => { w.style.opacity = warmth.toFixed(2); });
-        const strip = el.querySelector('.cc-strip'), bar = strip.firstElementChild;
-        strip.style.opacity = isA && settled ? 1 : 0;
-        bar.style.width = fill;
-        bar.style.transition = `width 600ms ${EASE} 300ms`;
-        bar.style.boxShadow = glowLine;
-        // balance level on every card: high (half or more left), medium, low (under 25%)
-        const lvl = ratio >= .5 ? 'high' : ratio >= LOW ? 'mid' : 'low', tag = el.querySelector('.cc-lvl');
-        tag.className = `cc-low cc-lvl is-${lvl}`; tag.querySelector('b').textContent = { high: 'High balance', mid: 'Medium balance', low: 'Low balance' }[lvl];
-        el.querySelector('.cc-back-num').textContent = money(avail, true);
-        const bb = el.querySelector('.cc-back-bar i');
-        bb.style.width = (ratio * 100).toFixed(1) + '%'; bb.style.boxShadow = glowLine;
-        el.querySelector('.cc-back-bar em').textContent = Math.round(ratio * 100) + '%';
-        el.setAttribute('aria-label', `${d.name} card, ${money(avail, true)} of ${money(d.limit)} available. ${ratio >= .5 ? 'High balance. ' : ratio >= LOW ? 'Medium balance. ' : 'Low balance. '}${isA ? (s.open ? (flipped() ? 'Activate to flip back.' : 'Activate to see the balance.') : 'Activate to bring up.') : 'Activate to switch to this card.'}`);
+        el.style.transition = s.drag && isA ? 'transform 0ms' : `transform ${ms('560ms')} ${EASE}`;
+        el.style.transform = `translate(${x}px, ${y}px) rotate(${rz.toFixed(2)}deg) scale(${sc})`;
+        el.querySelector('.cf-front').style.transform = `rotateY(${ry}deg)`;
+        el.querySelector('.cf-back').style.transform = `rotateY(${ry - 180}deg)`;
+        el.classList.toggle('is-up', isA); el.classList.toggle('is-flipped', isA && s.flip);
+        const d = CARDS.find(c => c.id === id), avail = d.limit * d.pct / 100;
+        el.setAttribute('aria-label', `${d.name} card ending ${d.last4}, ${money(avail)} of ${whole(d.limit)} available. ${isA ? (s.flip ? 'Tap to flip back.' : 'Tap to see the balance.') : 'Tap to bring it up.'}`);
       });
-
-      $('.cc-info').classList.toggle('is-on', settled);
-      const note = $('.cc-note'), aAvail = availOf(def(s.active), s.spent[s.active] || 0), aLow = aAvail / def(s.active).limit < LOW;
-      if (aLow) { note.textContent = `Low balance · ${money(aAvail, true)} left`; note.className = 'cc-note is-low'; }
-      else { note.textContent = flipped() ? 'Tap to flip back' : 'Tap the card to see your balance'; note.className = 'cc-note is-hint'; }
+      host.querySelectorAll('[data-dot]').forEach(i => i.classList.toggle('on', i.dataset.dot === act));
+      $('.cf-hint').textContent = s.flip ? 'Tap to flip back · swipe for your next card' : 'Tap to see your balance · swipe for your next card';
     }
 
-    // ---------- input: vertical drag raises/lowers, horizontal swipe flips ----------
-    function release(id) {
-      if (!pDown) return; pDown = false;
-      const st = s, ax = axis; axis = null;
-      if (id !== st.active) { select(id); return; }
-      if (ax === 'x') { const t = Math.abs(st.dx) > 60 ? (st.dx > 0 ? 180 : -180) : 0; set({ xdrag: false, dx: 0, flip: st.flip + t }); return; }
-      const dy = ax === 'y' ? st.dy : 0;
-      if (Math.abs(dy) < 6) {
-        set({ dragging: false, dy: 0 });
-        if (!st.open) openUp(); else turn(1);
-        return;
-      }
-      const openNow = ((st.open ? 0 : G.HIDE) + dy) < G.HIDE * .6;
-      if (openNow && !st.open) openUp(); else if (!openNow) closeDown(); else set({ dragging: false, dy: 0 });
-    }
-    CARDS.forEach(d => {
-      const el = cardEl(d.id);
-      el.addEventListener('pointerdown', e => {
-        pDown = true; axis = null; startX = e.clientX; startY = e.clientY;
-        try { el.setPointerCapture(e.pointerId); } catch {}
-      });
-      el.addEventListener('pointermove', e => {
-        if (!pDown || d.id !== s.active) return;
-        const dx = e.clientX - startX, dy = e.clientY - startY;
-        if (!axis) {
-          if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return;
-          axis = Math.abs(dx) > Math.abs(dy) && s.open ? 'x' : 'y';
-        }
-        axis === 'x' ? set({ xdrag: true, dx }) : set({ dragging: true, dy });
-      });
-      el.addEventListener('pointerup', () => release(d.id));
-      el.addEventListener('pointercancel', () => release(d.id));
-      el.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pDown = true; axis = null; release(d.id); }
-        if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && s.open && d.id === s.active) { e.preventDefault(); turn(e.key === 'ArrowRight' ? 1 : -1); }
-        if (e.key === 'Escape' && s.open) closeDown();
-      });
+    const bring = id => { if (id === s.order[0]) return; s.order = [id, ...s.order.filter(x => x !== id)]; s.flip = false; render(); };
+    // flip through the cards in their own order, whatever the wallet shows
+    const step = dir => { const ids = CARDS.map(d => d.id), i = ids.indexOf(s.order[0]); bring(ids[(i + dir + ids.length) % ids.length]); };
+
+    let sx = 0, sy = 0, down = null, axis = null;
+    host.addEventListener('pointerdown', e => {
+      const el = e.target.closest('.cf-card'); if (!el) return;
+      down = el.dataset.card; axis = null; sx = e.clientX; sy = e.clientY;
+      try { el.setPointerCapture(e.pointerId); } catch {}
     });
-    // Focusing a card must never scroll the clipped stage.
+    host.addEventListener('pointermove', e => {
+      if (!down) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      if (!axis) { if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return; axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'; }
+      if (axis === 'x' && down === s.order[0]) { s.drag = true; s.dx = dx; render(); }
+    });
+    const up = e => {
+      if (!down) return;
+      const id = down, dx = e.clientX - sx, dy = e.clientY - sy; down = null;
+      const wasDrag = s.drag; s.drag = false; s.dx = 0;
+      if (id === s.order[0]) {
+        if (axis === 'x' && Math.abs(dx) > 60) { step(dx < 0 ? 1 : -1); return; }
+        if (!axis) { s.flip = !s.flip; }
+        render(); return;
+      }
+      if (!axis || (axis === 'y' && dy < -24)) bring(id); else if (wasDrag) render();
+    };
+    host.addEventListener('pointerup', up);
+    host.addEventListener('pointercancel', () => { down = null; s.drag = false; s.dx = 0; render(); });
+    host.addEventListener('keydown', e => {
+      const el = e.target.closest('.cf-card'); if (!el) return;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (el.dataset.card === s.order[0]) { s.flip = !s.flip; render(); } else bring(el.dataset.card); }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); step(e.key === 'ArrowRight' ? 1 : -1); card(s.order[0]).focus({ preventScroll: true }); }
+    });
     host.addEventListener('scroll', () => { host.scrollTop = 0; host.scrollLeft = 0; });
     const onResize = () => { if (!host.isConnected) { removeEventListener('resize', onResize); return; } measure(); render(); };
     addEventListener('resize', onResize);
