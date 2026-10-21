@@ -63,7 +63,7 @@
       // the same scale for every week (from Home), so a shell and a grid line always mean the same amount
       const top = Math.max(D.scaleMax || 0, ...D.days.map(x => x.total), 1);
       const unit = UNITS.find(u => Math.ceil(top / u) <= 8) || UNITS.at(-1);
-      const nMax = Math.max(2, Math.ceil(top / unit)), every = nMax > 5 ? 2 : 1, SLOT = 22, H = nMax * SLOT;
+      const nMax = Math.max(2, Math.ceil(top / unit)), every = nMax > 5 ? 2 : 1, SLOT = 18, H = nMax * SLOT;
       const y = v => v / unit * SLOT;
       const ticks = []; for (let k = 0; k <= nMax; k += every) ticks.push(k);
       const stackOf = x => {

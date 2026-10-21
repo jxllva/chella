@@ -682,7 +682,6 @@
 <header class="hm-head" data-mood="${moodNow}" data-rise>
   ${logoBtn()}
   <h1 class="hm-hello"><span class="hm-wb">Welcome back,</span> <span class="hm-who">${esc(first || 'friend')}</span><span class="hm-dot">.</span></h1>
-  <p class="hm-nudge">${esc(paceLine())}</p>
 </header>
 <section class="mt" aria-label="Your spending, day by day"></section>
 

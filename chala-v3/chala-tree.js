@@ -98,8 +98,9 @@
     host.innerHTML = `
       <div class="sp-top">
         <div class="sp-seg" role="tablist" aria-label="Period"><button role="tab" data-m="W">Week</button><button role="tab" data-m="M">Month</button></div>
-        <button class="sp-eye" data-a="eye"></button>
+        <span class="sp-tools"><button class="sp-info" data-a="info" aria-label="How to read this card" aria-expanded="false" aria-controls="sp-pop">${I('<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 7.6h.01"/>')}</button><button class="sp-eye" data-a="eye"></button></span>
       </div>
+      <div class="sp-pop" id="sp-pop" role="dialog" aria-label="How to read this card" hidden></div>
       <div class="sp-period">
         <button class="sp-arrow mt-arrow" data-d="-1" aria-label="Previous period">${I('<path d="M14.5 6 8.5 12l6 6"/>')}</button>
         <p class="sp-when" aria-live="polite"><b></b><span></span></p>
@@ -118,11 +119,28 @@
       <span class="mt-tip" aria-hidden="true" hidden></span><span class="mt-pop" aria-hidden="true" hidden></span>
       <p class="mt-mood" aria-live="polite"><b></b><span></span></p>
       <p class="sp-cats"></p>
-      <div class="sp-acts"><button class="sp-wrap mt-wrapped" data-a="wrap">${I('<path d="M5 4.5h11l3 3V19.5H5z"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h4"/>')}<span>Your wrap</span></button><button class="sp-recap mt-recap" data-a="recap">${I('<path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V8M16 15v-6"/>')}<span>Recap</span></button></div>`;
+      <div class="sp-acts"><button class="sp-recap mt-recap" data-a="recap">${I('<path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V8M16 15v-6"/>')}<span>Recap</span></button></div>`;
     const $ = s => host.querySelector(s), $$ = s => [...host.querySelectorAll(s)];
     const leaves = $$('.mt-leaf'), coins = $$('.mt-coin'), fallen = $$('.mt-fl');
 
+    // How to read the card: the key, the shell's value and the tap hint live in a small popup
+    const infoPop = $('.sp-pop'), infoBtn = $('.sp-info');
+    function closePop() { if (infoPop.hidden) return; infoPop.hidden = true; infoBtn.setAttribute('aria-expanded', 'false'); document.removeEventListener('pointerdown', outside, true); document.removeEventListener('keydown', esc, true); }
+    const outside = e => { if (!infoPop.contains(e.target) && !infoBtn.contains(e.target)) closePop(); };
+    const esc = e => { if (e.key === 'Escape') { e.stopPropagation(); closePop(); infoBtn.focus(); } };
+    function togglePop() {
+      if (!infoPop.hidden) { closePop(); return; }
+      const month = host.classList.contains('is-month'), unit = $('.cs-unit'), key = $('.cs-keybox');
+      infoPop.innerHTML = `<p class="sp-pop-h">How to read this</p>
+        ${month ? (key ? `<div class="sp-pop-key">${key.outerHTML}</div>` : '') + '<p>Each shell is a day. Deeper shells are days you spent more than usual.</p>' : (unit ? `<p class="sp-pop-unit">${unit.innerHTML}</p>` : '') + '<p>Each column is a day. Stacked shells show what you spent.</p>'}
+        <p>Tap a day to see what you spent on it.</p>`;
+      infoPop.hidden = false; infoBtn.setAttribute('aria-expanded', 'true');
+      if (!reduce()) infoPop.animate([{ opacity: 0, transform: 'translateY(-6px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.22,1,.36,1)' });
+      setTimeout(() => { document.addEventListener('pointerdown', outside, true); document.addEventListener('keydown', esc, true); });
+    }
+
     function paint(animate) {
+      closePop();
       const d = opts.getData(st.mode, st.offset);
       $$('.sp-seg button').forEach(b => { const on = b.dataset.m === st.mode; b.classList.toggle('is-on', on); b.setAttribute('aria-selected', on); });
       const hide = hidden(), sx = status(d);
@@ -217,6 +235,7 @@
       if (b.dataset.m && b.dataset.m !== st.mode) { st.mode = b.dataset.m; st.offset = 0; $('.mt-pop').classList.remove('on'); opts.onMode?.(st.mode); paint(true); return; }
       if (b.dataset.d) { go(+b.dataset.d); return; }
       if (b.dataset.a === 'eye') { try { localStorage.setItem(HIDE, hidden() ? '0' : '1'); } catch {} paint(false); return; }
+      if (b.dataset.a === 'info') { togglePop(); return; }
       if (b.classList.contains('mt-wrapped')) { opts.onWrapped?.(); return; }
       if (b.classList.contains('mt-recap')) { opts.onRecap?.(st.mode, st.offset); return; }
       if (b.classList.contains('mt-stage')) {
