@@ -10,7 +10,8 @@
   const SYMBOL = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="cs-shell" viewBox="0 0 70.4 65.4"><g transform="translate(70.4 0) rotate(90)"><path d="M 56.7 32.9 L 39.9 7.2 C 32.7 0.0 17.2 5.3 24.4 12.5 L 56.0 33.3Z"/><path d="M 55.8 33.4 L 22.7 13.4 C 14.8 10.0 4.0 18.9 12.0 22.3 L 55.3 34.1Z"/><path d="M 55.3 34.3 L 11.0 23.6 C 3.9 22.7 0.0 33.6 7.1 34.5 L 55.1 35.1Z"/><path d="M 55.1 35.3 L 7.1 35.9 C 0.0 36.8 3.9 47.7 11.0 46.8 L 55.3 36.1Z"/><path d="M 55.3 36.3 L 12.0 48.1 C 4.0 51.5 14.8 60.4 22.7 57.0 L 55.8 37.0Z"/><path d="M 56.0 37.1 L 24.4 57.9 C 17.2 65.1 32.7 70.4 39.9 63.2 L 56.7 37.5Z"/><path d="M 58.3 12.7 Q 64.1 12.7 63.8 18.2 Q 65.4 35.2 63.8 52.2 Q 64.1 57.7 58.3 57.7 Q 51.7 57.7 52.8 52.2 Q 53.6 35.2 52.8 18.2 Q 51.7 12.7 58.3 12.7Z"/></g></symbol></defs></svg>`;
   const KINDS = [['food', 'Food', '#E8643F'], ['cafe', 'Cafés', '#E3A33C'], ['shop', 'Shopping', '#9C8BD6'], ['move', 'Transport', '#4E9C8B'], ['other', 'Other', '#BDB5AA']];
   // month shades, chill to heavy, against a usual day
-  const LEVELS = [[0, '#EFEBE6', 'No spending'], [.6, '#FBD5C4', 'Chill'], [1.35, '#F4A383', 'Usual'], [2.1, '#E5603C', 'Heavy'], [Infinity, '#A93A1E', 'Overspent']];
+  // four levels: nothing, chill, usual, heavy (anything well above your usual day)
+  const LEVELS = [[0, '#EFEBE6', 'No spending'], [.6, '#FBD5C4', 'Chill'], [1.35, '#F09A78', 'Usual'], [Infinity, '#B8452A', 'Heavy']];
   const level = (c, usual) => !c ? 0 : LEVELS.findIndex(([t], i) => i > 0 && c / usual <= t);
   const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'], DOWL = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const shell = (fill, cls = '', style = '') => `<svg class="cs-sh ${cls}" viewBox="0 0 70.4 65.4" style="${style}" aria-hidden="true"><use href="#cs-shell" fill="${fill}"></use></svg>`;
@@ -115,7 +116,7 @@
     const s = sel && D.days.find(x => x.iso === sel);
     $('.cs-detail').innerHTML = s ? dayCard(s) : '<span class="cs-sum">Tap a day to see spending details</span>';
     $('.cs-legend').innerHTML = mode === 'M'
-      ? `<div class="cs-keybox" role="img" aria-label="Key: lighter shells are chill days, deeper shells are heavy days"><span class="cs-keyh">Key</span>${LEVELS.map(([, c, n], i) => `<span class="cs-keyi">${shell(c, 'cs-key' + (i ? '' : ' is-empty'))}<em>${['None', 'Chill', 'Usual', 'Heavy', 'Over'][i]}</em></span>`).join('')}</div>`
+      ? `<div class="cs-keybox" role="img" aria-label="Key: lighter shells are chill days, deeper shells are heavy days"><span class="cs-keyh">Key</span>${LEVELS.map(([, c, n], i) => `<span class="cs-keyi">${shell(c, 'cs-key' + (i ? '' : ' is-empty'))}<em>${['None', 'Chill', 'Usual', 'Heavy'][i]}</em></span>`).join('')}</div>`
       : '';
   }
 

@@ -1227,3 +1227,7 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .cf-bar span { height: 3px; }
 .cf-bar em { font-weight: 500; }
 .cf-hint { font-size: .75rem; }
+
+/* four levels in the key; a heavy day's tag is the solid one */
+.cs-keybox { grid-template-columns: auto repeat(4, minmax(0, 1fr)) !important; }
+.cs-day.lv-3 .cs-day-lv { background: #B8452A !important; color: #fff !important; }
