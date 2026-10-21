@@ -660,6 +660,9 @@
     function homeTab() {
       const goals = p.goals.filter(g => !g.archived), saved = savedTotal(p);
       const goalSum = goals.reduce((t, g) => t + (g.target || 0), 0); // the saving shell fills toward every open goal
+      // with the sample statement and nothing saved yet, show a sample goal so the shell has something in it (display only)
+      const demoSave = !!api.isSample?.() && !goals.length && !saved;
+      const svShown = demoSave ? 21000 : saved, glShown = demoSave ? 50000 : goalSum;
       const since = new Date(p.joinedAt || Date.now()).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       const names = Object.keys(p.limits);
       // same rule as the spending jar, so the greeting and the jar always agree
@@ -679,10 +682,10 @@
 <div class="hm-save hm-save-static hm-save-shell" data-rise>
   <span class="hm-save-txt">
     <span class="hm-save-k">So far, you’ve saved</span>
-    <b class="hm-save-n" data-count="${saved}">${m(saved)}</b>
-    <span class="hm-save-s">${goalSum ? `of ${m(goalSum)} toward your ${goals.length === 1 ? 'goal' : 'goals'}` : `since ${esc(since)}`}</span>
+    <b class="hm-save-n" data-count="${svShown}">${m(svShown)}</b>
+    <span class="hm-save-s">${demoSave ? `of ${m(glShown)} toward a weekend away <i class="hm-sample">Sample</i>` : goalSum ? `of ${m(goalSum)} toward your ${goals.length === 1 ? 'goal' : 'goals'}` : `since ${esc(since)}`}</span>
   </span>
-  <span class="hm-save-meter" data-meter="${saved}|${goalSum}"></span>
+  <span class="hm-save-meter" data-meter="${svShown}|${glShown}"></span>
 </div>
 
 <div class="hm-kh" data-rise><h2 class="hm-k">My spending limits</h2>${addBtn('addlimit', 'Add a limit')}</div>
