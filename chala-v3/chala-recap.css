@@ -7,16 +7,14 @@
 
 /* ---------- the header: frosted glass, follows the screen under it ---------- */
 .cr-top{position:absolute;z-index:3;left:0;right:0;top:0;display:grid;grid-template-columns:44px minmax(0,1fr);grid-template-areas:"back mode" "pager pager";align-items:center;gap:10px 8px;
-  padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 12px;pointer-events:none;
-  background:linear-gradient(180deg,rgba(247,245,241,.92),rgba(247,245,241,.78));-webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);
-  box-shadow:0 1px 0 rgba(29,27,25,.06),0 10px 24px -20px rgba(29,27,25,.35);transition:background .4s,box-shadow .4s}
+  padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 14px;pointer-events:none}
 .cr-top>*{pointer-events:auto}
 .cr-top>.cr-gb{grid-area:back}
 .cr-mode{grid-area:mode;justify-self:end;display:flex;padding:3px;border-radius:999px;background:rgba(29,27,25,.06)}
 .cr-mode button{appearance:none;border:0;cursor:pointer;min-height:34px;padding:0 14px;border-radius:999px;background:none;font:600 .8125rem/1 var(--cr-f);color:var(--ink3);transition:background .25s,color .25s}
 .cr-mode button.is-on{background:var(--ink);color:#fff}
 .cr-month{grid-area:pager;display:flex;align-items:center;justify-content:space-between;gap:4px;min-width:0;height:46px;padding:0 4px;border-radius:16px;
-  background:#fff;box-shadow:inset 0 0 0 1px rgba(29,27,25,.08),0 6px 16px -12px rgba(29,27,25,.3)}
+  background:#fff;box-shadow:inset 0 0 0 1px rgba(29,27,25,.07)}
 .cr-month b{min-width:0;padding:0 6px;font:600 1rem/1.2 var(--cr-f);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .cr-pg{appearance:none;border:0;cursor:pointer;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:none;color:var(--ink);transition:background .2s}
 .cr-pg:hover:not(:disabled){background:rgba(29,27,25,.05)}
@@ -27,9 +25,9 @@
 .cr-gb svg{width:20px;height:20px}
 .cr-gb.cr-sm{width:36px;height:36px}.cr-gb.cr-sm svg{width:17px;height:17px}
 .cr-gb:disabled{opacity:.3;cursor:default}
-.cr-prog{position:absolute;left:14px;right:14px;bottom:-1px;height:3px;border-radius:3px;background:rgba(29,27,25,.08);overflow:hidden}
+.cr-prog{position:absolute;left:30px;right:30px;bottom:4px;height:2px;border-radius:2px;background:rgba(29,27,25,.06);overflow:hidden}
 .cr-prog i{position:absolute;inset:0;transform-origin:0 50%;transform:scaleX(0);background:var(--ink);border-radius:3px;transition:background .4s}
-.cr[data-tone=dark] .cr-top{color:#fff;background:linear-gradient(180deg,rgba(25,25,25,.9),rgba(25,25,25,.76));box-shadow:0 1px 0 rgba(255,255,255,.08)}
+.cr[data-tone=dark] .cr-top{color:#fff}
 .cr[data-tone=dark] .cr-mode{background:rgba(255,255,255,.1)}
 .cr[data-tone=dark] .cr-mode button{color:rgba(255,255,255,.65)}
 .cr[data-tone=dark] .cr-mode button.is-on{background:#fff;color:#191919}
