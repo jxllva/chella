@@ -142,12 +142,13 @@
   }
   function survey({ onExit } = {}) { open(onExit); pull(); MW.survey.open(); }
 
-  /* Which story a month gets: the persona's finished month → roast; this month → live recap;
-     anything else stays with Faiit's own Wrapped. Returns false when Faiit should handle it. */
+  /* Which story a month gets: this month, mid-way → chala's live recap. Everything else → the
+     Wrapped in chala-wrap.js. Returns false when the Wrapped should handle it. */
   function route(key, { first = false, onExit } = {}) {
     boot();
-    if (first || !key || key === MW.PERSONA.wrapMonth) { playWrapped({ first, onExit }); return true; }
-    if (key === MW.dash.info.monthInfo().key) { playRecap({ onExit }); return true; }
+    // The Wrapped itself now lives in chala-wrap.js. chala keeps only the live mid-month recap.
+    if (!window.ChalaWrap && (first || !key || key === MW.PERSONA.wrapMonth)) { playWrapped({ first, onExit }); return true; }
+    if (!first && key && key === MW.dash.info.monthInfo().key) { playRecap({ onExit }); return true; }
     return false;
   }
   function reset() { MW.wipe(); }
