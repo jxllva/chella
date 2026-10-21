@@ -1,7 +1,7 @@
 /* chala v3 — Cards tab, after the "editorial flip" reference (no pay step, no Face ID).
    - The chosen card sits up top; the rest peek out of a wallet at the bottom.
    - Tap the card to flip it: the back shows what's available, against the limit.
-   - Swipe up (or tap) a card in the wallet to bring it up; it follows your finger. Sideways swipes still flip through them.
+   - Swipe up (or tap) a card in the wallet to bring it up; swipe the top card down to put it back. Both follow your finger. Sideways swipes still flip through them.
    - Minimal faces: no balance tags; the bar on the back turns red when a card runs low. */
 (() => {
   const EASE = 'cubic-bezier(.2,.8,.2,1)';
@@ -23,7 +23,7 @@
   function mount(host, { holder = '' } = {}) {
     if (!host) return;
     const first = (holder || 'Card holder').trim().split(/\s+/), hFirst = first[0], hRest = first.slice(1).join(' ');
-    const s = { order: CARDS.map(d => d.id), flip: false, dx: 0, drag: false };
+    const s = { order: CARDS.map(d => d.id), flip: false, dx: 0, drag: false, stowed: false }; // stowed: every card is back in the wallet
     let G = null;
 
     host.innerHTML = `${CARDS.map(d => {
@@ -59,7 +59,7 @@
 
     function render() {
       if (!G) measure();
-      const [act, ...rest] = s.order, ms = v => (reduce() ? '0ms' : v);
+      const act = s.stowed ? null : s.order[0], rest = s.stowed ? [...s.order.slice(1), s.order[0]] : s.order.slice(1), ms = v => (reduce() ? '0ms' : v);
       s.order.forEach(id => {
         const el = card(id), isA = id === act;
         let y, x = 0, rz = 0, sc = 1, z, ry = 0;
@@ -80,12 +80,13 @@
         el.setAttribute('aria-label', `${d.name} card ending ${d.last4}, ${money(avail)} of ${whole(d.limit)} available. ${isA ? (s.flip ? 'Tap to flip back.' : 'Tap to see the balance.') : 'Tap to bring it up.'}`);
       });
       if (s.flip) hintDone = true;
-      const hint = $('.cf-hint'); hint.textContent = 'Tap to see your balance'; hint.style.visibility = hintDone ? 'hidden' : '';
+      const hint = $('.cf-hint'); hint.textContent = s.stowed ? 'Swipe up a card to see it' : 'Tap to see your balance'; hint.style.visibility = hintDone && !s.stowed ? 'hidden' : '';
     }
 
-    const bring = id => { if (id === s.order[0]) return; s.order = [id, ...s.order.filter(x => x !== id)]; s.flip = false; render(); };
+    const bring = id => { if (!s.stowed && id === s.order[0]) return; s.order = [id, ...s.order.filter(x => x !== id)]; s.stowed = false; s.flip = false; render(); };
+    const stow = () => { s.stowed = true; s.flip = false; render(); };
     // flip through the cards in their own order, whatever the wallet shows
-    const step = dir => { const ids = CARDS.map(d => d.id), i = ids.indexOf(s.order[0]); bring(ids[(i + dir + ids.length) % ids.length]); };
+    const step = dir => { if (s.stowed) { bring(s.order[0]); return; } const ids = CARDS.map(d => d.id), i = ids.indexOf(s.order[0]); bring(ids[(i + dir + ids.length) % ids.length]); };
 
     let sx = 0, sy = 0, down = null, axis = null;
     host.addEventListener('pointerdown', e => {
@@ -97,15 +98,19 @@
       if (!down) return;
       const dx = e.clientX - sx, dy = e.clientY - sy;
       if (!axis) { if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return; axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'; }
-      if (axis === 'x' && down === s.order[0]) { s.drag = true; s.dx = dx; render(); }
-      if (axis === 'y' && down !== s.order[0]) { const el = card(down); el.style.transition = 'none'; el.style.translate = `0 ${Math.max(-160, Math.min(0, dy)) }px`; }
+      const isTop = !s.stowed && down === s.order[0];
+      if (axis === 'x' && isTop) { s.drag = true; s.dx = dx; render(); }
+      // the top card follows a swipe down; wallet cards follow a swipe up
+      if (axis === 'y' && isTop) { const el = card(down); el.style.transition = 'none'; el.style.translate = `0 ${Math.max(0, Math.min(260, dy))}px`; }
+      if (axis === 'y' && !isTop) { const el = card(down); el.style.transition = 'none'; el.style.translate = `0 ${Math.max(-160, Math.min(0, dy)) }px`; }
     });
     const up = e => {
       if (!down) return;
       const id = down, dx = e.clientX - sx, dy = e.clientY - sy; down = null;
       const wasDrag = s.drag; s.drag = false; s.dx = 0;
       const lifted = card(id); if (lifted?.style.translate) lifted.style.translate = '';
-      if (id === s.order[0]) {
+      if (!s.stowed && id === s.order[0]) {
+        if (axis === 'y' && dy > 50) { stow(); return; }
         if (axis === 'x' && Math.abs(dx) > 60) { step(dx < 0 ? 1 : -1); return; }
         if (!axis) { s.flip = !s.flip; }
         render(); return;
@@ -116,7 +121,7 @@
     host.addEventListener('pointercancel', () => { down = null; s.drag = false; s.dx = 0; render(); });
     host.addEventListener('keydown', e => {
       const el = e.target.closest('.cf-card'); if (!el) return;
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (el.dataset.card === s.order[0]) { s.flip = !s.flip; render(); } else bring(el.dataset.card); }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (!s.stowed && el.dataset.card === s.order[0]) { s.flip = !s.flip; render(); } else bring(el.dataset.card); }
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); step(e.key === 'ArrowRight' ? 1 : -1); card(s.order[0]).focus({ preventScroll: true }); }
     });
     host.addEventListener('scroll', () => { host.scrollTop = 0; host.scrollLeft = 0; });

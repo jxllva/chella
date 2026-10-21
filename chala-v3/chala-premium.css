@@ -1267,9 +1267,8 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .jr-lab.on { fill: var(--p-ink); font-weight: 700; }
 .jr-sh use { filter: drop-shadow(0 1px 0 rgba(120,50,20,.2)); }
 
-/* Limit cards show what's left: green with room, amber getting close, red at 20% or less, red and empty past the limit */
+/* Limit cards show what's left. The bar goes amber, then red at 20% or less; the number stays black until it goes negative, then it's red and the bar is empty. */
 .lc.is-low { --st: #D9604A; }
-.lc.is-low .lc-num, .lc.is-over .lc-num { color: #C24F3A; }
+.lc.is-over .lc-num { color: #C24F3A; }
 .lc.is-over .lc-bar { background: rgba(217,96,74,.14) !important; box-shadow: inset 0 0 0 1px rgba(217,96,74,.35); }
 .lc .lc-num { font-variant-numeric: tabular-nums; }
-.hm-limits > .lc:last-child:nth-child(odd) { grid-column: 1 / -1; min-height: 0; }
