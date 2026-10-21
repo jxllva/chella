@@ -1152,3 +1152,13 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 /* one colour of shell; the side column only holds the average tag */
 .cs .cs-wk { grid-template-columns: 30px minmax(0, 1fr) 62px; }
 .cs-day-p { padding: 5px 10px !important; }
+
+/* month key: its own outlined strip above the hint; the hint is quieter */
+.cs.is-month .cs-legend { display: block; margin: 16px 0 0; }
+.cs-keybox { display: grid; grid-template-columns: auto repeat(5, minmax(0, 1fr)); align-items: center; gap: 4px; padding: 10px 12px; border-radius: 16px; border: 1px solid rgba(25,25,25,.1); background: #FCFBFA; }
+.cs-keyh { padding-right: 8px; margin-right: 2px; border-right: 1px solid rgba(25,25,25,.1); font: 600 .625rem/1 var(--p-sans); letter-spacing: .14em; text-transform: uppercase; color: var(--p-ink-3); align-self: stretch; display: flex; align-items: center; }
+.cs-keyi { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.cs-keyi .cs-key { width: 22px !important; height: 20px !important; }
+.cs-keyi em { font: 500 .625rem/1 var(--p-sans); font-style: normal; color: var(--p-ink-2); }
+.cs .cs-detail { margin-top: 12px; }
+.cs .cs-sum { font: 400 .75rem/1.3 var(--p-sans) !important; color: var(--p-ink-3); padding: 2px 0; }

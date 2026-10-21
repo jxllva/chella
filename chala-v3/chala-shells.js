@@ -115,7 +115,7 @@
     const s = sel && D.days.find(x => x.iso === sel);
     $('.cs-detail').innerHTML = s ? dayCard(s) : '<span class="cs-sum">Tap a day to see spending details</span>';
     $('.cs-legend').innerHTML = mode === 'M'
-      ? `<span class="cs-scale">Chill ${LEVELS.slice(1).map(([, c]) => shell(c, 'cs-key')).join('')} Heavy</span>`
+      ? `<div class="cs-keybox" role="img" aria-label="Key: lighter shells are chill days, deeper shells are heavy days"><span class="cs-keyh">Key</span>${LEVELS.map(([, c, n], i) => `<span class="cs-keyi">${shell(c, 'cs-key' + (i ? '' : ' is-empty'))}<em>${['None', 'Chill', 'Usual', 'Heavy', 'Over'][i]}</em></span>`).join('')}</div>`
       : '';
   }
 
