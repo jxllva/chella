@@ -479,3 +479,27 @@
 }
 /* headings get focus so screen readers announce each new screen; no ring for that */
 .cw [tabindex="-1"]:focus,.cw [tabindex="-1"]:focus-visible{outline:none}
+
+/* =====================================================================
+   v4: soft gradient screens. Each screen keeps its colour as the base and
+   picks up two soft neighbouring tones in opposite corners.
+   ===================================================================== */
+.cw.cw[data-genre]{background:
+  radial-gradient(120% 70% at 0% 0%,var(--cw-g1,color-mix(in srgb,var(--cw-bg,#F7F5F1) 55%,#fff)) 0%,transparent 64%),
+  radial-gradient(115% 70% at 100% 100%,var(--cw-g2,color-mix(in srgb,var(--cw-bg,#F7F5F1) 85%,#fff)) 0%,transparent 66%),
+  var(--cw-bg,#F7F5F1)}
+.cw[data-genre=cold]{--cw-g1:#FFF7DA;--cw-g2:#FFD2BC}
+.cw[data-genre=receipt]{--cw-g1:#ECE6FF;--cw-g2:#B8D4FF}
+.cw[data-genre=court]{--cw-g1:#FFF1B8;--cw-g2:#FFBE8E}
+.cw[data-genre=stream]{--cw-g1:#FFFFFF;--cw-g2:#F5DFD7}
+.cw[data-genre=matcha]{--cw-g1:#E9F6C9;--cw-g2:#A4DBBA}
+.cw[data-genre=box]{--cw-g1:#FFDAE8;--cw-g2:#FFC4AA}
+.cw[data-genre=sitcom]{--cw-g1:#FFE3C8;--cw-g2:#FFA3B6}
+.cw[data-genre=limits]{--cw-g1:#FFF2E9;--cw-g2:#F6C8DA}
+.cw[data-genre=letter]{--cw-g1:#E9F0FF;--cw-g2:#D3C8FF}
+.cw[data-genre=question]{--cw-g1:#ECE6FB;--cw-g2:#FBE6DC}
+.cw[data-genre=finale]{--cw-g1:#FFFFFF;--cw-g2:#E8E1F7}
+.cw[data-genre=crime]{--cw-g1:#DA3613;--cw-g2:#A41600}
+.cw[data-genre=lineup]{--cw-g1:#2A2642;--cw-g2:#1B2C30}
+.cw[data-genre=tricks]{--cw-g1:#2C2436;--cw-g2:#33251F}
+.cw[data-genre=turn]{--cw-g1:#3A4592;--cw-g2:#1B2356}
