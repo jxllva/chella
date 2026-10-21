@@ -1346,3 +1346,9 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .cfa-err:empty { min-height: 0; }
 .cfa-go { appearance: none; border: 0; cursor: pointer; min-height: 54px; border-radius: 999px; background: var(--p-ink); color: #fff; font: 600 1rem/1 var(--p-sans); }
 .cfa-x:focus-visible, .cfa-sw button:focus-visible, .cfa-go:focus-visible, .cf-add:focus-visible { outline: 2px solid var(--p-ink); outline-offset: 3px; }
+
+/* Sign-up sheet: full screen on the app's paper, no panel edge above the back and close buttons, and a plain step icon instead of the glowing orb */
+.fw-sheet { top: 0 !important; border-radius: 0 !important; background: var(--p-bg) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: none !important; padding-top: var(--f-safe-t, env(safe-area-inset-top, 0px)); }
+.fw-sheet .fw-grab { display: none; }
+.fw-step-badge { width: 44px !important; height: 44px !important; color: var(--p-ink) !important; background: #fff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 0 0 1px var(--p-line), 0 6px 16px -10px rgba(25,25,25,.25) !important; }
+.fw-step-badge svg { width: 20px !important; height: 20px !important; }
