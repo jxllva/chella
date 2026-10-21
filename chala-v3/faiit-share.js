@@ -18,12 +18,12 @@
   /* chala v3: every card looks like the Wrapped story slides. One colour washes in from the
      top-left corner over a pale tint of itself, with film grain. Text is a deep shade of that
      colour, the second punch line a mid shade. The illustration sits in the lower half. */
-  const HUES = {
-    red:    ['#F29A86', '#6B1406', '#C6301A'],
-    matcha: ['#A9C98B', '#2B4321', '#557D37'],
-    navy:   ['#B6C2F2', '#1C2468', '#3A4FC4'],
-    yellow: ['#EBDC8C', '#5C4310', '#C29129'],
-    sky:    ['#A8D3F1', '#1B4369', '#2F78BF']
+  const HUES = { // the Wrapped's warm family, from the app's orange theme
+    red:    ['#EF8670', '#5E0F05', '#C42A14'],
+    matcha: ['#B9CC94', '#2F4420', '#5F7F3C'],
+    orange: ['#F4AC80', '#66280B', '#D2622B'],
+    honey:  ['#F2CF8A', '#5A3B0B', '#B47C1C'],
+    apricot:['#F6C39C', '#642C0E', '#BF5F27']
   };
   const mix = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.substr(i, 2), 16) * t + parseInt(b.substr(i, 2), 16) * (1 - t)).toString(16).padStart(2, '0')).join('');
   const SANS = 'Bricolage Grotesque'; // embedded as Inter when saved
@@ -96,7 +96,7 @@
 
   // ---------- 03 · Cart: receipts piled into a shopping cart, one per order ----------
   function cart(d, s) {
-    const hue = 'navy', n = Math.min(d.cart.n, 16), rnd = seeded(d.cart.n * 13 + 5), [, wd] = HUES[hue];
+    const hue = 'orange', n = Math.min(d.cart.n, 16), rnd = seeded(d.cart.n * 13 + 5), [, wd] = HUES[hue];
     const grid = `<pattern id="gp" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M18 0H0V18" fill="none" stroke="#8C6CC9" stroke-width="2" opacity=".55"/></pattern>`;
     // the cart, scaled into the lower half
     const T = 'translate(236 1010) scale(.78)';
@@ -128,7 +128,7 @@
   const SLICE = ['#E0483C', '#F3C74A', '#4FA35E', '#8A5BD6', '#2F6FE0', '#F6E7CC'];
   const PIE = { cx: 540, cy: 1330, r: 290 };
   function pie(d, s) {
-    const hue = 'yellow', { cx, cy, r } = PIE, depth = 60; let a0 = -Math.PI / 2;
+    const hue = 'honey', { cx, cy, r } = PIE, depth = 60; let a0 = -Math.PI / 2;
     const parts = d.pie.map((p, k) => { const a1 = a0 + p.share * Math.PI * 2, o = { ...p, a0, a1, c: SLICE[k % SLICE.length] }; a0 = a1; return o; });
     const arc = (p, rr, oy = 0) => { const x0 = cx + rr * Math.cos(p.a0), y0 = cy + oy + rr * Math.sin(p.a0) * .62, x1 = cx + rr * Math.cos(p.a1), y1 = cy + oy + rr * Math.sin(p.a1) * .62; return `M${cx} ${cy + oy} L${x0.toFixed(1)} ${y0.toFixed(1)} A${rr} ${rr * .62} 0 ${p.a1 - p.a0 > Math.PI ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)} Z`; };
     const order = parts.map((p, k) => k).sort((a, b) => (a === s.slice) - (b === s.slice));
@@ -148,7 +148,7 @@
 
   // ---------- 05 · Goals: a note in an envelope ----------
   function note(d, s) {
-    const hue = 'sky', [, wd] = HUES[hue], up = s.open ? -200 : 0, gs = d.goals, more = (d.goalCount || gs.length) - gs.length;
+    const hue = 'apricot', [, wd] = HUES[hue], up = s.open ? -200 : 0, gs = d.goals, more = (d.goalCount || gs.length) - gs.length;
     return `${washOpen('no', hue)}
   ${head(hue, gs.length
       ? { kicker: `${d.when} · goals`, big: String(d.goalCount || gs.length), unit: (d.goalCount || gs.length) === 1 ? 'goal' : 'goals', sub: 'Things I’m saving up for next.', l1: 'Next up,', l2: 'treating future me.' }

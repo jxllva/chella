@@ -12,9 +12,9 @@
   const whole = n => '$' + Math.max(0, n).toLocaleString('en-US', { maximumFractionDigits: 0 });
 
   const CARDS = [
-    { id: 'a', name: 'Everyday', last4: '4021', limit: 3000, pct: 62, bg: '#D5FC53', ink: '#14170A' },
+    { id: 'a', name: 'Everyday', last4: '4021', limit: 3000, pct: 62, bg: '#F5C6B1', ink: '#2A1A14' },
     { id: 'b', name: 'Travel', last4: '7716', limit: 5000, pct: 48, bg: '#1D1C20', ink: '#F7F3EF', dark: true },
-    { id: 'c', name: 'Groceries', last4: '0388', limit: 800, pct: 9, bg: '#0627EE', ink: '#FFFFFF', dark: true }
+    { id: 'c', name: 'Groceries', last4: '0388', limit: 800, pct: 9, bg: '#D5CBEF', ink: '#211A33' }
   ];
   const CHIP = '<svg class="cf-chip" viewBox="0 0 40 30" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><rect x=".6" y=".6" width="38.8" height="28.8" rx="6"/><path d="M14 .6v8.4M26 .6v8.4M14 21v8.4M26 21v8.4M.6 10.5H11M29 10.5h10.4M.6 19.5H11M29 19.5h10.4"/><rect x="11" y="9" width="18" height="12" rx="4"/></svg>';
   const level = r => r >= MID ? ['high', 'High balance'] : r >= LOW ? ['mid', 'Medium balance'] : ['low', 'Low balance'];

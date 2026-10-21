@@ -5,8 +5,8 @@
    tint of the same colour, a faint echo of it lower down, and a fine film grain.
    The text on each screen is a deep shade of that same colour, the second line a mid shade.
 
-   Palette: yellow, green, sky blue, dark blue, lime green, ochre (plus red for the DoorDash
-   case file and a muted matcha green for coffee math).
+   Story slides: yellow, green, sky blue, dark blue, lime green, ochre.
+   Interactive Wrapped: a warm family from the app's orange theme (see below).
      --wa  wash colour      --wd  deep text      --wc  mid accent (second line, highlights)
    The dark interludes (the story's "Jokes aside" pause and the Wrapped's "Spot the trick")
    stay dark on purpose. */
@@ -63,20 +63,23 @@
 /* =====================================================================
    Interactive Wrapped (chala-wrap.js)
    ===================================================================== */
+/* chala v3: one warm family, built from the app's orange theme, all at the same softness,
+   so the Wrapped flows from screen to screen instead of jumping between unrelated colours.
+   The DoorDash screens are red; coffee math is the one green, a warm muted matcha. */
 .cw[data-genre=cold],
-.cw[data-genre=box]      { --wa: #EBDC8C; --wd: #5C4310; --wc: #C29129; }
-.cw[data-genre=stream],
-.cw[data-genre=letter]   { --wa: #A7E2C3; --wd: #1F5039; --wc: #2F8A5C; }
-.cw[data-genre=court],
-.cw[data-genre=finale],
-.cw[data-genre=question] { --wa: #A8D3F1; --wd: #1B4369; --wc: #2F78BF; }
-.cw[data-genre=receipt],
-.cw[data-genre=lineup],
-.cw[data-genre=turn]     { --wa: #B6C2F2; --wd: #1C2468; --wc: #3A4FC4; }
-.cw[data-genre=matcha]   { --wa: #A9C98B; --wd: #2B4321; --wc: #557D37; }  /* matcha: muted tea green */
-.cw[data-genre=crime]    { --wa: #F29A86; --wd: #6B1406; --wc: #C6301A; }  /* DoorDash case file: red */
 .cw[data-genre=sitcom],
-.cw[data-genre=limits]   { --wa: #E8C88C; --wd: #5A3A0E; --wc: #A8701F; }
+.cw[data-genre=finale]   { --wa: #F2CF8A; --wd: #5A3B0B; --wc: #B47C1C; }  /* honey */
+.cw[data-genre=receipt],
+.cw[data-genre=letter],
+.cw[data-genre=question] { --wa: #F6C39C; --wd: #642C0E; --wc: #BF5F27; }  /* apricot */
+.cw[data-genre=crime],
+.cw[data-genre=stream]   { --wa: #EF8670; --wd: #5E0F05; --wc: #C42A14; }  /* DoorDash red */
+.cw[data-genre=court],
+.cw[data-genre=limits]   { --wa: #F4AC80; --wd: #66280B; --wc: #D2622B; }  /* orange */
+.cw[data-genre=matcha]   { --wa: #B9CC94; --wd: #2F4420; --wc: #5F7F3C; }  /* warm matcha */
+.cw[data-genre=box]      { --wa: #EFC1AE; --wd: #642A18; --wc: #BD5E3D; }  /* peach */
+.cw[data-genre=lineup],
+.cw[data-genre=turn]     { --wa: #E3A88E; --wd: #57230F; --wc: #A84E2C; }  /* terracotta */
 
 .cw[data-genre]:not([data-genre=tricks]) {
   --cw-fg: var(--wd);
@@ -97,7 +100,7 @@
 .cw:is([data-genre=crime],[data-genre=lineup],[data-genre=turn]) .ew-big span,
 .cw:is([data-genre=crime],[data-genre=lineup],[data-genre=turn]) .ew-guess span,
 .cw:is([data-genre=crime],[data-genre=lineup],[data-genre=turn]) .ew-brand { color: color-mix(in srgb, var(--wd) 86%, transparent); }
-.cw[data-genre=crime] .cw-brand { color: #B81C00; }
+.cw[data-genre=crime] .cw-brand { color: var(--wd); }
 .cw.is-dark:not([data-genre=tricks]) .ew-x { background: rgba(255,255,255,.5); color: var(--wd); box-shadow: inset 0 1px 0 #fff, inset 0 0 0 1px rgba(255,255,255,.7); }
 .cw.is-dark:not([data-genre=tricks]) .ew-chip[aria-checked=true] { background: #1d1b19; color: #fff; }
 .cw.is-dark:not([data-genre=tricks]) .cw-gate:not(.is-blocked) { background: color-mix(in srgb, var(--cw-bg) 70%, #fff); color: var(--wd); }
@@ -106,3 +109,27 @@
 .cw[data-genre=turn] .cw-steps li::before { background: var(--wd); color: #fff; }
 .cw[data-genre=turn] .cw-steps b { color: var(--wd); }
 .cw[data-genre=turn] .cw-steps span { color: color-mix(in srgb, var(--wd) 80%, transparent); }
+
+/* ---------- DoorDash: the series ---------- */
+.cw[data-genre=stream] .ew-h .cw-brand { color: var(--wd); }
+.cw[data-genre=stream] .cw-eps { gap: 10px; }
+.cw[data-genre=stream] .cw-ep .f, .cw[data-genre=stream] .cw-ep:nth-child(n) .f {
+  background: rgba(255,255,255,.78); color: var(--wd); border-radius: 16px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.9), 0 10px 22px -16px rgba(94,15,5,.55); }
+.cw[data-genre=stream] .cw-ep .f small { color: var(--wc); font-weight: 800; letter-spacing: .08em; }
+.cw[data-genre=stream] .cw-ep .f b { color: var(--wd); font-weight: 700; }
+.cw[data-genre=stream] .cw-play, .cw[data-genre=stream] .cw-ep:nth-child(n) .cw-play { background: var(--wc); box-shadow: 0 6px 12px -6px rgba(94,15,5,.6); }
+.cw[data-genre=stream] .cw-play::after, .cw[data-genre=stream] .cw-ep:nth-child(n) .cw-play::after { border-left-color: #fff; }
+.cw[data-genre=stream] .cw-ep .b { background: var(--wd); color: #fff; border-radius: 16px; box-shadow: none; }
+.cw[data-genre=stream] .cw-ep .b small { color: rgba(255,255,255,.72); }
+.cw[data-genre=stream] .cw-ep .b b { color: #fff; }
+.cw[data-genre=stream] .cw-ep .b em { color: #FFC9B8; }
+.cw[data-genre=stream] .cw-ep:focus-visible { outline-color: var(--wd); }
+
+/* the two DoorDash screens get a fuller red gradient than the rest */
+.cw:is([data-genre=crime],[data-genre=stream]) {
+  --wash:
+    radial-gradient(140% 80% at 0% 0%, color-mix(in srgb, var(--wa) 100%, transparent) 0%, color-mix(in srgb, var(--wa) 72%, transparent) 38%, transparent 82%),
+    radial-gradient(95% 55% at 100% 92%, color-mix(in srgb, var(--wa) 55%, transparent), transparent 74%),
+    linear-gradient(180deg, color-mix(in srgb, var(--wa) 34%, #F6EEEC) 0%, color-mix(in srgb, var(--wa) 20%, #F6F1EF) 100%);
+}
