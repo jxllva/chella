@@ -112,7 +112,10 @@
         <span class="sp-status"><i aria-hidden="true"></i><span></span></span>
         <span class="sp-left"></span>
       </div>
-      <button class="mt-stage" aria-label="Your money tree. Tap to shake it.">${treeSVG()}<span class="mt-tip" aria-hidden="true"></span><span class="mt-pop" aria-hidden="true"></span></button>
+      <div class="mt-stage cs-stage" role="group" aria-label="Your spending, day by day"></div>
+      <p class="cs-detail" aria-live="polite"></p>
+      <div class="cs-legend"></div>
+      <span class="mt-tip" aria-hidden="true" hidden></span><span class="mt-pop" aria-hidden="true" hidden></span>
       <p class="mt-mood" aria-live="polite"><b></b><span></span></p>
       <p class="sp-cats"></p>
       <div class="sp-acts"><button class="sp-wrap mt-wrapped" data-a="wrap">${I('<path d="M5 4.5h11l3 3V19.5H5z"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h4"/>')}<span>Your wrap</span></button><button class="sp-recap mt-recap" data-a="recap">${I('<path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V8M16 15v-6"/>')}<span>Recap</span></button></div>`;
@@ -149,12 +152,13 @@
       host.dataset.mood = mood.toLowerCase();
       $('.mt-mood b').textContent = mood;
 
-      $('.mt-stage').setAttribute('aria-label', `Your money tree is ${mood.toLowerCase()}: ${sx.t.toLowerCase()}. Tap to shake it.`);
+      /* chala v3: the shell chart sits where the tree was: stacks by kind for a week, a calendar of shells for a month */
+      if (window.ChalaShells && opts.getShells) ChalaShells.render(host, opts.getShells(st.mode, st.offset), { mode: st.mode, animate, hide });
     }
 
     function shake() {
       if (reduce()) return;
-      const tree = $('.mt-tree');
+      const tree = $('.mt-tree'); if (!tree) return;
       tree.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-2.2deg)' }, { transform: 'rotate(1.6deg)' }, { transform: 'rotate(-.8deg)' }, { transform: 'rotate(0)' }], { duration: 900, easing: 'cubic-bezier(.25,.1,.25,1)' });
       coins.filter(c => c.classList.contains('on')).forEach((c, i) => c.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(10deg)' }, { transform: 'rotate(-7deg)' }, { transform: 'rotate(0)' }], { duration: 1100, delay: i * 40, easing: 'ease-out' }));
       // a few leaves drift off; more when the tree is struggling
