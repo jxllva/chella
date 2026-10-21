@@ -1352,3 +1352,7 @@ html.ri-open, html.ri-open body { overflow: hidden; }
 .fw-sheet .fw-grab { display: none; }
 .fw-step-badge { width: 44px !important; height: 44px !important; color: var(--p-ink) !important; background: #fff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 0 0 1px var(--p-line), 0 6px 16px -10px rgba(25,25,25,.25) !important; }
 .fw-step-badge svg { width: 20px !important; height: 20px !important; }
+
+/* Onboarding: the accent words take the dashboard's orange (the same gradient as the name on Home) instead of grey */
+.fw .fw-title em, .fw-sheet h2 em, .fw-done h2 em, .fw-screen h1 em {
+  color: #E8743F !important; background: linear-gradient(100deg, #E8743F 0%, #F2A06B 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }

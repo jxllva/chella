@@ -79,6 +79,15 @@
   const words = (line, start) => line.map((w, i) => `<span class="fw-w" style="--i:${start + i}">${w}</span>`).join(' ');
   // Soft moving gradient across the top half of every onboarding screen
   const sky = () => '<div class="fw-sky" aria-hidden="true"><i></i><i></i><i></i><i></i></div>';
+  // the big splash wordmark glides and shrinks into the header logo while the welcome sky fades in
+  function handoff(el, from) {
+    const mark = el.querySelector('.fw-top .fw-mark'), sky = el.querySelector('.fw-sky');
+    if (!mark) return;
+    const to = mark.getBoundingClientRect(); if (!to.width || !to.height) return;
+    const k = from.height / to.height, dx = from.left + from.width / 2 - (to.left + to.width / 2), dy = from.top + from.height / 2 - (to.top + to.height / 2);
+    mark.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${k})` }, { transform: 'none' }], { duration: 900, easing: 'cubic-bezier(.65,0,.25,1)' });
+    sky?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1100, easing: 'ease-out' });
+  }
   function splashMarkup() {
     return `
 <section class="fw" aria-label="Welcome to chala">
@@ -436,7 +445,10 @@ ${S.mode === 'in' ? '<p class="fw-sub">Enter the number you signed up with.</p>'
     api = hooks;
     const st = history.state?.fauth;
     if (!el.querySelector('.fw') || root !== el) {
+      // chala v3: carry the splash wordmark into the welcome header instead of cutting to it
+      const fromMark = el.querySelector('.fw-splash .fw-mark')?.getBoundingClientRect();
       el.innerHTML = splashMarkup();
+      if (fromMark && !reduceMotion()) handoff(el, fromMark);
       root = el;
       el.addEventListener('click', onClick);
       el.addEventListener('input', onInputEv);
